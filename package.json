@@ -1,0 +1,92 @@
+{
+  "name": "test",
+  "version": "0.0.0",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "vite | electron .",
+    "dev": "vite",
+    "build": "run-p type-check \"build-only {@}\" --",
+    "preview": "vite preview",
+    "build-only": "vite build",
+    "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
+    "electron:build": "vite build && electron-builder"
+  },
+  "dependencies": {
+    "pinia": "^2.1.6",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "devDependencies": {
+    "@tsconfig/node18": "^18.2.2",
+    "@types/node": "^18.17.17",
+    "@vitejs/plugin-vue": "^4.3.4",
+    "@vue/tsconfig": "^0.4.0",
+    "electron": "^26.3.0",
+    "electron-builder": "^23.6.0",
+    "node-sass": "^9.0.0",
+    "npm-run-all2": "^6.0.6",
+    "sass": "^1.69.0",
+    "sass-loader": "^13.3.2",
+    "typescript": "~5.2.0",
+    "vite": "^4.4.9",
+    "vue-tsc": "^1.8.11"
+  },
+  "build": {
+    "appId": "lsl.first.app",
+    "productName": "ElectronApp",
+    "copyright": "Copyright © 2023 lsl",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "win": {
+      "icon": "./public/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 410,
+          "y": 150,
+          "type": "link",
+          "path": "/Applications"
+        },
+        {
+          "x": 130,
+          "y": 150,
+          "type": "file"
+        }
+      ]
+    },
+    "linux": {
+      "icon": "./public/icon.ico",
+      "target": "AppImage"
+    },
+    "mac": {
+      "icon": "./public/icon.ico"
+    },
+    "files": [
+      "./dist",
+      "./electron",
+      "!**/node_modules/**"
+    ],
+    "asar": false,
+    "nsis": {
+      "oneClick": false,
+      "allowElevation": true,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "./public/icon.ico",
+      "uninstallerIcon": "./public/icon.ico",
+      "installerHeaderIcon": "./public/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    }
+  }
+}
