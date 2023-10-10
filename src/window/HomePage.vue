@@ -71,7 +71,6 @@ watch(
   </div>
   <div class="container">
     <div id="head-tool-box">
-      
     </div>
     <div id="screen-box" @click="showEditor">
       <div>
@@ -93,7 +92,6 @@ watch(
   </div>
   <WindowTools />
   <HeadMessage />
-
 </template>
 
 <style lang="scss">
@@ -146,7 +144,7 @@ watch(
   padding: 15px;
   z-index: 99;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: rgb(245, 252, 250);
+  background: rgb(243, 248, 247);
   color: rgba(51, 51, 51, 0.8);
   padding-bottom: 12px;
 
@@ -169,7 +167,7 @@ watch(
   flex-flow: column nowrap;
   justify-content: space-around;
   align-items: flex-start;
-  
+
 }
 
 #window-tool {
@@ -193,9 +191,9 @@ watch(
   align-items: center;
   cursor: pointer;
 
-  > div {
-    width: 30em;
-    height: 15em;
+  >div {
+    width: 80%;
+    height: 80%;
     background: white;
     overflow: hidden;
     border-radius: 11px;
@@ -204,6 +202,7 @@ watch(
     justify-content: center;
     align-items: center;
   }
+
   img {
     max-width: 100%;
     max-height: 100%;
@@ -234,7 +233,4 @@ watch(
 #data-setting-box {
   grid-area: 7 / 2 / 10 / 2;
 }
-
-
-
 </style>

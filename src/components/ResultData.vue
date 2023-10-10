@@ -112,6 +112,6 @@ const vCopy = {
   justify-content: center;
   align-items: center;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-
+  font-size: 12px;
 }
 </style>

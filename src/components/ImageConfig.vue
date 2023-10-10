@@ -330,6 +330,7 @@ watch(
 
     .div1 {
       grid-area: 1 / 1 / 2 / 2;
+      font-size: 13px;
     }
 
     .div2 {
@@ -355,6 +356,7 @@ watch(
 
     .div3 {
       grid-area: 2 / 1 / 3 / 5;
+      font-size: 14px;
     }
 
     .div4 {
@@ -370,7 +372,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 1.2em;
+        font-size: 15px;
       }
       #mode-move-box {
         width: 22%;
@@ -385,6 +387,7 @@ watch(
 
     .div5 {
       grid-area: 5 / 1 / 6 / 3;
+      font-size: 14px;
     }
 
     .div6 {
@@ -399,7 +402,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 14px;
       }
       #mode-direction-move-box {
         width: 45%;
@@ -414,6 +417,7 @@ watch(
 
     .div7 {
       grid-area: 5 / 3 / 6 / 5;
+      font-size: 14px;
     }
 
     .div8 {
@@ -428,7 +432,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 12px;
+        font-size: 13px;
       }
       #output-move-box {
         width: 45%;

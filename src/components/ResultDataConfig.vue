@@ -39,11 +39,13 @@ const modifyData = () => {
     <div class="div6">
       <input type="text" v-model="configData.backComment" />
     </div>
-    <div class="div7"><input type="text" style="font-size: 12px" placeholder="自定义替换" v-model="configData.replaceSource1" /></div>
+    <div class="div7"><input type="text" style="font-size: 13px" placeholder="自定义替换"
+        v-model="configData.replaceSource1" /></div>
     <div class="div8">
       <input type="text" placeholder="替换数据" v-model="configData.replaceTarget1" />
     </div>
-    <div class="div9"><input type="text" style="font-size: 12px" placeholder="自定义替换" v-model="configData.replaceSource2" /></div>
+    <div class="div9"><input type="text" style="font-size: 13px" placeholder="自定义替换"
+        v-model="configData.replaceSource2" /></div>
     <div class="div10">
       <input type="text" placeholder="替换数据" v-model="configData.replaceTarget2" />
     </div>
@@ -64,7 +66,7 @@ const modifyData = () => {
   border: none;
   overflow: hidden;
 
-  > div {
+  >div {
     border: none;
     background: rgba(51, 51, 51, 0.08);
     border-radius: 9px;
@@ -72,6 +74,7 @@ const modifyData = () => {
     justify-content: center;
     align-items: center;
   }
+
   input {
     width: 100%;
     height: 100%;
@@ -84,36 +87,53 @@ const modifyData = () => {
     color: rgba(51, 51, 51, 0.7);
     background: rgba(245, 222, 211, 0.3);
   }
+
   .div1 {
     grid-area: 1 / 1 / 2 / 2;
+    font-size: 14px;
+
   }
+
   .div2 {
     grid-area: 1 / 2 / 2 / 4;
   }
+
   .div3 {
     grid-area: 2 / 1 / 3 / 2;
+    font-size: 14px;
+
   }
+
   .div4 {
     grid-area: 2 / 2 / 3 / 4;
   }
+
   .div5 {
     grid-area: 3 / 1 / 4 / 2;
+    font-size: 14px;
+
   }
+
   .div6 {
     grid-area: 3 / 2 / 4 / 4;
   }
+
   .div7 {
     grid-area: 4 / 1 / 5 / 2;
   }
+
   .div8 {
     grid-area: 4 / 2 / 5 / 4;
   }
+
   .div9 {
     grid-area: 5 / 1 / 6 / 2;
   }
+
   .div10 {
     grid-area: 5 / 2 / 6 / 4;
   }
+
   .div11 {
     grid-area: 1 / 4 / 6 / 5;
     display: flex;
@@ -124,5 +144,4 @@ const modifyData = () => {
     background: rgba(134, 163, 161, 0.35);
     cursor: pointer;
   }
-}
-</style>
+}</style>

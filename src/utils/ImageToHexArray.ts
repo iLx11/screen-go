@@ -1,11 +1,12 @@
 const os = require('os')
 const path = require('path')
 import Crypto from 'crypto'
-// png 文件转像素
-const pngparse = require('pngparse')
+import * as pngparse from 'pngparse'
 import * as mime from 'mime'
-const Jimp = require('jimp')
+// import * as Jimp from 'jimp'
+var Jimp = require('jimp')
 const fs = require('fs-extra')
+// const fs = require('fs');
 
 // const Crypto = getCrypto()
 

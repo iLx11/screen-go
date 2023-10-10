@@ -1,7 +1,9 @@
 import Img2lcd from './ImageToHexArray.js'
 
 // 图片裁剪
+// import * as Jimp from "jimp"
 var Jimp = require('jimp')
+
 import Crypto from 'crypto'
 const os = require('os')
 const fs = require('fs-extra')
