@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useScreenStore } from '../store/store'
+import { useScreenStore } from '../stores/store'
 import ImageToHexArray from '../utils/ImageToHexArray'
 import { imgEditorHandle } from '../utils/imgTools'
-import { getItem, setItem } from '../../db/electron-store'
+import { getItem, setItem } from '../utils/storage'
 import { reactive } from 'vue'
 
 const screenStore = useScreenStore()

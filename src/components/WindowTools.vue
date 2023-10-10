@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted } from 'vue'
+const { ipcRenderer } = require('electron')
 // import os from 'os'
 const win = window as any
 defineProps<{ title?: string }>()
@@ -8,13 +9,16 @@ defineProps<{ title?: string }>()
 
 
 let closeWindow = () => {
-  win.myApi.closeWindow()
+  // win.myApi.closeWindow()
+  ipcRenderer.send('window-close')
 }
 let maximizeMainWin = () => {
-  win.myApi.maximizeWindow()
+  // win.myApi.maximizeWindow()
+  ipcRenderer.send('window-max')
 }
 let minimizeMainWindow = () => {
-  win.myApi.minimizeWindow()
+  // win.myApi.minimizeWindow()
+  ipcRenderer.send('window-min')
 }
 
 </script>

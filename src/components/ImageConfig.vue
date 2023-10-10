@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue'
 import { imgEditorHandle } from '../utils/imgTools'
-import { useScreenStore } from '../store/store'
-import { getItem, setItem } from '../../db/electron-store'
-import { warn } from 'console'
+import { useScreenStore } from '../stores/store'
+import { getItem, setItem } from '../utils/storage'
+// import { warn } from 'console'
 
 const screenStore = useScreenStore()
 onMounted(() => {

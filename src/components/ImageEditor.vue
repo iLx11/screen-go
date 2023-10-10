@@ -2,16 +2,16 @@
 import { onMounted, nextTick, ref } from 'vue'
 
 import { customImgEditorTheme } from '../utils/theme'
-import useLocale from '../hooks/lang'
+// import useLocale from '../hooks/lang'
 import 'dp-image-editor/dist/tui-image-editor.css'
 // import imageTool from '../utils/Base64ToHexArray.ts'
 import ImageToHexArray from '../utils/ImageToHexArray'
 // import { imgEditorHandle } from '../utils/imgTools'
-import {useScreenStore} from '../store/store'
+import { useScreenStore } from '../stores/store'
 
 const { ipcRenderer } = require('electron')
 const ImageEditor = require('dp-image-editor')
-const { t } = useLocale()
+// const { t } = useLocale()
 const emits = defineEmits(['editorCancle', 'editorCommit'])
 const screenStore = useScreenStore()
 
@@ -21,7 +21,7 @@ onMounted(() => {
       usageStatistics: false, //这个一定要写要不然会报错
       includeUI: {
         loadImage: {
-          path: 'src/renderer/assets/img/black.png', //加载的图片链接
+          path: 'src/assets/img/black.png', //加载的图片链接
           name: 'image' //图片名称（不重要）
         },
         //操作菜单栏
@@ -38,74 +38,74 @@ onMounted(() => {
         ],
         menuBarPosition: 'bottom', //操作栏位置
         locale: {
-          Crop: t('index.imageEditor.Crop'),
-          Load: t('index.imageEditor.Load'),
-          DeleteAll: t('index.imageEditor.DeleteAll'),
-          Delete: t('index.imageEditor.Delete'),
-          Undo: t('index.imageEditor.Undo'),
-          Redo: t('index.imageEditor.Redo'),
-          Reset: t('index.imageEditor.Reset'),
-          Flip: t('index.imageEditor.Flip'),
-          Rotate: t('index.imageEditor.Rotate'),
-          Draw: t('index.imageEditor.Draw'),
-          Shape: t('index.imageEditor.Shape'),
-          Icon: t('index.imageEditor.Icon'),
-          Text: t('index.imageEditor.Text'),
-          Mask: t('index.mask'),
-          Filter: t('index.imageEditor.Filter'),
-          Bold: t('index.imageEditor.Bold'),
-          Italic: t('index.imageEditor.Italic'),
-          Underline: t('index.imageEditor.Underline'),
-          Left: t('index.imageEditor.Left'),
-          Center: t('index.imageEditor.Center'),
-          Right: t('index.imageEditor.Right'),
-          Color: t('index.editor.rgbColorDialog.color'),
-          'Text size': t('index.imageEditor.TextSize'),
-          Custom: t('index.imageEditor.Custom'),
-          Square: t('index.imageEditor.Square'),
-          Apply: t('index.imageEditor.Apply'),
-          Cancel: t('index.imageEditor.Cancel'),
-          'Flip X': t('index.imageEditor.FlipX'),
-          'Flip Y': t('index.imageEditor.FlipY'),
-          Range: t('index.imageEditor.Range'),
-          Stroke: t('index.imageEditor.Stroke'),
-          Fill: t('index.imageEditor.Fill'),
-          Circle: t('index.imageEditor.Circle'),
-          Triangle: t('index.imageEditor.Triangle'),
-          Rectangle: t('index.imageEditor.Rectangle'),
-          Free: t('index.imageEditor.Free'),
-          Straight: t('index.imageEditor.Straight'),
-          Arrow: t('index.imageEditor.Arrow'),
-          'Arrow-2': t('index.imageEditor.Arrow2'),
-          'Arrow-3': t('index.imageEditor.Arrow3'),
-          'Star-1': t('index.imageEditor.Star1'),
-          'Star-2': t('index.imageEditor.Star2'),
-          Polygon: t('index.imageEditor.Polygon'),
-          Location: t('index.imageEditor.Location'),
-          Heart: t('index.imageEditor.Heart'),
-          Bubble: t('index.imageEditor.Bubble'),
-          'Custom icon': t('index.imageEditor.CustomIcon'),
-          'Load Mask Image': t('index.imageEditor.LoadMaskImage'),
-          Grayscale: t('index.imageEditor.Grayscale'),
-          Blur: t('index.imageEditor.Blur'),
-          Sharpen: t('index.imageEditor.Sharpen'),
-          Emboss: t('index.imageEditor.Emboss'),
-          'Remove White': t('index.imageEditor.RemoveWhite'),
-          Distance: t('index.imageEditor.Distance'),
-          Brightness: t('index.imageEditor.Brightness'),
-          Noise: t('index.imageEditor.Noise'),
-          'Color Filter': t('index.imageEditor.ColorFilter'),
-          Sepia: t('index.imageEditor.Sepia'),
-          Sepia2: t('index.imageEditor.Sepia2'),
-          Invert: t('index.imageEditor.Invert'),
-          Pixelate: t('index.imageEditor.Pixelate'),
-          Threshold: t('index.imageEditor.Threshold'),
-          Tint: t('index.imageEditor.Tint'),
-          Multiply: t('index.imageEditor.Multiply'),
-          Blend: t('index.imageEditor.Blend'),
-          Double: t('index.imageEditor.Double'),
+          Crop: 'index.imageEditor.Crop',
+          Load: 'index.imageEditor.Load',
+          DeleteAll: 'index.imageEditor.DeleteAll',
+          Delete: 'index.imageEditor.Delete',
+          Undo: 'index.imageEditor.Undo',
+          Redo: 'index.imageEditor.Redo',
+          Reset: 'index.imageEditor.Reset',
+          Flip: 'index.imageEditor.Flip',
+          Rotate: 'index.imageEditor.Rotate',
+          Draw: 'index.imageEditor.Draw',
+          Shape: 'index.imageEditor.Shape',
+          Icon: 'index.imageEditor.Icon',
+          Text: 'index.imageEditor.Text',
+          Mask: 'index.mask',
+          Filter: 'index.imageEditor.Filter',
+          Bold: 'index.imageEditor.Bold',
+          Italic: 'index.imageEditor.Italic',
+          Underline: 'index.imageEditor.Underline',
+          Left: 'index.imageEditor.Left',
+          Center: 'index.imageEditor.Center',
+          Right: 'index.imageEditor.Right',
+          Color: 'index.editor.rgbColorDialog.color',
+          'Text size': 'index.imageEditor.TextSize',
+          Custom: 'index.imageEditor.Custom',
+          Square: 'index.imageEditor.Square',
+          Apply: 'index.imageEditor.Apply',
+          Cancel: 'index.imageEditor.Cancel',
+          'Flip X': 'index.imageEditor.FlipX',
+          'Flip Y': 'index.imageEditor.FlipY',
+          Range: 'index.imageEditor.Range',
+          Stroke: 'index.imageEditor.Stroke',
+          Fill: 'index.imageEditor.Fill',
+          Circle: 'index.imageEditor.Circle',
+          Triangle: 'index.imageEditor.Triangle',
+          Rectangle: 'index.imageEditor.Rectangle',
+          Free: 'index.imageEditor.Free',
+          Straight: 'index.imageEditor.Straight',
+          Arrow: 'index.imageEditor.Arrow',
+          'Arrow-2': 'index.imageEditor.Arrow2',
+          'Arrow-3': 'index.imageEditor.Arrow3',
+          'Star-1': 'index.imageEditor.Star1',
+          'Star-2': 'index.imageEditor.Star2',
+          Polygon: 'index.imageEditor.Polygon',
+          Location: 'index.imageEditor.Location',
+          Heart: 'index.imageEditor.Heart',
+          Bubble: 'index.imageEditor.Bubble',
+          'Custom icon': 'index.imageEditor.CustomIcon',
+          'Load Mask Image': 'index.imageEditor.LoadMaskImage',
+          Grayscale: 'index.imageEditor.Grayscale',
+          Blur: 'index.imageEditor.Blur',
+          Sharpen: 'index.imageEditor.Sharpen',
+          Emboss: 'index.imageEditor.Emboss',
+          'Remove White': 'index.imageEditor.RemoveWhite',
+          Distance: 'index.imageEditor.Distance',
+          Brightness: 'index.imageEditor.Brightness',
+          Noise: 'index.imageEditor.Noise',
+          'Color Filter': 'index.imageEditor.ColorFilter',
+          Sepia: 'index.imageEditor.Sepia',
+          Sepia2: 'index.imageEditor.Sepia2',
+          Invert: 'index.imageEditor.Invert',
+          Pixelate: 'index.imageEditor.Pixelate',
+          Threshold: 'index.imageEditor.Threshold',
+          Tint: 'index.imageEditor.Tint',
+          Multiply: 'index.imageEditor.Multiply',
+          Blend: 'index.imageEditor.Blend',
+          Double: 'index.imageEditor.Double',
           Download: '',
-          BGColor: t('index.imageEditor.BGColor')
+          BGColor: 'index.imageEditor.BGColor'
         }, //语言
         theme: customImgEditorTheme //主题样式
       }
@@ -118,10 +118,10 @@ let isBlank = ref<boolean>(false)
 // 切换反色背景
 const switchBack = () => {
   isBlank.value = !isBlank.value
-  let img = isBlank.value ? 'src/renderer/assets/img/blank.png' : 'src/renderer/assets/img/black.png'
-  let color = isBlank.value ? '#000000' : '#ffffff'
-  instance.value.loadImageFromURL(img, 'blank').then((result) => {
-    instance.value.addText('', {
+  let img = isBlank.value ? 'src/assets/img/blank.png' : 'src/assets/img/black.png';
+  let color = isBlank.value ? '#000000' : '#ffffff';
+  (instance as any).value.loadImageFromURL(img, 'blank').then((result) => {
+    (instance as any).value.addTex('', {
       position: {},
       styles: {
         fill: color,
@@ -136,7 +136,7 @@ const switchBack = () => {
 }
 // 编辑信息提交
 const editorCommit = () => {
-  const picBase64Str = instance.value.toDataURL()
+  const picBase64Str = (instance as any).value.toDataURL()
   // 提交到父组件显示
   emits('editorCommit', picBase64Str)
   // 存储图像数据
@@ -185,6 +185,7 @@ const editorCommit = () => {
   padding: 0;
   margin: 0;
   z-index: 9999;
+
   ul {
     width: 100%;
     height: 100%;
@@ -194,9 +195,11 @@ const editorCommit = () => {
     align-items: center;
     padding: 0;
     margin: 0;
-    :nth-child(3) > div {
+
+    :nth-child(3)>div {
       background: rgba(243, 226, 224, 1);
     }
+
     li {
       height: 10%;
       width: 100%;

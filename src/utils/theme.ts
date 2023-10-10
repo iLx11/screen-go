@@ -6,7 +6,7 @@
  * @FilePath: \electron-v3-ts-tempalte\src\renderer\utils\theme.ts
  * @Description: 主题设置
  */
-import { getItem, setItem } from "../../db/electron-store";
+import { getItem, setItem } from "../utils/storage";
 
 export function setTheme(color = null) {
   console.info("设置颜色: ", color);

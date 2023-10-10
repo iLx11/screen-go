@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
-import { useScreenStore } from '../store/store'
+import { useScreenStore } from '../stores/store'
 
 const screenStore = useScreenStore()
 const messageBoxShow = ref<boolean>(false)
@@ -94,7 +94,7 @@ const vCopy = {
   </div>
   <div id="message-show-box" v-if="messageBoxShow" @click.stop="hideMessageBox"></div>
   <div id="message-show" v-if="messageBoxShow">
-    &nbsp;&nbsp;本项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span>的标准开发模板以及开源项目所开发，并遵循 MIT 开源协议<br /><br />
+    &nbsp;&nbsp;本项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 开源项目所开发，并遵循 MIT 开源协议<br /><br />
     &nbsp;&nbsp;本项目为图片取模软件，可以直接对屏幕的布局以及显示进行编辑，包括导入任何类型的图片，编辑文字与图形，并直接生成可修改的数据（支持正则替换），并直接在硬件显示！！<br /><br />
     &nbsp;&nbsp;项目 <span href="" v-copy="copyText[1]"> 开源地址 </span><br><br><br>
     &nbsp;&nbsp;之后会不断优化此软件或开发更多有意思的软件，十分感谢您的支持！！！

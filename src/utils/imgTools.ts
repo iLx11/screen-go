@@ -8,6 +8,15 @@ const fs = require('fs-extra')
 const path = require('path')
 // const fs = require('fs');
 
+// const Crypto = getCrypto()
+
+// function getCrypto() {
+//   try {
+//     return window.crypto;
+//   } catch {
+//     return crypto;
+//   }
+// }
 const DIC_DIG = {
   '0': 0,
   '1': 1,

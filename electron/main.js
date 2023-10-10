@@ -27,9 +27,10 @@ const createWindow = () => {
         minHeight: 560,
         webPreferences: {
             nodeIntegration: true,
+            contextIsolation:false,
             nodeIntegrationInWorker: true,
-            preload: path.join(__dirname, 'preload.js'),
             webSecurity: false,
+            // preload: path.join(__dirname, 'preload.js'),
         }
     })
     win.setMenu(null)
