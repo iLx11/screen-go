@@ -1,24 +1,13 @@
 import Img2lcd from './ImageToHexArray.js'
 
 // 图片裁剪
-// import * as Jimp from "jimp"
 var Jimp = require('jimp')
-
 import Crypto from 'crypto'
 const os = require('os')
 const fs = require('fs-extra')
 const path = require('path')
 // const fs = require('fs');
 
-// const Crypto = getCrypto()
-
-// function getCrypto() {
-//   try {
-//     return window.crypto;
-//   } catch {
-//     return crypto;
-//   }
-// }
 const DIC_DIG = {
   '0': 0,
   '1': 1,

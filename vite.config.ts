@@ -1,23 +1,11 @@
-import { fileURLToPath, URL } from "node:url";
+import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig } from "vite";
-import vue from "@vitejs/plugin-vue";
-import optimizer from "vite-plugin-optimizer";
+import { defineConfig } from 'vite'
+import vue from '@vitejs/plugin-vue'
+import optimizer from 'vite-plugin-optimizer'
+
 let getReplacer = () => {
-  let externalModels = [
-    "electron",
-    "os",
-    "fs",
-    "path",
-    "events",
-    "child_process",
-    "crypto",
-    "http",
-    "buffer",
-    "url",
-    "better-sqlite3",
-    "knex",
-  ];
+  let externalModels = ["electron", "os", "fs", "path", "events", "child_process", "crypto", "http", "buffer", "url", "better-sqlite3", "knex"];
   let result = {};
   for (let item of externalModels) {
     (result as any)[item] = () => ({
@@ -25,33 +13,20 @@ let getReplacer = () => {
       code: `const ${item} = require('${item}');export { ${item} as default }`,
     });
   }
-  (result as any)["electron"] = () => {
-    let electronModules = [
-      "clipboard",
-      "ipcRenderer",
-      "nativeImage",
-      "shell",
-      "webFrame",
-    ].join(",");
-    return {
-      find: new RegExp(`^electron$`),
-      code: `const {${electronModules}} = require('electron');export {${electronModules}}`,
-    };
-  };
   return result;
 };
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: "./",
-  plugins: [optimizer(getReplacer()), vue()],
-  define: {
-    'process.env': {},
-  },
+  plugins: [
+    optimizer(getReplacer()),
+    vue(),
+  ],
   resolve: {
     alias: {
-      "@": fileURLToPath(new URL("./src", import.meta.url)),
-    },
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
   },
   css: {
     preprocessorOptions: {
@@ -61,4 +36,4 @@ export default defineConfig({
       },
     },
   },
-});
+})

@@ -1,22 +1,12 @@
 const os = require('os')
 const path = require('path')
 import Crypto from 'crypto'
-import * as pngparse from 'pngparse'
+// png 文件转像素
+const pngparse = require('pngparse')
 import * as mime from 'mime'
-// import * as Jimp from 'jimp'
-var Jimp = require('jimp')
+const Jimp = require('jimp')
 const fs = require('fs-extra')
-// const fs = require('fs');
 
-// const Crypto = getCrypto()
-
-// function getCrypto() {
-//   try {
-//     return window.crypto;
-//   } catch {
-//     return crypto;
-//   }
-// }
 export default class ImageToHexArray {
   private static configArray: number[]
   public static generate = (picData: string, config: number[]): Promise<any[]> => {
