@@ -3,16 +3,30 @@ import { useScreenStore } from '../stores/store'
 import ImageToHexArray from '../utils/ImageToHexArray'
 import { imgEditorHandle } from '../utils/imgTools'
 import { getItem, setItem } from '../utils/storage'
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
+const { ipcRenderer } = require('electron')
 
 const screenStore = useScreenStore()
 const presetArray: object[] = reactive([{}, {}, {}])
 let presetCount: number = 0
 
-const commit = () => {
+onMounted(() => {
+  ipcRenderer.on('pic-data-done', (event: any, data: any) => {
+    console.log(event)
+    console.log(data)
+  })
+})
+
+// onMounted(async () => {
+//   const data = await ipcRenderer.invoke('pic-data-editor', '2342342', [])
+//   console.log('data', data)
+// })
+const commit = async () => {
   if (screenStore.editorPicData != '') {
     if (screenStore.resizeWidth != 0 && screenStore.resizeHeight != 0) {
-      imgEditorHandle(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData, async (base64) => {
+      const data = await ipcRenderer.invoke('pic-data-editor', screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData)
+      console.log('pic-data-editor', data)
+      /* imgEditorHandle(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData, async (base64) => {
         screenStore.setResizePicData(base64)
         screenStore.setResized(true)
         // 图片取模
@@ -38,7 +52,7 @@ const commit = () => {
           setItem('presetArray', JSON.stringify(presetArray))
         }
         presetCount >= 2 ? (presetCount = 0) : presetCount++
-      })
+      }) */
     } else {
       screenStore.showText('请设置图片的大小！')
     }

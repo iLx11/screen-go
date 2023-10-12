@@ -3,6 +3,7 @@ const { app, protocol, BrowserWindow, globalShortcut } = require('electron')
 // 需在当前文件内开头引入 Node.js 的 'path' 模块
 const path = require('path')
 require('./windowControl')
+require('./picDataEditor')
 
 app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
 // Scheme must be registered before the app is ready
@@ -42,7 +43,7 @@ const createWindow = () => {
         // win.loadURL('http://127.0.0.1:5173/')
         win.loadURL('http://localhost:5173/')
         win.webContents.openDevTools()
-    }
+    } 
     globalShortcut.register("CommandOrControl+Shift+i", function () {
         win.webContents.openDevTools();
     });

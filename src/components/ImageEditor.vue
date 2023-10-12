@@ -2,14 +2,8 @@
 import { onMounted, nextTick, ref } from 'vue'
 
 import { customImgEditorTheme } from '../utils/theme'
-// import useLocale from '../hooks/lang'
 import 'dp-image-editor/dist/tui-image-editor.css'
-// import imageTool from '../utils/Base64ToHexArray.ts'
-import ImageToHexArray from '../utils/ImageToHexArray'
-// import { imgEditorHandle } from '../utils/imgTools'
 import { useScreenStore } from '../stores/store'
-
-const { ipcRenderer } = require('electron')
 const ImageEditor = require('dp-image-editor')
 // const { t } = useLocale()
 const emits = defineEmits(['editorCancle', 'editorCommit'])
