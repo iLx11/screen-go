@@ -6,8 +6,11 @@ const Crypto = require("crypto");
 const os = require("os");
 const fs = require("fs-extra");
 const path = require("path");
+const utils = require("./ImageToHexArray");
 
-const imgEditorHandle = async (width, height, picData, callBack) => {
+let resultPicData = "";
+
+const imgEditorHandle = async (width, height, picData) => {
   // console.info('图片：', picData)
   let hashname =
     Crypto.createHash("md5").update("angular-cir-img").digest("hex") + ".bmp";
@@ -26,7 +29,7 @@ const imgEditorHandle = async (width, height, picData, callBack) => {
   );
   // console.info('裁剪后的文件路径：', filePath)
   // console.info('裁剪：', width, height)
-  const temp = await Jimp.read(originFilePath, async (err, lenna) => {
+  Jimp.read(originFilePath, async (err, lenna) => {
     if (err) throw err;
     lenna
       .resize(width, height) // resize
@@ -38,13 +41,18 @@ const imgEditorHandle = async (width, height, picData, callBack) => {
       const readable = fs.readFileSync(filePath, "binary");
       const base64 = Buffer.from(readable, "binary").toString("base64");
       // base64 = `data:image/png;base64,${base64}`
-      callBack(base64);
-      // console.info(base64)
+      resultPicData = base64;
     }, 500);
   });
-  console.info('temp', temp)
 };
 
-ipcMain.handle("pic-data-editor", (event, width, height, picData) => {
-  
+ipcMain.handle("pic-data-editor", async (event, width, height, picData) => {
+  imgEditorHandle(width, height, picData);
+  await new Promise((resolve) => setTimeout(resolve, 700));
+  return resultPicData;
+});
+
+ipcMain.handle("pic-data-parse", async (event, data, ...configArray) => {
+  const result = await utils.ImageToHexArray.generate(data, configArray)
+  return result
 });

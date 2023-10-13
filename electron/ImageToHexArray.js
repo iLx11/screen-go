@@ -1,15 +1,15 @@
 const os = require('os')
 const path = require('path')
-import Crypto from 'crypto'
+const Crypto = require('crypto') 
 // png 文件转像素
 const pngparse = require('pngparse')
-import * as mime from 'mime'
+const mime = require('mime') 
 const Jimp = require('jimp')
 const fs = require('fs-extra')
 
-export default class ImageToHexArray {
-  private static configArray: number[]
-  public static generate = (picData: string, config: number[]): Promise<any[]> => {
+module.exports.ImageToHexArray = class {
+  static configArray
+  static generate = (picData, config) => {
     this.configArray = config
     return new Promise((resolve, reject) => {
       this.convert(this.generateTemFile(picData), function (err, hex) {
@@ -22,7 +22,7 @@ export default class ImageToHexArray {
       })
     })
   }
-  private static convert(filename: string, callback: Function) {
+  static convert(filename, callback) {
     let _this = this
     let ext = mime.getType(filename)
     if (ext == 'image/png') {
@@ -48,7 +48,7 @@ export default class ImageToHexArray {
     }
   }
   // 根据 base64 生成临时文件
-  private static generateTemFile(base64: string): string {
+  static generateTemFile(base64) {
     let hashname = Crypto.createHash('md5').update('angular-tmp-img').digest('hex') + '.bmp'
     let temFilePath = path.join(os.tmpdir(), hashname)
     let dataBuffer = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
@@ -56,7 +56,7 @@ export default class ImageToHexArray {
     return temFilePath
   }
   // 图片取模
-  private static pngtolcd = (filename, callback: Function) => {
+  static pngtolcd = (filename, callback) => {
     let _this = this
     pngparse.parseFile(filename, function (err, img) {
       if (err) {
@@ -68,7 +68,7 @@ export default class ImageToHexArray {
   }
 
   // ImageData 对象转 hexArray
-  private static imageDataToHexArray = (imageData) => {
+  static imageDataToHexArray = (imageData) => {
     // 创建 ImageData 对象，重新构建 data
     const pimage = this.createImageDate(imageData)
     // 获取像素数据、高度、宽度和透明度等信息
@@ -93,7 +93,7 @@ export default class ImageToHexArray {
     return this.imageSamplingArr[this.configArray[1]](unpackedBuffer, width, height)
   }
   //------------------------------ 逐行式 ------------------------------------
-  private static ImageSamplingRow = (unpackedBuffer, width, height) => {
+  static ImageSamplingRow = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
     const buffer = Buffer.alloc((width * height) / 8)
     for (let i = 0; i < unpackedBuffer.length; i++) {
@@ -120,7 +120,7 @@ export default class ImageToHexArray {
     return buffer
   }
   //------------------------------ 逐列式 ------------------------------------
-  private static ImageSamplingCol = (unpackedBuffer, width, height) => {
+  static ImageSamplingCol = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
     const buffer = Buffer.alloc((width * height) / 8)
     for (let i = 0; i < unpackedBuffer.length; i++) {
@@ -146,7 +146,7 @@ export default class ImageToHexArray {
     return buffer
   }
   //------------------------------ 列行式 ------------------------------------
-  private static ImageSamplingColRow = (unpackedBuffer, width, height) => {
+  static ImageSamplingColRow = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
     const buffer = Buffer.alloc((width * height) / 8)
     for (let i = 0; i < unpackedBuffer.length; i++) {
@@ -172,7 +172,7 @@ export default class ImageToHexArray {
     return buffer
   }
   //------------------------------ 行列式 ------------------------------------
-  private static ImageSamplingRowCol = (unpackedBuffer, width, height) => {
+  static ImageSamplingRowCol = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
     const buffer = Buffer.alloc((width * height) / 8)
     for (let i = 0; i < unpackedBuffer.length; i++) {
@@ -197,9 +197,9 @@ export default class ImageToHexArray {
     // 返回转换后的lcd数据
     return buffer
   }
-  private static imageSamplingArr: Function[] = [this.ImageSamplingRow, this.ImageSamplingCol, this.ImageSamplingColRow, this.ImageSamplingRowCol]
+  static imageSamplingArr = [this.ImageSamplingRow, this.ImageSamplingCol, this.ImageSamplingColRow, this.ImageSamplingRowCol]
   // 创建 ImageData 对象
-  private static createImageDate = (imageData) => {
+  static createImageDate = (imageData) => {
     // 创建一个缓冲区，用于存储图像数据
     let buffer = Buffer.alloc(imageData.width * imageData.height * 4)
     // 重组 ImageData 的数据
@@ -216,7 +216,7 @@ export default class ImageToHexArray {
     // return new ImageData(new Uint8ClampedArray(buffer), imageData.width, imageData.height)
   }
   // 获取指定位置的像素值
-  private static getPixel = (image, x, y) => {
+  static getPixel = (image, x, y) => {
     x = x | 0
     y = y | 0
     // 检查坐标是否越界，如果越界返回 0
@@ -252,14 +252,14 @@ export default class ImageToHexArray {
     // 将颜色值转换为十六进制像素值并返回
     return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0
   }
-  private static hex2hex = (hex) => {
+  static hex2hex = (hex) => {
     for (var bytes = [], c = 0; c < hex.length; c += 2) {
       bytes.push('0x' + hex.substr(c, 2))
     }
     return bytes
   }
 
-  private static pngtohexarray = (filename, callback) => {
+  static pngtohexarray = (filename, callback) => {
     this.pngtolcd(filename, function (err, buffer) {
       if (err) {
         callback(err, null)

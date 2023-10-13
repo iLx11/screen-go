@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue'
-import { imgEditorHandle } from '../utils/imgTools'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
-// import { warn } from 'console'
+const { ipcRenderer } = require('electron')
+
+
 
 const screenStore = useScreenStore()
 onMounted(() => {
@@ -62,15 +63,15 @@ const setPreSize = (v: object) => {
   picSizeData.height = v['height']
 }
 // 图片缩放预览
-const resizePic = () => {
+const resizePic = async () => {
   if (screenStore.editorPicData != '' && screenStore.isResized == false) {
     // 图片裁剪
-    if (picSizeData.height != '' && picSizeData.width != '')
-      imgEditorHandle(parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData, async (base64) => {
-        screenStore.setResizePicData(base64)
-        screenStore.setResized(true)
-        resizeText.value = '返回原始图片'
-      })
+    if (picSizeData.height != '' && picSizeData.width != '') {
+      const data = await ipcRenderer.invoke('pic-data-editor', parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData)
+      screenStore.setResizePicData(data)
+      screenStore.setResized(true)
+      resizeText.value = '返回原始图片'
+    }
     else screenStore.showText('请设置图片的大小！')
   } else {
     screenStore.showText('请先设置一个图片！')
@@ -189,7 +190,7 @@ watch(
   padding: 0.7em;
   border: none;
 
-  > div {
+  >div {
     width: 48.5%;
     height: 100%;
     border-radius: 10px;
@@ -203,7 +204,7 @@ watch(
     column-gap: 5px;
     row-gap: 5px;
 
-    > div {
+    >div {
       border: none;
       background: rgba(51, 51, 51, 0.08);
     }
@@ -230,9 +231,10 @@ watch(
       padding: 0.5em;
       background: rgba(245, 222, 211, 0.35);
 
-      > div {
+      >div {
         border: none;
       }
+
       .input-group {
         width: 100%;
         height: 42%;
@@ -258,6 +260,7 @@ watch(
           font-family: 'ceyy';
           text-align: center;
         }
+
         .user-label {
           width: 30%;
           height: 50%;
@@ -268,7 +271,8 @@ watch(
           transform: translateY(-50%);
           transition: all 0.3s ease-in-out;
         }
-        .input:focus + label {
+
+        .input:focus+label {
           left: 50%;
           top: 7%;
           font-size: 12px;
@@ -276,6 +280,7 @@ watch(
         }
       }
     }
+
     #size-choose-box {
       grid-area: 3 / 2 / 5 / 4;
       display: flex;
@@ -283,7 +288,8 @@ watch(
       justify-content: space-between;
       align-items: center;
       padding: 0.66em;
-      > div {
+
+      >div {
         width: 100%;
         height: 27%;
         background: rgba(211, 221, 229, 1);
@@ -308,6 +314,7 @@ watch(
       background: rgba(134, 163, 161, 0.35);
     }
   }
+
   // ------------------ 取模设置 -------------------
   #img-data-config {
     display: grid;
@@ -316,11 +323,13 @@ watch(
     column-gap: 4px;
     row-gap: 4px;
     color: rgba(51, 51, 51, 0.7);
-    > div {
+
+    >div {
       border: none;
       background: rgba(51, 51, 51, 0.06);
       border-radius: 10px;
     }
+
     div {
       border: none;
       display: flex;
@@ -338,11 +347,13 @@ watch(
       justify-content: space-around;
       background: rgba(219, 232, 229, 0.7);
       position: relative;
-      > div {
+
+      >div {
         width: 46%;
         height: 100%;
         cursor: pointer;
       }
+
       #format-move-box {
         width: 45%;
         height: 80%;
@@ -367,13 +378,15 @@ watch(
       padding: 0.3em;
       background: rgba(219, 232, 229, 0.7);
       overflow: hidden;
-      > div {
+
+      >div {
         width: 22%;
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
         font-size: 15px;
       }
+
       #mode-move-box {
         width: 22%;
         height: 90%;
@@ -397,13 +410,15 @@ watch(
       padding: 0.3em;
       position: relative;
       background: rgba(219, 232, 229, 0.7);
-      > div {
+
+      >div {
         width: 45%;
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
         font-size: 14px;
       }
+
       #mode-direction-move-box {
         width: 45%;
         height: 90%;
@@ -427,13 +442,15 @@ watch(
       padding: 0.3em;
       background: rgba(219, 232, 229, 0.7);
       position: relative;
-      > div {
+
+      >div {
         width: 45%;
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
         font-size: 13px;
       }
+
       #output-move-box {
         width: 45%;
         height: 90%;
@@ -444,23 +461,26 @@ watch(
         transition: all 0.5s ease-in-out;
       }
     }
+
     .div9 {
       grid-area: 1/ 1/ 2/ 5;
       z-index: -1;
       padding: 1em;
     }
+
     .div10 {
       grid-area: 2/ 1/ 4/ 5;
       z-index: -1;
     }
+
     .div11 {
       grid-area: 5 / 1 / 8 / 3;
       z-index: -1;
     }
+
     .div12 {
       grid-area: 5 / 3 / 8 / 5;
       z-index: -1;
     }
   }
-}
-</style>
+}</style>

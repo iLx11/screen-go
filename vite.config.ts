@@ -5,7 +5,7 @@ import vue from '@vitejs/plugin-vue'
 import optimizer from 'vite-plugin-optimizer'
 
 let getReplacer = () => {
-  let externalModels = ["electron", "os", "fs", "path", "events", "child_process", "crypto", "http", "buffer", "url", "better-sqlite3", "knex"];
+  let externalModels = ["electron", "os", "fs-extra", "path", "events", "child_process", "crypto", "http", "buffer", "url", "better-sqlite3", "knex"];
   let result = {};
   for (let item of externalModels) {
     (result as any)[item] = () => ({

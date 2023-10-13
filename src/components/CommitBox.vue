@@ -1,7 +1,5 @@
 <script setup lang="ts">
 import { useScreenStore } from '../stores/store'
-import ImageToHexArray from '../utils/ImageToHexArray'
-import { imgEditorHandle } from '../utils/imgTools'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive } from 'vue'
 const { ipcRenderer } = require('electron')
@@ -10,28 +8,23 @@ const screenStore = useScreenStore()
 const presetArray: object[] = reactive([{}, {}, {}])
 let presetCount: number = 0
 
-onMounted(() => {
-  ipcRenderer.on('pic-data-done', (event: any, data: any) => {
-    console.log(event)
-    console.log(data)
-  })
-})
-
-// onMounted(async () => {
-//   const data = await ipcRenderer.invoke('pic-data-editor', '2342342', [])
-//   console.log('data', data)
+// onMounted(() => {
+//   ipcRenderer.on('pic-data-done', (event: any, data: any) => {
+//     console.log(event)
+//     console.log(data)
+//   })
 // })
 const commit = async () => {
   if (screenStore.editorPicData != '') {
     if (screenStore.resizeWidth != 0 && screenStore.resizeHeight != 0) {
       const data = await ipcRenderer.invoke('pic-data-editor', screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData)
       console.log('pic-data-editor', data)
-      /* imgEditorHandle(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData, async (base64) => {
-        screenStore.setResizePicData(base64)
+      screenStore.setResizePicData(data)
         screenStore.setResized(true)
         // 图片取模
-        const data = await ImageToHexArray.generate(base64, screenStore.configArray)
-        screenStore.setResultString(data.join(','))
+        // const hexArrData = await ImageToHexArray.generate(data, screenStore.configArray)
+        const arrData = await ipcRenderer.invoke('pic-data-parse', data, screenStore.configArray[0],  screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3])
+        screenStore.setResultString(arrData.join(','))
         screenStore.showText('生成成功！')
         screenStore.setCountModify(true)
         screenStore.setPreCount(presetCount)
@@ -52,7 +45,6 @@ const commit = async () => {
           setItem('presetArray', JSON.stringify(presetArray))
         }
         presetCount >= 2 ? (presetCount = 0) : presetCount++
-      }) */
     } else {
       screenStore.showText('请设置图片的大小！')
     }
