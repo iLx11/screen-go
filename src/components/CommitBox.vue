@@ -2,28 +2,22 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive } from 'vue'
-const { ipcRenderer } = require('electron')
-
+// const { ipcRenderer } = require('electron')
+const win = window as any
 const screenStore = useScreenStore()
 const presetArray: object[] = reactive([{}, {}, {}])
 let presetCount: number = 0
 
-// onMounted(() => {
-//   ipcRenderer.on('pic-data-done', (event: any, data: any) => {
-//     console.log(event)
-//     console.log(data)
-//   })
-// })
 const commit = async () => {
   if (screenStore.editorPicData != '') {
     if (screenStore.resizeWidth != 0 && screenStore.resizeHeight != 0) {
-      const data = await ipcRenderer.invoke('pic-data-editor', screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData)
+      const data = await win.myApi.resizeImage(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData)
       console.log('pic-data-editor', data)
       screenStore.setResizePicData(data)
         screenStore.setResized(true)
         // 图片取模
         // const hexArrData = await ImageToHexArray.generate(data, screenStore.configArray)
-        const arrData = await ipcRenderer.invoke('pic-data-parse', data, screenStore.configArray[0],  screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3])
+        const arrData = await win.myApi.generateResultArray(data, screenStore.configArray[0],  screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3])
         screenStore.setResultString(arrData.join(','))
         screenStore.showText('生成成功！')
         screenStore.setCountModify(true)

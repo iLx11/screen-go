@@ -4,7 +4,7 @@ const { app, protocol, BrowserWindow, globalShortcut } = require('electron')
 const path = require('path')
 require('./windowControl')
 require('./picDataEditor')
-
+// require('./EditorConfig')
 app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -27,11 +27,13 @@ const createWindow = () => {
         minWidth: 688,
         minHeight: 560,
         webPreferences: {
+            // nodeIntegration: true,
+            // contextIsolation:false,
+            // nodeIntegrationInWorker: true,
+            // webSecurity: false,
+            // sandbox: false,
             nodeIntegration: true,
-            contextIsolation:false,
-            nodeIntegrationInWorker: true,
-            webSecurity: false,
-            // preload: path.join(__dirname, 'preload.js'),
+            preload: path.join(__dirname, './preload.js'),
         }
     })
     win.setMenu(null)
@@ -62,3 +64,6 @@ app.whenReady().then(() => {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
+
+
+

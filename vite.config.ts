@@ -2,7 +2,7 @@ import { fileURLToPath, URL } from 'node:url'
 
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
-import optimizer from 'vite-plugin-optimizer'
+// import optimizer from 'vite-plugin-optimizer'
 
 let getReplacer = () => {
   let externalModels = ["electron", "os", "fs-extra", "path", "events", "child_process", "crypto", "http", "buffer", "url", "better-sqlite3", "knex"];
@@ -20,7 +20,7 @@ let getReplacer = () => {
 export default defineConfig({
   base: "./",
   plugins: [
-    optimizer(getReplacer()),
+    // optimizer(getReplacer()),
     vue(),
   ],
   resolve: {
@@ -36,4 +36,22 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    emptyOutDir: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        // 分包
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            return id
+              .toString()
+              .split("node_modules/")[1]
+              .split("/")[0]
+              .toString();
+          }
+        },
+      },
+    },
+  }
 })

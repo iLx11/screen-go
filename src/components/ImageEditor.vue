@@ -4,8 +4,11 @@ import { onMounted, nextTick, ref } from 'vue'
 import { customImgEditorTheme } from '../utils/theme'
 import 'dp-image-editor/dist/tui-image-editor.css'
 import { useScreenStore } from '../stores/store'
-const ImageEditor = require('dp-image-editor')
+// const ImageEditor = require('dp-image-editor')
+import ImageEditor from 'dp-image-editor/dist/tui-image-editor.js'
 // const { t } = useLocale()
+// import imgBlack from './img/black.png'
+// import imgWhite from './img/blank.png'
 const emits = defineEmits(['editorCancle', 'editorCommit'])
 const screenStore = useScreenStore()
 
@@ -15,7 +18,7 @@ onMounted(() => {
       usageStatistics: false, //这个一定要写要不然会报错
       includeUI: {
         loadImage: {
-          path: 'src/assets/img/black.png', //加载的图片链接
+          path: './img/black.png', //加载的图片链接
           name: 'image' //图片名称（不重要）
         },
         //操作菜单栏
@@ -112,10 +115,10 @@ let isBlank = ref<boolean>(false)
 // 切换反色背景
 const switchBack = () => {
   isBlank.value = !isBlank.value
-  let img = isBlank.value ? 'src/assets/img/blank.png' : 'src/assets/img/black.png';
-  let color = isBlank.value ? '#000000' : '#ffffff';
-  (instance as any).value.loadImageFromURL(img, 'blank').then((result) => {
-    (instance as any).value.addText('', {
+  let img = isBlank.value ? './img/blank.png' : './img/black.png'
+  let color = isBlank.value ? '#000000' : '#ffffff'
+  ;(instance as any).value.loadImageFromURL(img, 'blank').then((result) => {
+    ;(instance as any).value.addText('', {
       position: {},
       styles: {
         fill: color,
@@ -190,7 +193,7 @@ const editorCommit = () => {
     padding: 0;
     margin: 0;
 
-    :nth-child(3)>div {
+    :nth-child(3) > div {
       background: rgba(243, 226, 224, 1);
     }
 
@@ -212,7 +215,6 @@ const editorCommit = () => {
         display: flex;
         justify-content: center;
         align-items: center;
-
       }
     }
   }

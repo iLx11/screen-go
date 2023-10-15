@@ -2,9 +2,8 @@
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
-const { ipcRenderer } = require('electron')
-
-
+// const { ipcRenderer } = require('electron')
+const win = window as any
 
 const screenStore = useScreenStore()
 onMounted(() => {
@@ -67,7 +66,7 @@ const resizePic = async () => {
   if (screenStore.editorPicData != '' && screenStore.isResized == false) {
     // 图片裁剪
     if (picSizeData.height != '' && picSizeData.width != '') {
-      const data = await ipcRenderer.invoke('pic-data-editor', parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData)
+      const data = await win.myApi.resizeImage(parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData)
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'

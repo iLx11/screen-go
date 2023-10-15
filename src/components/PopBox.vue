@@ -15,7 +15,7 @@ const showPop = (text: string) => {
   }
   timer = setTimeout(() => {
     const backAnimationEffect = new KeyframeEffect(
-      popBoxRef.value, // element to animate
+      (popBoxRef as any).value, // element to animate
       [
         {
           width: '30%',

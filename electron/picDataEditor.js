@@ -1,4 +1,4 @@
-const { ipcMain, BrowserWindow } = require("electron");
+const { ipcMain } = require("electron");
 
 // 图片裁剪
 var Jimp = require("jimp");
