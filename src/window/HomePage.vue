@@ -23,7 +23,7 @@ const closeEditor = () => {
 }
 
 const showEditor = () => {
-  document.documentElement.setAttribute("main-theme", "color")
+  // document.documentElement.setAttribute("main-theme", "color")
   coverShow.value = true
   editorShow.value = true
 }

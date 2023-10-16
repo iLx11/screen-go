@@ -70,12 +70,10 @@ const resizePic = async () => {
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'
-      return 
-    }
-    else screenStore.showText('请设置图片的大小！')
+      return
+    } else screenStore.showText('请设置图片的大小！')
   } else {
-    if(screenStore.editorPicData == '')
-    screenStore.showText('请先设置一个图片！')
+    if (screenStore.editorPicData == '') screenStore.showText('请先设置一个图片！')
   }
   if (screenStore.resizePicData != '' && screenStore.isResized == true) {
     screenStore.setResized(false)
@@ -86,7 +84,7 @@ const resizePic = async () => {
 // -------------------------------- 取模设置 ---------------------------------
 // 点阵格式
 const formatBoxLeft = ref<string>(2 + '%')
-const latticeFormat = reactive<string[]>(['阴码', '阳码'])
+const latticeFormat = reactive<string[]>(['阳码', '阴码'])
 const setLatticeFormat = (k: number) => {
   formatBoxLeft.value = k * 50 + 2 + '%'
   screenStore.setConfigArray(0, k)
@@ -191,7 +189,7 @@ watch(
   padding: 0.7em;
   border: none;
 
-  >div {
+  > div {
     width: 48.5%;
     height: 100%;
     border-radius: 10px;
@@ -205,7 +203,7 @@ watch(
     column-gap: 5px;
     row-gap: 5px;
 
-    >div {
+    > div {
       border: none;
       background: var(--data-config-title-box-color);
     }
@@ -232,7 +230,7 @@ watch(
       padding: 0.5em;
       background: var(--data-config-input-color);
 
-      >div {
+      > div {
         border: none;
       }
 
@@ -273,7 +271,7 @@ watch(
           transition: all 0.3s ease-in-out;
         }
 
-        .input:focus+label {
+        .input:focus + label {
           left: 50%;
           top: 7%;
           font-size: 12px;
@@ -290,7 +288,7 @@ watch(
       align-items: center;
       padding: 0.66em;
 
-      >div {
+      > div {
         width: 100%;
         height: 27%;
         background: var(--data-size-box-color);
@@ -325,7 +323,7 @@ watch(
     row-gap: 4px;
     color: var(--text-color-1);
 
-    >div {
+    > div {
       border: none;
       background: var(--data-config-title-box-color);
       border-radius: 10px;
@@ -349,7 +347,7 @@ watch(
       background: var(--data-config-func-box-color);
       position: relative;
 
-      >div {
+      > div {
         width: 46%;
         height: 100%;
         cursor: pointer;
@@ -363,6 +361,8 @@ watch(
         z-index: -1;
         transition: all 0.6s ease-in-out;
         border-radius: 8px;
+        border: 0.1px solid rgba(51, 51, 51, 0.2);
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -380,7 +380,7 @@ watch(
       background: var(--data-config-func-box-color);
       overflow: hidden;
 
-      >div {
+      > div {
         width: 22%;
         height: 100%;
         writing-mode: tb-rl;
@@ -395,7 +395,9 @@ watch(
         background: var(--data-config-move-box-color);
         z-index: -1;
         transition: all 0.6s ease-in-out;
+        border: 0.1px solid rgba(51, 51, 51, 0.2);
         border-radius: 8px;
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -412,7 +414,7 @@ watch(
       position: relative;
       background: var(--data-config-func-box-color);
 
-      >div {
+      > div {
         width: 45%;
         height: 100%;
         writing-mode: tb-rl;
@@ -427,7 +429,9 @@ watch(
         background: var(--data-config-move-box-color);
         z-index: -1;
         border-radius: 8px;
+        border: 0.1px solid rgba(51, 51, 51, 0.2);
         transition: all 0.5s ease-in-out;
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -444,7 +448,7 @@ watch(
       background: var(--data-config-func-box-color);
       position: relative;
 
-      >div {
+      > div {
         width: 45%;
         height: 100%;
         writing-mode: tb-rl;
@@ -459,7 +463,9 @@ watch(
         background: var(--data-config-move-box-color);
         z-index: -1;
         border-radius: 8px;
+        border: 0.1px solid rgba(51, 51, 51, 0.15);
         transition: all 0.5s ease-in-out;
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -470,7 +476,7 @@ watch(
     }
 
     .div10 {
-      grid-area: 2/ 1/ 4/ 5;
+      grid-area: 2/ 1/ 5/ 5;
       z-index: -1;
     }
 
@@ -484,4 +490,5 @@ watch(
       z-index: -1;
     }
   }
-}</style>
+}
+</style>
