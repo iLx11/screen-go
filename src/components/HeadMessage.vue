@@ -94,7 +94,7 @@ const vCopy = {
   </div>
   <div id="message-show-box" v-if="messageBoxShow" @click.stop="hideMessageBox"></div>
   <div id="message-show" v-if="messageBoxShow">
-    &nbsp;&nbsp;本项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 开源项目所开发，并遵循 MIT 开源协议<br /><br />
+    &nbsp;&nbsp;本项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 的开源项目所开发，并遵循 MIT 开源协议<br /><br />
     &nbsp;&nbsp;本项目为图片取模软件，可以直接对屏幕的布局以及显示进行编辑，包括导入任何类型的图片，编辑文字与图形，并直接生成可修改的数据（支持正则替换），并直接在硬件显示！！<br /><br />
     &nbsp;&nbsp;项目 <span href="" v-copy="copyText[1]"> 开源地址 </span><br><br><br>
     &nbsp;&nbsp;之后会不断优化此软件或开发更多有意思的软件，十分感谢您的支持！！！
@@ -146,14 +146,15 @@ const vCopy = {
   transform: translate(-50%, -50%);
   background: rgba(255, 255, 255, 1);
   border-radius: 20px;
-  padding: 3em;
+  padding: 2em;
   font-size: 20px;
-  color: rgba(51, 51, 51, 0.8);
+  color: var(--text-color-1);
   z-index: 999;
   overflow-y: scroll;
+  line-height: 25px;
   span {
     text-decoration: none;
-    color: rgb(143, 206, 202);
+    color: var(--span-text-color);
     font-size: 20px;
     cursor: pointer;
   }

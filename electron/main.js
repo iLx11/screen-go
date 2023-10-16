@@ -39,7 +39,7 @@ const createWindow = () => {
     win.setMenu(null)
     if (app.isPackaged) {
         win.loadURL(`file://${path.join(__dirname, '../dist/index.html')}`)
-        win.webContents.openDevTools()
+        // win.webContents.openDevTools()
 
     } else {
         // win.loadURL('http://127.0.0.1:5173/')

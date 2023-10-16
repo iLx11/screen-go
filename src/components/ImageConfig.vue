@@ -70,9 +70,11 @@ const resizePic = async () => {
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'
+      return 
     }
     else screenStore.showText('请设置图片的大小！')
   } else {
+    if(screenStore.editorPicData == '')
     screenStore.showText('请先设置一个图片！')
   }
   if (screenStore.resizePicData != '' && screenStore.isResized == true) {
@@ -205,7 +207,7 @@ watch(
 
     >div {
       border: none;
-      background: rgba(51, 51, 51, 0.08);
+      background: var(--data-config-title-box-color);
     }
 
     #func-box {
@@ -216,7 +218,7 @@ watch(
       align-items: center;
       writing-mode: tb-rl;
       font-size: 18px;
-      color: rgba(51, 51, 51, 0.5);
+      color: var(--text-color-2);
     }
 
     #resize-config-box {
@@ -228,7 +230,7 @@ watch(
       justify-content: space-around;
       align-items: center;
       padding: 0.5em;
-      background: rgba(245, 222, 211, 0.35);
+      background: var(--data-config-input-color);
 
       >div {
         border: none;
@@ -244,7 +246,7 @@ watch(
         display: flex;
         justify-content: center;
         align-items: center;
-        color: rgba(51, 51, 51, 0.3);
+        color: var(--text-color-2);
         font-weight: 900;
         padding: 0.1em;
 
@@ -255,7 +257,7 @@ watch(
           display: block;
           border: none;
           font-size: 18px;
-          color: rgba(51, 51, 51, 0.8);
+          color: var(--text-color-1);
           font-family: 'ceyy';
           text-align: center;
         }
@@ -291,7 +293,7 @@ watch(
       >div {
         width: 100%;
         height: 27%;
-        background: rgba(211, 221, 229, 1);
+        background: var(--data-size-box-color);
         display: flex;
         justify-content: center;
         align-items: center;
@@ -308,9 +310,9 @@ watch(
       justify-content: center;
       align-items: center;
       font-size: 18px;
-      color: rgba(51, 51, 51, 0.5);
+      color: var(--text-color-2);
       cursor: pointer;
-      background: rgba(134, 163, 161, 0.35);
+      background: var(--config-botton-color);
     }
   }
 
@@ -321,11 +323,11 @@ watch(
     grid-template-rows: repeat(7, 1fr);
     column-gap: 4px;
     row-gap: 4px;
-    color: rgba(51, 51, 51, 0.7);
+    color: var(--text-color-1);
 
     >div {
       border: none;
-      background: rgba(51, 51, 51, 0.06);
+      background: var(--data-config-title-box-color);
       border-radius: 10px;
     }
 
@@ -344,7 +346,7 @@ watch(
     .div2 {
       grid-area: 1 / 2 / 2 / 5;
       justify-content: space-around;
-      background: rgba(219, 232, 229, 0.7);
+      background: var(--data-config-func-box-color);
       position: relative;
 
       >div {
@@ -357,7 +359,7 @@ watch(
         width: 45%;
         height: 80%;
         position: absolute;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--data-config-move-box-color);
         z-index: -1;
         transition: all 0.6s ease-in-out;
         border-radius: 8px;
@@ -375,7 +377,7 @@ watch(
       align-items: center;
       position: relative;
       padding: 0.3em;
-      background: rgba(219, 232, 229, 0.7);
+      background: var(--data-config-func-box-color);
       overflow: hidden;
 
       >div {
@@ -390,7 +392,7 @@ watch(
         width: 22%;
         height: 90%;
         position: absolute;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--data-config-move-box-color);
         z-index: -1;
         transition: all 0.6s ease-in-out;
         border-radius: 8px;
@@ -408,7 +410,7 @@ watch(
       align-items: center;
       padding: 0.3em;
       position: relative;
-      background: rgba(219, 232, 229, 0.7);
+      background: var(--data-config-func-box-color);
 
       >div {
         width: 45%;
@@ -422,7 +424,7 @@ watch(
         width: 45%;
         height: 90%;
         position: absolute;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--data-config-move-box-color);
         z-index: -1;
         border-radius: 8px;
         transition: all 0.5s ease-in-out;
@@ -439,7 +441,7 @@ watch(
       justify-content: space-around;
       align-items: center;
       padding: 0.3em;
-      background: rgba(219, 232, 229, 0.7);
+      background: var(--data-config-func-box-color);
       position: relative;
 
       >div {
@@ -454,7 +456,7 @@ watch(
         width: 45%;
         height: 90%;
         position: absolute;
-        background: rgba(255, 255, 255, 0.9);
+        background: var(--data-config-move-box-color);
         z-index: -1;
         border-radius: 8px;
         transition: all 0.5s ease-in-out;

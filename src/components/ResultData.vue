@@ -7,7 +7,7 @@ const resultString = ref<string>('')
 watch(
   () => screenStore.resultString,
   () => {
-    resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n}\n${(screenStore.configData as any).backComment}\n`
+    resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n};\n${(screenStore.configData as any).backComment}\n`
   }
 )
 watch(
@@ -15,7 +15,7 @@ watch(
   () => {
     if (screenStore.isConfigModify == true) {
       screenStore.setModify(false)
-      resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n}\n${screenStore.configData['backComment']}\n`
+      resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n};\n${screenStore.configData['backComment']}\n`
       let repS1 = screenStore.configData['replaceSource1']
       let repT1 = screenStore.configData['replaceTarget1']
       let repS2 = screenStore.configData['replaceSource2']
@@ -97,6 +97,7 @@ const vCopy = {
   overflow: scroll;
   white-space: pre-wrap;
   position: relative;
+  color: var(--text-color-1);
   div {
     border: none;
   }
@@ -107,11 +108,13 @@ const vCopy = {
   position: absolute;
   top: 0;
   right: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--pop-box-color);
   display: flex;
   justify-content: center;
   align-items: center;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   font-size: 12px;
+  color: var(--text-color-1);
+
 }
 </style>

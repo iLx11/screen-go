@@ -88,7 +88,7 @@ defineExpose({
   top: 10%;
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--pop-box-color);
   border-radius: 25px;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   border: 0.1 solid rgba(0, 0, 0, 0.12);
@@ -98,6 +98,7 @@ defineExpose({
   padding: 2em;
   z-index: 9999;
   animation: begin 0.3s ease-in-out;
+  color: var(--text-color-1);
   div {
     display: flex;
     justify-content: center;

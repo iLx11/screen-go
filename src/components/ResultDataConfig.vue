@@ -68,11 +68,13 @@ const modifyData = () => {
 
   >div {
     border: none;
-    background: rgba(51, 51, 51, 0.08);
+    background: var(--data-config-title-box-color);
     border-radius: 9px;
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
+    overflow: hidden;
   }
 
   input {
@@ -80,12 +82,11 @@ const modifyData = () => {
     height: 100%;
     outline: none;
     border: none;
-    background: rgba(51, 51, 51, 0);
     font-size: 16px;
     text-align: center;
     font-family: 'ceyy';
-    color: rgba(51, 51, 51, 0.7);
-    background: rgba(245, 222, 211, 0.3);
+    color: var(--text-color-1);
+    background: var(--data-config-input-color);
   }
 
   .div1 {
@@ -141,7 +142,7 @@ const modifyData = () => {
     align-items: center;
     writing-mode: tb-rl;
     font-size: 20px;
-    background: rgba(134, 163, 161, 0.35);
+    background: var(--config-botton-color);
     cursor: pointer;
   }
 }</style>

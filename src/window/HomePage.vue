@@ -23,6 +23,7 @@ const closeEditor = () => {
 }
 
 const showEditor = () => {
+  document.documentElement.setAttribute("main-theme", "color")
   coverShow.value = true
   editorShow.value = true
 }
@@ -104,19 +105,19 @@ watch(
   transform: translate(-50%, -50%);
   background: rgba(51, 51, 51, 0.2);
   border-radius: 15px;
-  z-index: 9998;
+  z-index: 99998;
 }
 
 #image-editor-box {
-  width: 80%;
-  height: 80%;
+  width: 85%;
+  height: 85%;
   background: rgb(255, 255, 255);
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 9999;
+  z-index: 99999;
   border-radius: 12px;
   border: 0.2px solid rgba(51, 51, 51, 0.1);
   // box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
@@ -131,9 +132,8 @@ watch(
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(255, 255, 255, 1);
-  border: 0.1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 15px;
+  border: 0.1px solid rgba(173, 171, 171, 0.4);
+  border-radius: 16px;
   overflow: hidden;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -143,9 +143,9 @@ watch(
   box-sizing: border-box;
   padding: 15px;
   z-index: 99;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: rgb(243, 248, 247);
-  color: rgba(51, 51, 51, 0.8);
+  // box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  background: var(--content-box-color);
+  color: var(--text-color-1);
   padding-bottom: 12px;
 
   div {
@@ -184,7 +184,7 @@ watch(
 #screen-box {
   grid-area: 2 / 1 / 5 / 2;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: rgb(211, 221, 230);
+  background: var(--editor-box-color);
   border: none;
   display: flex;
   justify-content: center;
@@ -216,7 +216,7 @@ watch(
 #result-data-box {
   grid-area: 2 / 2 / 7 / 3;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: rgba(219, 232, 229, 1);
+  background: var(--result-data-box-color);
   border: none;
   padding: 1.5em;
 }

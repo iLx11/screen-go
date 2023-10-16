@@ -15,18 +15,24 @@
     "electron:build": "vite build && electron-builder"
   },
   "dependencies": {
+    "@jimp/core": "^0.22.10",
     "@jimp/custom": "^0.22.10",
     "@jimp/plugins": "^0.22.10",
     "@jimp/types": "^0.22.10",
+    "@jimp/utils": "^0.22.10",
+    "any-base": "^1.1.0",
     "dp-image-editor": "^1.0.1",
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.0",
     "graceful-fs": "^4.2.11",
+    "isomorphic-fetch": "^3.0.0",
     "jimp": "^0.22.10",
     "jsonfile": "^6.1.0",
     "mime": "^3.0.0",
     "pinia": "^2.1.6",
+    "pixelmatch": "^5.3.0",
     "pngparse": "^2.0.1",
+    "tinycolor2": "^1.6.0",
     "universalify": "^2.0.0"
   },
   "devDependencies": {
@@ -48,7 +54,6 @@
     "vue-tsc": "^1.8.11"
   },
   "build": {
-    
     "appId": "com.iLx1.app",
     "productName": "ScreenGo",
     "copyright": "Copyright © 2023 iLx1",
@@ -102,6 +107,13 @@
       "installerHeaderIcon": "./public/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "iLx11",
+        "repo": "screen-go"
+      }
+    ]
   }
 }
