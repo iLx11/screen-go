@@ -2,10 +2,11 @@
 import { onMounted, nextTick, ref } from 'vue'
 
 import { customImgEditorTheme } from '../utils/theme'
-import 'dp-image-editor/dist/tui-image-editor.css'
+import 'tui-image-editor/dist/tui-image-editor.css'
 import { useScreenStore } from '../stores/store'
 // const ImageEditor = require('dp-image-editor')
-import ImageEditor from 'dp-image-editor/dist/tui-image-editor.js'
+import ImageEditor from 'tui-image-editor/dist/tui-image-editor.js'
+
 // const { t } = useLocale()
 // import imgBlack from './img/black.png'
 // import imgWhite from './img/blank.png'
@@ -17,6 +18,7 @@ onMounted(() => {
     instance.value = new ImageEditor(document.querySelector('#editor'), {
       usageStatistics: false, //这个一定要写要不然会报错
       includeUI: {
+        // 装载图片
         loadImage: {
           path: './img/black.png', //加载的图片链接
           name: 'image' //图片名称（不重要）
@@ -30,59 +32,63 @@ onMounted(() => {
           'shape', // 添加形状
           'icon', // 添加图标
           'text', // 添加文本
-          'mask' // 添加覆盖
-          // "filter", // 添加滤镜
+          'mask', // 添加覆盖
+          "filter", // 添加滤镜
         ],
         menuBarPosition: 'bottom', //操作栏位置
         locale: {
-          Crop: 'Crop',
-          Load: 'Load',
-          DeleteAll: 'DeleteAll',
-          Delete: 'Delete',
-          Undo: 'Undo',
-          Redo: 'Redo',
-          Reset: 'Reset',
-          Flip: 'Flip',
-          Rotate: 'Rotate',
-          Draw: 'Draw',
-          Shape: 'Shape',
-          Icon: 'Icon',
-          Text: 'Text',
-          Mask: 'index.mask',
-          Filter: 'Filter',
-          Bold: 'Bold',
-          Italic: 'Italic',
-          Underline: 'Underline',
-          Left: 'Left',
-          Center: 'Center',
-          Right: 'Right',
-          Color: 'color',
-          'Text size': 'TextSize',
-          Custom: 'Custom',
-          Square: 'Square',
-          Apply: 'Apply',
-          Cancel: 'Cancel',
-          'Flip X': 'FlipX',
-          'Flip Y': 'FlipY',
-          Range: 'Range',
-          Stroke: 'Stroke',
-          Fill: 'Fill',
-          Circle: 'Circle',
-          Triangle: 'Triangle',
-          Rectangle: 'Rectangle',
-          Free: 'Free',
-          Straight: 'Straight',
-          Arrow: 'Arrow',
+          Crop: '裁剪',
+          Load: '加载图片背景',
+          DeleteAll: '删除全部',
+          Delete: '删除',
+          Undo: '前一步',
+          Redo: '后一步',
+          Reset: '重置',
+          Flip: '镜像',
+          Rotate: '旋转',
+          Draw: '画笔',
+          Shape: '图形',
+          Icon: '图标',
+          Text: '文字',
+          Mask: '图片遮罩',
+          Filter: '滤镜',
+          History: "历史",
+          Hand: "手型",
+          ZoomIn: "缩小",
+          ZoomOut: "放大",
+          Bold: '加粗',
+          Italic: '斜体',
+          Underline: '下划线',
+          Left: '左',
+          Center: '中',
+          Right: '右',
+          Color: '颜色',
+          'Text size': '字体颜色',
+          Custom: '用户配置',
+          Square: '正方形',
+          Apply: '应用',
+          Cancel: '取消',
+          'Flip X': 'X镜像',
+          'Flip Y': 'Y镜像',
+          Range: '范围',
+          Stroke: '边框',
+          Fill: '填充',
+          Circle: '圆',
+          Triangle: '三角形',
+          Rectangle: '多边形',
+          Free: '自由曲线',
+          Straight: '直线',
+          Arrow: '箭头',
           'Arrow-2': 'Arrow2',
           'Arrow-3': 'Arrow3',
           'Star-1': 'Star1',
           'Star-2': 'Star2',
           Polygon: 'Polygon',
-          Location: 'Location',
+          Location: '定位',
           Heart: 'Heart',
           Bubble: 'Bubble',
-          'Custom icon': 'CustomIcon',
-          'Load Mask Image': 'LoadMaskImage',
+          'Custom icon': '用户图标',
+          'Load Mask Image': '加载图片遮罩',
           Grayscale: 'Grayscale',
           Blur: 'Blur',
           Sharpen: 'Sharpen',
@@ -101,10 +107,10 @@ onMounted(() => {
           Multiply: 'Multiply',
           Blend: 'Blend',
           Double: 'Double',
-          Download: '',
-          BGColor: 'BGColor'
-        }, //语言
-        theme: customImgEditorTheme //主题样式
+          // Download: '324',
+          BGColor: '背景颜色'
+        }, 
+        theme: customImgEditorTheme, //主题样式
       }
     })
   })
@@ -120,7 +126,7 @@ const switchBack = () => {
   ;(instance as any).value.loadImageFromURL(img, 'blank').then((result) => {
     ;(instance as any).value.addText('', {
       position: {},
-      styles: {
+      styles: { 
         fill: color,
         fontSize: 85,
         fontFamily: '',

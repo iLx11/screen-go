@@ -21,7 +21,6 @@
     "@jimp/types": "^0.22.10",
     "@jimp/utils": "^0.22.10",
     "any-base": "^1.1.0",
-    "dp-image-editor": "^1.0.1",
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.0",
     "graceful-fs": "^4.2.11",
@@ -33,6 +32,7 @@
     "pixelmatch": "^5.3.0",
     "pngparse": "^2.0.1",
     "tinycolor2": "^1.6.0",
+    "tui-image-editor": "^3.15.3",
     "universalify": "^2.0.0"
   },
   "devDependencies": {

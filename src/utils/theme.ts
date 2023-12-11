@@ -58,7 +58,7 @@ export const customImgEditorTheme = {
 
   // header
   "header.backgroundImage": "none",
-  // "header.backgroundColor": "#f3f4f6",
+  "header.backgroundColor": "#f3f4f6",
   "header.border": "0px",
   "header.margin": "0px auto",
 
@@ -68,7 +68,11 @@ export const customImgEditorTheme = {
   "loadButton.color": "#222",
   "loadButton.fontFamily": "NotoSans, sans-serif",
   "loadButton.fontSize": "12px",
-  // "loadButton.width": "150px",
+  "loadButton.position": "absolution",
+  "loadButton.top": "30px",
+  "loadButton.right": "-30px",
+  "loadButton.height": "30px",
+  "loadButton.cursor": "pointer",
   // "loadButton.display": "none", // 可以直接隐藏掉
 
   // download button
@@ -77,7 +81,7 @@ export const customImgEditorTheme = {
   "downloadButton.color": "#fff",
   "downloadButton.fontFamily": "NotoSans, sans-serif",
   "downloadButton.fontSize": "12px",
-  // "downloadButton.display": "none", // 可以直接隐藏掉
+  "downloadButton.display": "none", // 可以直接隐藏掉
 
   // icons default
   "menu.normalIcon.color": "#8a8a8a",

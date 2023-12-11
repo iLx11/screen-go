@@ -8,7 +8,7 @@ export const useScreenStore = defineStore('screen', {
       isResized: false,
       resizeWidth: 0,
       resizeHeight: 0,
-      configArray: [0,2,0,0],
+      configArray: [1,2,0,0],
       resultString: '',
       configData: {},
       isConfigModify: false,

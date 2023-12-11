@@ -97,8 +97,8 @@ watch(
 
 <style lang="scss">
 #cover {
-  width: 98%;
-  height: 98%;
+  width: 99%;
+  height: 99%;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -109,8 +109,8 @@ watch(
 }
 
 #image-editor-box {
-  width: 85%;
-  height: 85%;
+  width: 87%;
+  height: 87%;
   background: rgb(255, 255, 255);
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
@@ -126,8 +126,8 @@ watch(
 }
 
 .container {
-  width: 98%;
-  height: 98%;
+  width: 99%;
+  height: 99%;
   position: absolute;
   top: 50%;
   left: 50%;
