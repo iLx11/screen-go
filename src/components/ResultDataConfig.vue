@@ -4,7 +4,7 @@ import { useScreenStore } from '../stores/store'
 
 const screenStore = useScreenStore()
 const configData = reactive({
-  arrayName: 'unsigned char bmp[]',
+  arrayName: 'unsigned char bmp',
   preComment: '// 图片数组开始',
   backComment: '// 图片数组结束',
   replaceSource1: '',

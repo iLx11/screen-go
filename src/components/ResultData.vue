@@ -4,10 +4,16 @@ import { useScreenStore } from '../stores/store'
 
 const screenStore = useScreenStore()
 const resultString = ref<string>('')
+const resultStrShow = ref<string>('')
 watch(
   () => screenStore.resultString,
   () => {
-    resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n};\n${(screenStore.configData as any).backComment}\n`
+    resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']}[${screenStore.resultDataLength}] = {\n  ${screenStore.resultString}\n};\n${(screenStore.configData as any).backComment}\n`
+    if(resultString.value.length > 10000) {
+        resultStrShow.value = resultString.value.substring(0, 10000)
+        screenStore.showText('数据过长，显示截取，复制时为全部文本')
+    } else
+        resultStrShow.value =  resultString.value
   }
 )
 watch(
@@ -15,7 +21,7 @@ watch(
   () => {
     if (screenStore.isConfigModify == true) {
       screenStore.setModify(false)
-      resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']} = {\n  ${screenStore.resultString}\n};\n${screenStore.configData['backComment']}\n`
+      resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']}[${screenStore.resultDataLength}] = {\n  ${screenStore.resultString}\n};\n${screenStore.configData['backComment']}\n`
       let repS1 = screenStore.configData['replaceSource1']
       let repT1 = screenStore.configData['replaceTarget1']
       let repS2 = screenStore.configData['replaceSource2']
@@ -26,6 +32,11 @@ watch(
       if (repS2 != '') {
         resultString.value = resultString.value.replace(eval('/' + repS2 + '/gi'), repT2)
       }
+      if(resultString.value.length > 10000) {
+        resultStrShow.value = resultString.value.substring(0, 10000)
+        screenStore.showText('数据过长，显示截取，复制时为全部文本')
+      } else
+        resultStrShow.value =  resultString.value
     }
   }
 )
@@ -81,7 +92,7 @@ const vCopy = {
 <template>
   <!-- <PopBox /> -->
   <div id="result-data-content" v-copy="resultString">
-    {{ resultString }}
+    {{ resultStrShow }}
     <div id="info">点击文本可复制</div>
   </div>
 </template>

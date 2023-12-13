@@ -19,18 +19,24 @@ const showPop = (text: string) => {
       [
         {
           width: '30%',
-          opacity: '100%',
+          opacity: '100%', 
           top: '10%'
         },
         {
-          opacity: '0%',
-          top: '5%',
+          width: '26%',
+          opacity: '100%', 
+          top: '10%',
+          height: '50px'
+        },
+        {
           width: '35%',
-          height: '40px'
+          opacity: '0%',
+          top: '8%',
+          height: '30px'
         }
       ],
       {
-        duration: 300
+        duration: 250
       } // keyframe options
     )
     const backAnimation = new Animation(backAnimationEffect, document.timeline)
@@ -97,7 +103,7 @@ defineExpose({
   align-items: center;
   padding: 2em;
   z-index: 9999;
-  animation: begin 0.3s ease-in-out;
+  animation: begin 0.35s ease-in-out;
   color: var(--text-color-1);
   div {
     display: flex;
@@ -105,12 +111,12 @@ defineExpose({
     align-items: center;
   }
   #font-box {
-    width: 20%;
+    width: 15%;
     height: 100%;
     font-size: 12px;
   }
   #message-box {
-    width: 75%;
+    width: 78%;
     height: 100%;
     font-size: 18px;
   }
@@ -120,6 +126,11 @@ defineExpose({
     opacity: 0%;
     top: 1%;
     width: 20%;
+  }
+  50% {
+    width: 35%;
+    opacity: 100%;
+    top: 12%;
   }
   100% {
     width: 30%;
@@ -131,6 +142,9 @@ defineExpose({
   100% {
     opacity: 0%;
     top: 1%;
+    width: 60%;
+  }
+  50% {
     width: 20%;
   }
   0% {

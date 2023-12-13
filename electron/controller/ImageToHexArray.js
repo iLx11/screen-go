@@ -1,15 +1,16 @@
 const os = require('os')
 const path = require('path')
-const Crypto = require('crypto') 
+const Crypto = require('crypto')
 // png 文件转像素
 const pngparse = require('pngparse')
-const mime = require('mime') 
+const mime = require('mime')
 const Jimp = require('jimp')
 const fs = require('fs-extra')
 
 module.exports.ImageToHexArray = class {
   static configArray
   static generate = (picData, config) => {
+    // console.info('config', config)
     this.configArray = config
     return new Promise((resolve, reject) => {
       this.convert(this.generateTemFile(picData), function (err, hex) {
@@ -24,8 +25,10 @@ module.exports.ImageToHexArray = class {
   }
   static convert(filename, callback) {
     let _this = this
+    // 获取文件类型
     let ext = mime.getType(filename)
     if (ext == 'image/png') {
+      // 图片取模
       _this.pngtolcd(filename, function (err, buffer) {
         err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
       })
@@ -37,6 +40,7 @@ module.exports.ImageToHexArray = class {
         if (!err) {
           image.write(tmppath, function (err, status) {
             if (err) return callback(err, null)
+            // 图片取模
             _this.pngtolcd(tmppath, function (err, buffer) {
               err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
             })
@@ -76,21 +80,50 @@ module.exports.ImageToHexArray = class {
     let height = pimage.height
     let width = pimage.width
     let pixelsLen = pixels.length
-    // 设置黑白像素的阈值，高于则转为黑点，低于则转为白点
-    let threshold = 120
-    let unpackedBuffer = []
-    let depth = 4
-    let pixelVal
-    // 遍历像素数据
-    for (let i = 0; i < pixelsLen; i += depth) {
-      pixelVal = pixels[i + 1] = pixels[i + 2] = pixels[i]
-      // 根据像素值与阈值的比较，将像素值转换为0或1
-      pixelVal > threshold ? (pixelVal = 1) : (pixelVal = 0)
-      // 存储转换后的像素值到数组中
-      unpackedBuffer[i / depth] = pixelVal
+
+
+
+    // ------------------ 根据配置选用取模方式 --------------------------
+    // 单色图片取模
+    if (this.configArray[4] == 1) {
+      // 设置黑白像素的阈值，高于则转为黑点，低于则转为白点
+      let threshold = 120
+      let unpackedBuffer = []
+      let depth = 4
+      let pixelVal
+      // 遍历像素数据
+      for (let i = 0; i < pixelsLen; i += depth) {
+        pixelVal = pixels[i + 1] = pixels[i + 2] = pixels[i]
+        // 根据像素值与阈值的比较，将像素值转换为0或1
+        pixelVal > threshold ? (pixelVal = 1) : (pixelVal = 0)
+        // 存储转换后的像素值到数组中
+        unpackedBuffer[i / depth] = pixelVal
+      }
+      return this.imageSamplingArr[this.configArray[1]](unpackedBuffer, width, height)
+    } else {
+      // 彩色图片取模, pixels 为图片的 r, g, b, a 信息
+      return this.colorImageSampling(pixels, width, height)
     }
-    // 根据配置选用取模方式
-    return this.imageSamplingArr[this.configArray[1]](unpackedBuffer, width, height)
+  }
+  static colorImageSampling = (pixels, width, height) => {
+    // console.info('unpackedBufferL -> ', unpackedBuffer.length)
+    // 缓冲数组，作为存储 16 位真彩色
+    const buffer = Buffer.alloc((width * height) * 2)
+    // console.info('bufferL -> ', buffer.length);
+    let i = 0, j = 0
+    while(i < buffer.length && j < pixels.length) {
+      buffer[i] |= (pixels[j] >> 3) << 3
+      buffer[i] |= pixels[j + 1] >> 5
+      buffer[i + 1] |= (pixels[j + 1] >> 2) << 5
+      buffer[i + 1] |= pixels[j + 2] >> 3
+      if(this.configArray[0] == 0 || this.configArray[2] == 1) {
+        buffer[i] = ~buffer[i]
+        buffer[i + 1] = ~buffer[i + 1]
+      }
+      i += 2
+      j += 4
+    }
+    return buffer
   }
   //------------------------------ 逐行式 ------------------------------------
   static ImageSamplingRow = (unpackedBuffer, width, height) => {
@@ -104,18 +137,18 @@ module.exports.ImageToHexArray = class {
       let page = y
       // 每个 page 的字节的位
       let pageShift = 0x01 << (x % 8)
-      if(this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
+      if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * Math.floor(width / 8) + Math.floor(x / 8)
       // 根据转换后的像素值设置缓冲区的相应位
-      if(this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
         buffer[byte] &= ~pageShift
       }
     }
-    console.log('buffer', buffer)
+    // console.info('buffer', buffer)
     // 返回转换后的lcd数据
     return buffer
   }
@@ -131,11 +164,11 @@ module.exports.ImageToHexArray = class {
       let page = x
       // 每个 page 的字节的位
       let pageShift = 0x01 << (y % 8)
-      if(this.configArray[2] != 0) pageShift = 0x01 << (7 - (y % 8))
+      if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (y % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * Math.floor(height / 8) + Math.floor(y / 8)
       // 根据转换后的像素值设置缓冲区的相应位
-      if(this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -157,11 +190,11 @@ module.exports.ImageToHexArray = class {
       let page = Math.floor(y / 8)
       // 每个 page 的字节的位
       let pageShift = 0x01 << (y - 8 * page)
-      if(this.configArray[2] != 0) pageShift = 0x01 << (7 - (y - 8 * page))
+      if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (y - 8 * page))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       page === 0 ? (byte = x) : (byte = x + width * page)
       // 根据转换后的像素值设置缓冲区的相应位
-      if(this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -183,11 +216,11 @@ module.exports.ImageToHexArray = class {
       let page = Math.floor(x / 8)
       // 每个 page 的字节的位
       let pageShift = 0x01 << (x % 8)
-      if(this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
+      if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * height + y
       // 根据转换后的像素值设置缓冲区的相应位
-      if(this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -197,6 +230,7 @@ module.exports.ImageToHexArray = class {
     // 返回转换后的lcd数据
     return buffer
   }
+  // 取模方式数组
   static imageSamplingArr = [this.ImageSamplingRow, this.ImageSamplingCol, this.ImageSamplingColRow, this.ImageSamplingRowCol]
   // 创建 ImageData 对象
   static createImageDate = (imageData) => {
@@ -252,6 +286,7 @@ module.exports.ImageToHexArray = class {
     // 将颜色值转换为十六进制像素值并返回
     return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0
   }
+  // 十六进制数据加 '0x'
   static hex2hex = (hex) => {
     for (var bytes = [], c = 0; c < hex.length; c += 2) {
       bytes.push('0x' + hex.substr(c, 2))

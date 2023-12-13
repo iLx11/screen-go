@@ -16,14 +16,14 @@ const closeWindow = () => {
 }
 
 // 裁剪图片
-const resizeImage = async (resizeWidth, resizeHeight, editorPicData) => {
-  const data = await ipcRenderer.invoke('pic-data-editor', resizeWidth, resizeHeight, editorPicData)
+const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) => {
+  const data = await ipcRenderer.invoke('pic-data-editor', resizeWidth, resizeHeight, editorPicData, colorMode)
   return data
 }
 
 // 生成数据
-const generateResultArray = async ( picData, configArray0,  configArray1, configArray2, configArray3) => {
-  const data = ipcRenderer.invoke('pic-data-parse', picData, configArray0,  configArray1, configArray2, configArray3)
+const generateResultArray = async ( picData, configArray0,  configArray1, configArray2, configArray3, configArray4) => {
+  const data = ipcRenderer.invoke('pic-data-parse', picData, configArray0, configArray1, configArray2, configArray3, configArray4)
   return data
 }
 

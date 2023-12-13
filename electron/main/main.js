@@ -2,8 +2,8 @@
 const { app, protocol, BrowserWindow, globalShortcut } = require('electron')
 // 需在当前文件内开头引入 Node.js 的 'path' 模块
 const path = require('path')
-require('./windowControl')
-require('./picDataEditor')
+require('../controller/windowControl')
+require('../controller/picDataEditor')
 // require('./EditorConfig')
 app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
 // Scheme must be registered before the app is ready

@@ -8,14 +8,15 @@ export const useScreenStore = defineStore('screen', {
       isResized: false,
       resizeWidth: 0,
       resizeHeight: 0,
-      configArray: [1,2,0,0],
+      configArray: [1, 2, 0, 0, 1],
       resultString: '',
       configData: {},
       isConfigModify: false,
       isTextShow: false,
       popText: '',
       preSizeCount: 0,
-      isCountModify: false
+      isCountModify: false,
+      resultDataLength: 0
     }
   },
   actions: {
@@ -50,8 +51,12 @@ export const useScreenStore = defineStore('screen', {
     setCountModify(state: boolean) {
       this.isCountModify = state
     },
+    setDataLength(data: number) {
+      this.resultDataLength = data
+    },
     setPreCount(data: number) {
       this.preSizeCount = data
-    }
+    },
+    
   }
 })

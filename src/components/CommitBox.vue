@@ -11,13 +11,17 @@ let presetCount: number = 0
 const commit = async () => {
   if (screenStore.editorPicData != '') {
     if (screenStore.resizeWidth != 0 && screenStore.resizeHeight != 0) {
-      const data = await win.myApi.resizeImage(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData)
+      // 缩放图片
+      const data = await win.myApi.resizeImage(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData, screenStore.configArray[4])
       // console.log('pic-data-editor', data)
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
-      // 图片取模
-      // const hexArrData = await ImageToHexArray.generate(data, screenStore.configArray)
-      const arrData = await win.myApi.generateResultArray(data, screenStore.configArray[0], screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3])
+      // ----------------------------- 图片取模 ------------------------------------
+      // 获取图片取模模式
+      const arrData = await win.myApi.generateResultArray(data, screenStore.configArray[0], screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3], screenStore.configArray[4])
+      console.log(arrData.length)
+      // 
+      screenStore.setDataLength(arrData.length)
       screenStore.setResultString(arrData.join(','))
       screenStore.showText('生成成功！')
       screenStore.setCountModify(true)

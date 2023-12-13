@@ -2,6 +2,7 @@
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
+import FuncBox from "../components/FuncBox.vue"
 // const { ipcRenderer } = require('electron')
 const win = window as any
 
@@ -21,11 +22,27 @@ onMounted(() => {
     })
 })
 // -------------------------------- 图片设置 ---------------------------------
-const resizeText = ref<string>('图片重设预览')
+const resizeText = ref<string>('图片缩放预览')
 const picSizeData = reactive({
   width: '',
   height: ''
 })
+
+watch(() => screenStore.configArray[4], () => {
+  if(screenStore.configArray[4]) {
+    setLatticeFormat(1)
+    setModeMethod(2)
+    setModeDirection(0)
+    setOutputDecimal(0)
+  }else {
+    setLatticeFormat(1)
+    setModeMethod(0)
+    setModeDirection(0)
+    setOutputDecimal(0)
+  }
+})
+
+
 watch(
   picSizeData,
   () => {
@@ -77,7 +94,7 @@ const resizePic = async () => {
   }
   if (screenStore.resizePicData != '' && screenStore.isResized == true) {
     screenStore.setResized(false)
-    resizeText.value = '图片重设预览'
+    resizeText.value = '图片缩放预览'
   }
 }
 
@@ -93,6 +110,8 @@ const setLatticeFormat = (k: number) => {
 const moveBoxLeft = ref<string>(2 + '%')
 const modeMethod = reactive<string[]>(['逐行式', '逐列式', '列行式', '行列式'])
 const setModeMethod = (k: number) => {
+  if(!screenStore.configArray[4] && screenStore.configArray[1] != 0)
+    screenStore.showText('目前彩色取模只支持逐行哦！')
   moveBoxLeft.value = k * 25 + 2 + '%'
   screenStore.setConfigArray(1, k)
 }
@@ -125,15 +144,17 @@ watch(
 <template>
   <div id="config-content">
     <div id="img-size-config">
-      <div id="func-box">图片大小设置</div>
+      <div id="func-box">
+        <FuncBox />
+      </div>
       <div id="resize-config-box">
         <div class="input-group">
           <input type="text" class="input" v-model="picSizeData.width" />
-          <label class="user-label">Width:</label>
+          <label class="user-label">宽度:</label>
         </div>
         <div class="input-group">
           <input type="text" class="input" v-model="picSizeData.height" />
-          <label class="user-label">Height:</label>
+          <label class="user-label">高度:</label>
         </div>
       </div>
       <div id="size-choose-box">
@@ -214,8 +235,8 @@ watch(
       flex-flow: column wrap;
       justify-content: center;
       align-items: center;
-      writing-mode: tb-rl;
-      font-size: 18px;
+      // writing-mode: tb-rl;
+      // font-size: 18px;
       color: var(--text-color-2);
     }
 
@@ -247,6 +268,7 @@ watch(
         color: var(--text-color-2);
         font-weight: 900;
         padding: 0.1em;
+        box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 
         .input {
           width: 100%;
@@ -287,6 +309,7 @@ watch(
       justify-content: space-between;
       align-items: center;
       padding: 0.66em;
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
 
       > div {
         width: 100%;
@@ -322,6 +345,7 @@ watch(
     column-gap: 4px;
     row-gap: 4px;
     color: var(--text-color-1);
+    box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.8);
 
     > div {
       border: none;

@@ -2,7 +2,7 @@
   "name": "screen-go",
   "version": "1.0.0",
   "private": true,
-  "main": "electron/main.js",
+  "main": "electron/main/main.js",
   "author": "iLx1",
   "description": "图片取模软件",
   "scripts": {
