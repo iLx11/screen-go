@@ -82,7 +82,7 @@ const modifyData = () => {
     height: 100%;
     outline: none;
     border: none;
-    font-size: 16px;
+    font-size: 15px;
     text-align: center;
     font-family: 'ceyy';
     color: var(--text-color-1);
@@ -141,7 +141,7 @@ const modifyData = () => {
     justify-content: center;
     align-items: center;
     writing-mode: tb-rl;
-    font-size: 20px;
+    font-size: 19px;
     background: var(--config-botton-color);
     cursor: pointer;
   }

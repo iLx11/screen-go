@@ -21,6 +21,7 @@
     "@jimp/types": "^0.22.10",
     "@jimp/utils": "^0.22.10",
     "any-base": "^1.1.0",
+    "canvas": "^2.11.2",
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.0",
     "graceful-fs": "^4.2.11",

@@ -55,8 +55,8 @@ ipcMain.handle("pic-data-editor", async (event, width, height, picData, colorMod
 });
 
 // 生成结果数组
-ipcMain.handle("pic-data-parse", async (event, data, ...configArray) => {
+ipcMain.handle("pic-data-parse", async (event, data, threshold, ...configArray) => {
   // console.info('configArray------------->', configArray)
-  const result = await utils.ImageToHexArray.generate(data, configArray)
+  const result = await utils.ImageToHexArray.generate(data, threshold, configArray)
   return result
 });

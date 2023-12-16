@@ -18,9 +18,8 @@ const commit = async () => {
       screenStore.setResized(true)
       // ----------------------------- 图片取模 ------------------------------------
       // 获取图片取模模式
-      const arrData = await win.myApi.generateResultArray(data, screenStore.configArray[0], screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3], screenStore.configArray[4])
-      console.log(arrData.length)
-      // 
+      const arrData = await win.myApi.generateResultArray(data, screenStore.thresholdData, screenStore.configArray[0], screenStore.configArray[1], screenStore.configArray[2], screenStore.configArray[3], screenStore.configArray[4])
+       
       screenStore.setDataLength(arrData.length)
       screenStore.setResultString(arrData.join(','))
       screenStore.showText('生成成功！')

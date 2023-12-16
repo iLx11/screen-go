@@ -9,9 +9,12 @@ const fs = require('fs-extra')
 
 module.exports.ImageToHexArray = class {
   static configArray
-  static generate = (picData, config) => {
+  static threshold
+  static generate = (picData, thresholdData, config) => {
+    // console.info('thresholdData', thresholdData)
     // console.info('config', config)
     this.configArray = config
+    this.threshold = thresholdData
     return new Promise((resolve, reject) => {
       this.convert(this.generateTemFile(picData), function (err, hex) {
         if (!err) {
@@ -62,6 +65,7 @@ module.exports.ImageToHexArray = class {
   // 图片取模
   static pngtolcd = (filename, callback) => {
     let _this = this
+    // 获取图片的数据对象
     pngparse.parseFile(filename, function (err, img) {
       if (err) {
         return callback(err)
@@ -80,9 +84,7 @@ module.exports.ImageToHexArray = class {
     let height = pimage.height
     let width = pimage.width
     let pixelsLen = pixels.length
-
-
-
+    
     // ------------------ 根据配置选用取模方式 --------------------------
     // 单色图片取模
     if (this.configArray[4] == 1) {
@@ -201,6 +203,7 @@ module.exports.ImageToHexArray = class {
         buffer[byte] &= ~pageShift
       }
     }
+    // console.info(buffer.toString('base64'))
     // 返回转换后的lcd数据
     return buffer
   }

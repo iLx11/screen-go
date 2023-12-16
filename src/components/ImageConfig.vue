@@ -283,10 +283,10 @@ watch(
         }
 
         .user-label {
-          width: 30%;
+          width: 29px;
           height: 50%;
           position: absolute;
-          font-size: 15px;
+          font-size: 12px;
           left: 6%;
           top: 50%;
           transform: translateY(-50%);
@@ -362,7 +362,7 @@ watch(
 
     .div1 {
       grid-area: 1 / 1 / 2 / 2;
-      font-size: 13px;
+      font-size: 12px;
     }
 
     .div2 {
@@ -370,7 +370,7 @@ watch(
       justify-content: space-around;
       background: var(--data-config-func-box-color);
       position: relative;
-
+      font-size: 14.5px;
       > div {
         width: 46%;
         height: 100%;
@@ -392,7 +392,7 @@ watch(
 
     .div3 {
       grid-area: 2 / 1 / 3 / 5;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .div4 {
@@ -409,7 +409,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 15px;
+        font-size: 14px;
       }
 
       #mode-move-box {
@@ -427,7 +427,7 @@ watch(
 
     .div5 {
       grid-area: 5 / 1 / 6 / 3;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .div6 {
@@ -443,7 +443,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 13px;
       }
 
       #mode-direction-move-box {
@@ -461,7 +461,7 @@ watch(
 
     .div7 {
       grid-area: 5 / 3 / 6 / 5;
-      font-size: 14px;
+      font-size: 13px;
     }
 
     .div8 {
@@ -477,7 +477,7 @@ watch(
         height: 100%;
         writing-mode: tb-rl;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 12px;
       }
 
       #output-move-box {

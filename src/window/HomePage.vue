@@ -10,16 +10,20 @@ import HeadMessage from '../components/HeadMessage.vue'
 import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
 import PopBox from '../components/PopBox.vue'
+import ThresholdConfig from '../components/ThresholdConfig.vue'
 
 const screenStore = useScreenStore()
 
 const coverShow = ref<boolean>(false)
 const editorShow = ref<boolean>(false)
+const thresholdShow = ref<boolean>(false)
 const screenImg = ref<HTMLElement | null>(null)
 const popBoxRef = ref<HTMLElement | null>(null)
+
 const closeEditor = () => {
   coverShow.value = false
   editorShow.value = false
+  thresholdShow.value = false
 }
 
 const showEditor = () => {
@@ -34,7 +38,20 @@ const editorCommit = (picData: string) => {
   screenImg.value['src'] = picData
   closeEditor()
 }
-
+watch(
+  () => screenStore.isThresholdShow,
+  () => {
+    if (screenStore.isThresholdShow == true) {
+      screenStore.setThresholdShow(false)
+      thresholdShow.value = true
+      coverShow.value = true
+    }
+  },
+  {
+    deep: true,
+    immediate: false
+  }
+)
 watch(
   () => screenStore.isTextShow,
   () => {
@@ -65,6 +82,7 @@ watch(
 </script>
 
 <template>
+  <thresholdConfig v-if="thresholdShow" />
   <PopBox ref="popBoxRef" />
   <div id="cover" v-if="coverShow" @click="closeEditor"></div>
   <div id="image-editor-box" v-if="editorShow">

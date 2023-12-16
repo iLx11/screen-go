@@ -16,7 +16,9 @@ export const useScreenStore = defineStore('screen', {
       popText: '',
       preSizeCount: 0,
       isCountModify: false,
-      resultDataLength: 0
+      resultDataLength: 0,
+      isThresholdShow: false,
+      thresholdData: 120,
     }
   },
   actions: {
@@ -57,6 +59,11 @@ export const useScreenStore = defineStore('screen', {
     setPreCount(data: number) {
       this.preSizeCount = data
     },
-    
+    setThresholdShow(state: boolean) {
+      this.isThresholdShow = state
+    },
+    setThreshold(data: number) {
+      this.setThresholdData = data
+    }
   }
 })

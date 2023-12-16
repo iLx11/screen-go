@@ -22,8 +22,8 @@ const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) 
 }
 
 // 生成数据
-const generateResultArray = async ( picData, configArray0,  configArray1, configArray2, configArray3, configArray4) => {
-  const data = ipcRenderer.invoke('pic-data-parse', picData, configArray0, configArray1, configArray2, configArray3, configArray4)
+const generateResultArray = async ( picData, threshold = 120, ...configArray) => {
+  const data = ipcRenderer.invoke('pic-data-parse', picData, threshold, ...configArray)
   return data
 }
 
