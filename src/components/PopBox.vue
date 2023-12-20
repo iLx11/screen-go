@@ -102,7 +102,7 @@ defineExpose({
   justify-content: space-around;
   align-items: center;
   padding: 2em;
-  z-index: 9999;
+  z-index: 99999999;
   animation: begin 0.35s ease-in-out;
   color: var(--text-color-1);
   div {

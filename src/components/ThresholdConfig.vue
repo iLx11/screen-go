@@ -15,6 +15,7 @@ let offsetY
 let originImageData
 let imageDataString
 onMounted(() => {
+  thresholdValue.value = screenStore.thresholdData
   ctx = imageCanvas.value.getContext('2d')
   img = new Image()
   img.src = screenStore.editorPicData
@@ -56,15 +57,22 @@ const previewSetting = () => {
   ctx.putImageData(originImageData, offsetX, offsetY, 0, 0, img.width, img.height)
 }
 
+// 确认并退出
 const confirmThreshold = () => {
   screenStore.setThresholdShow(false)
+  screenStore.setThreshold(thresholdValue.value)
 }
+
+// 节流
+let timer = null
 const delayTime = (callback: Function, delay: number) => {
-  let timer = null
-  if (!timer)
+  if (!timer) {
     timer = setTimeout(() => {
       callback()
+      timer = null
+      clearTimeout(timer)            
     }, delay)
+  }
 }
 watch(
   () => thresholdValue.value,
@@ -80,11 +88,13 @@ watch(
         if (tempImageData[i] > thresholdValue.value) tempImageData[i] = tempImageData[i + 1] = tempImageData[i + 2] = 255
         else tempImageData[i] = tempImageData[i + 1] = tempImageData[i + 2] = 0
       }
-      imageCanvas.value.width = imageCanvas.value.width
-      imageCanvas.value.height = imageCanvas.value.height
-      originImageData.data.set(tempImageData)
-      ctx.putImageData(originImageData, offsetX, offsetY, 0, 0, img.width, img.height)
-    }, 300)
+      if (imageCanvas.value.width && imageCanvas.value.width) {
+        imageCanvas.value.width = imageCanvas.value.width
+        imageCanvas.value.height = imageCanvas.value.height
+        originImageData.data.set(tempImageData)
+        ctx.putImageData(originImageData, offsetX, offsetY, 0, 0, img.width, img.height)
+      }
+    }, 320)
   },
   {
     immediate: false
@@ -98,7 +108,7 @@ watch(
     <div id="threshold-tools">
       <div id="move-box">{{ thresholdValue }}</div>
       <!-- <input type="text" v-model="thresholdValue" /> -->
-      <input type="range" class="win10-thumb" min="0" max="255" v-model="thresholdValue" step="4" />
+      <input type="range" class="win10-thumb" min="0" max="255" v-model="thresholdValue" step="2" />
       <div id="confirm-button" @click="confirmThreshold">确认并退出</div>
     </div>
   </div>

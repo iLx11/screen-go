@@ -89,7 +89,8 @@ module.exports.ImageToHexArray = class {
     // 单色图片取模
     if (this.configArray[4] == 1) {
       // 设置黑白像素的阈值，高于则转为黑点，低于则转为白点
-      let threshold = 120
+      let threshold = this.threshold
+      // console.info(threshold)
       let unpackedBuffer = []
       let depth = 4
       let pixelVal

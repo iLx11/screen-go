@@ -32,6 +32,15 @@ const thresholdShow = () => {
   }
   screenStore.setThresholdShow(true)
 }
+
+// 图片裁剪
+const cropShow = () => {
+  if(screenStore.editorPicData == '') {
+    screenStore.showText('请先编辑一张图片')
+    return 
+  }
+  screenStore.setCropShow(true)
+}
 </script>
 
 <template>
@@ -43,7 +52,7 @@ const thresholdShow = () => {
     <div id="func-division"></div>
     <div id="image-control">
       <div @click="thresholdShow">单色阈值<br />调整</div>
-      <div>图片裁剪</div>
+      <div @click="cropShow">图片裁剪</div>
     </div>
   </div>
 </template>

@@ -11,12 +11,15 @@ import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
 import PopBox from '../components/PopBox.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
+import CropConfig from '../components/CropConfig.vue'
 
 const screenStore = useScreenStore()
 
 const coverShow = ref<boolean>(false)
 const editorShow = ref<boolean>(false)
 const thresholdShow = ref<boolean>(false)
+const cropShow = ref<boolean>(false)
+
 const screenImg = ref<HTMLElement | null>(null)
 const popBoxRef = ref<HTMLElement | null>(null)
 
@@ -24,6 +27,13 @@ const closeEditor = () => {
   coverShow.value = false
   editorShow.value = false
   thresholdShow.value = false
+  cropShow.value = false
+  if (screenStore.isThresholdShow == true) {
+    screenStore.setThresholdShow(false)
+  }
+  if (screenStore.isCropShow == true) {
+    screenStore.setCropShow(false)
+  }
 }
 
 const showEditor = () => {
@@ -38,13 +48,33 @@ const editorCommit = (picData: string) => {
   screenImg.value['src'] = picData
   closeEditor()
 }
+
+watch(
+  () => screenStore.isCropShow,
+  () => {
+    if (screenStore.isCropShow == true) {
+      cropShow.value = true
+      coverShow.value = true
+    } else if (screenStore.isThresholdShow == false) {
+      cropShow.value = false
+      coverShow.value = false
+    }
+  },
+  {
+    deep: true,
+    immediate: false
+  }
+)
+
 watch(
   () => screenStore.isThresholdShow,
   () => {
     if (screenStore.isThresholdShow == true) {
-      screenStore.setThresholdShow(false)
       thresholdShow.value = true
       coverShow.value = true
+    } else if (screenStore.isThresholdShow == false) {
+      thresholdShow.value = false
+      coverShow.value = false
     }
   },
   {
@@ -79,9 +109,21 @@ watch(
     immediate: false
   }
 )
+
+watch(() => screenStore.isCroped, () => {
+  if(screenStore.isCroped) {
+    screenStore.setCroped(false)
+    screenImg.value['src'] = screenStore.editorPicData
+  }
+}, {
+  deep: true,
+  immediate: true
+})
+
 </script>
 
 <template>
+  <CropConfig v-if="cropShow" />
   <thresholdConfig v-if="thresholdShow" />
   <PopBox ref="popBoxRef" />
   <div id="cover" v-if="coverShow" @click="closeEditor"></div>
@@ -89,8 +131,7 @@ watch(
     <ImageEditor @editorCancle="editorCancle" @editorCommit="editorCommit" />
   </div>
   <div class="container">
-    <div id="head-tool-box">
-    </div>
+    <div id="head-tool-box"></div>
     <div id="screen-box" @click="showEditor">
       <div>
         <img id="screen-box-img" ref="screenImg" src="" alt="" />
@@ -185,7 +226,6 @@ watch(
   flex-flow: column nowrap;
   justify-content: space-around;
   align-items: flex-start;
-
 }
 
 #window-tool {
@@ -209,7 +249,7 @@ watch(
   align-items: center;
   cursor: pointer;
 
-  >div {
+  > div {
     width: 80%;
     height: 80%;
     background: white;

@@ -19,6 +19,10 @@ export const useScreenStore = defineStore('screen', {
       resultDataLength: 0,
       isThresholdShow: false,
       thresholdData: 120,
+      isCropShow: false,
+      cropWidthData: 0,
+      cropHeightData: 0,
+      isCroped: false
     }
   },
   actions: {
@@ -30,6 +34,12 @@ export const useScreenStore = defineStore('screen', {
     },
     setResized(state: boolean) {
       this.isResized = state
+    },
+    setResizeWidth(data: number) {
+      this.resizeWidth = data
+    },
+    setResizeHeight(data: number) {
+      this.resizeHeight = data
     },
     setConfigArray(k: number, v: number) {
       this.configArray[k] = v
@@ -63,7 +73,19 @@ export const useScreenStore = defineStore('screen', {
       this.isThresholdShow = state
     },
     setThreshold(data: number) {
-      this.setThresholdData = data
+      this.thresholdData = data
+    },
+    setCropShow(state: boolean) {
+      this.isCropShow = state
+    },
+    setCropWidth(data: number) {
+      this.cropWidthData = data
+    },
+    setCropHeight(data: number) {
+      this.cropHeightData = data
+    },
+    setCroped(state: boolean) {
+      this.isCroped = state
     }
   }
 })

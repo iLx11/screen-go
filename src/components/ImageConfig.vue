@@ -42,6 +42,13 @@ watch(() => screenStore.configArray[4], () => {
   }
 })
 
+watch(() => screenStore.isCroped, () => {
+    picSizeData.width = screenStore.resizeWidth.toString()
+    picSizeData.height = screenStore.resizeHeight.toString()
+}, {
+  deep: true,
+  immediate: true
+})
 
 watch(
   picSizeData,
