@@ -1,19 +1,20 @@
 const { ipcMain } = require("electron");
 
 // 图片裁剪
-var Jimp = require("jimp");
+const sharp = require('sharp')
 const Crypto = require("crypto");
 const os = require("os");
 const fs = require("fs-extra");
 const path = require("path");
 const utils = require("./ImageToHexArray");
 
+
 let resultPicData = "";
 
 const imgEditorHandle = async (width, height, picData, colorMode) => {
+  if(width == 0 || height == 0) return
   // console.info('图片：', picData)
-  let hashname =
-    Crypto.createHash("md5").update("angular-cir-img").digest("hex") + ".bmp";
+  let hashname = Crypto.createHash("md5").update("angular-cir-img").digest("hex") + ".bmp";
   // temp 图片的原始路径
   let originFilePath = path.join(os.tmpdir(), hashname);
   // base64 转 buffer
@@ -21,30 +22,42 @@ const imgEditorHandle = async (width, height, picData, colorMode) => {
     picData.replace(/^data:image\/\w+;base64,/, ""),
     "base64"
   );
+  // 
   fs.writeFileSync(originFilePath, dataBuffer);
-  // console.info('文件生成在哪里？', originFilePath)
+
+  // 裁剪后写入的目录
   let filePath = path.join(
+    // 临时文件夹目录
     os.tmpdir(),
     Crypto.createHash("md5").update("angular-cir-img-zoom").digest("hex") +
     ".bmp"
   );
-  // console.info('裁剪后的文件路径：', filePath)
-  // console.info('裁剪：', width, height)
-  Jimp.read(originFilePath, async (err, lenna) => {
-    if (err) throw err;
-    lenna.resize(width, height) // resize
-    lenna.quality(60)  // set greyscale
-    if(colorMode) 
-      lenna.greyscale()  // set JPEG qualityS
-    lenna.write(filePath) // save 
-    // FIXME: 处理图片延时
-    setTimeout(async () => {
-      const readable = fs.readFileSync(filePath, "binary");
-      const base64 = Buffer.from(readable, "binary").toString("base64");
-      // base64 = `data:image/png;base64,${base64}`
-      resultPicData = base64;
-    }, 500);
-  });
+
+  // 图片裁剪
+  if(!colorMode) {
+    sharp(originFilePath)
+    .resize(width, height)
+    .toBuffer()
+    .then((outputBuffer) => {
+      let base64String = outputBuffer.toString('base64')
+      resultPicData = base64String
+      // 写入后读取临时文件
+      // const readable = fs.readFileSync(filePath, "binary");
+      // const base64 = Buffer.from(readable, "binary").toString("base64");
+      // // base64 = `data:image/png;base64,${base64}`
+      // resultPicData = base64;
+    })
+  }else {
+    sharp(originFilePath)
+    .resize(width, height)
+    .greyscale()
+    .toBuffer()
+    .then((outputBuffer) => {
+      let base64String = outputBuffer.toString('base64')
+      resultPicData = base64String
+    })
+  }
+  
 };
 
 // 缩放图片 

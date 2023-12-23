@@ -90,10 +90,17 @@ const resizePic = async () => {
   if (screenStore.editorPicData != '' && screenStore.isResized == false) {
     // 图片裁剪
     if (picSizeData.height != '' && picSizeData.width != '') {
-      const data = await win.myApi.resizeImage(parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData)
+      if(picSizeData.height == '0' || picSizeData.width == '0') {
+        screenStore.showText('请正确设置图片大小!')
+        return
+      }
+      screenStore.setWaitExecute(true)
+      const data = await win.myApi.resizeImage(parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData, screenStore.configArray[4])
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'
+      screenStore.showText('执行完成')
+      screenStore.setWaitExecute(false)
       return
     } else screenStore.showText('请设置图片的大小！')
   } else {

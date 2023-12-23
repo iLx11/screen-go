@@ -22,7 +22,8 @@ export const useScreenStore = defineStore('screen', {
       isCropShow: false,
       cropWidthData: 0,
       cropHeightData: 0,
-      isCroped: false
+      isCroped: false,
+      waitExecute: false
     }
   },
   actions: {
@@ -86,6 +87,9 @@ export const useScreenStore = defineStore('screen', {
     },
     setCroped(state: boolean) {
       this.isCroped = state
+    },
+    setWaitExecute(state: boolean) {
+      this.waitExecute = state
     }
   }
 })

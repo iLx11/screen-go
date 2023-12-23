@@ -13,7 +13,7 @@ const maximizeWindow = () => {
 // 关闭窗口
 const closeWindow = () => {
   ipcRenderer.send('window-close')
-}
+} 
 
 // 裁剪图片
 const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) => {

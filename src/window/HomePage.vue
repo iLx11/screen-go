@@ -24,15 +24,17 @@ const screenImg = ref<HTMLElement | null>(null)
 const popBoxRef = ref<HTMLElement | null>(null)
 
 const closeEditor = () => {
-  coverShow.value = false
-  editorShow.value = false
-  thresholdShow.value = false
-  cropShow.value = false
-  if (screenStore.isThresholdShow == true) {
-    screenStore.setThresholdShow(false)
-  }
-  if (screenStore.isCropShow == true) {
-    screenStore.setCropShow(false)
+  if (!screenStore.waitExecute) {
+    coverShow.value = false
+    editorShow.value = false
+    thresholdShow.value = false
+    cropShow.value = false
+    if (screenStore.isThresholdShow == true) {
+      screenStore.setThresholdShow(false)
+    }
+    if (screenStore.isCropShow == true) {
+      screenStore.setCropShow(false)
+    }
   }
 }
 
@@ -110,16 +112,31 @@ watch(
   }
 )
 
-watch(() => screenStore.isCroped, () => {
-  if(screenStore.isCroped) {
-    screenStore.setCroped(false)
-    screenImg.value['src'] = screenStore.editorPicData
+watch(
+  () => screenStore.isCroped,
+  () => {
+    if (screenStore.isCroped) {
+      screenStore.setCroped(false)
+      screenImg.value['src'] = screenStore.editorPicData
+    }
+  },
+  {
+    deep: true,
+    immediate: true
   }
-}, {
-  deep: true,
-  immediate: true
-})
+)
 
+watch(
+  () => screenStore.waitExecute,
+  () => {
+    if (screenStore.waitExecute) {
+      screenStore.showText('请等待执行...')
+      coverShow.value = true
+    } else {
+      coverShow.value = false
+    }
+  }
+)
 </script>
 
 <template>

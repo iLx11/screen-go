@@ -12,28 +12,27 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "electron:build": "vite build && electron-builder"
+    "electron:build": "vite build && electron-builder",
+    "build:test": "node ./electron/controller/checkPackage.js"
   },
   "dependencies": {
-    "@jimp/core": "^0.22.10",
-    "@jimp/custom": "^0.22.10",
-    "@jimp/plugins": "^0.22.10",
-    "@jimp/types": "^0.22.10",
-    "@jimp/utils": "^0.22.10",
-    "any-base": "^1.1.0",
-    "canvas": "^2.11.2",
+    "color": "^4.2.3",
+    "detect-libc": "^2.0.2",
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.0",
-    "graceful-fs": "^4.2.11",
-    "isomorphic-fetch": "^3.0.0",
-    "jimp": "^0.22.10",
-    "jsonfile": "^6.1.0",
-    "mime": "^3.0.0",
+    "optional": "^0.1.4",
     "pinia": "^2.1.6",
-    "pixelmatch": "^5.3.0",
     "pngparse": "^2.0.1",
-    "tinycolor2": "^1.6.0",
+    "semver": "^7.5.4",
+    "sharp": "0.32.6",
     "tui-image-editor": "^3.15.3",
+    "color-convert": "^2.0.1",
+    "color-string": "^1.9.0",
+    "color-name": "~1.1.4",
+    "simple-swizzle": "^0.2.2",
+    "is-arrayish": "^0.3.1",
+    "graceful-fs": "^4.2.0",
+    "jsonfile": "^6.0.1",
     "universalify": "^2.0.0"
   },
   "devDependencies": {
@@ -63,6 +62,9 @@
     },
     "win": {
       "icon": "./public/icon.ico",
+      "asarUnpack": [
+        "**/node_modules/sharp/**/*"
+      ],
       "target": [
         {
           "target": "nsis",

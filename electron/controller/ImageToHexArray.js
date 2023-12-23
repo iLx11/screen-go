@@ -3,8 +3,8 @@ const path = require('path')
 const Crypto = require('crypto')
 // png 文件转像素
 const pngparse = require('pngparse')
-const mime = require('mime')
-const Jimp = require('jimp')
+const sharp = require('sharp')
+// const mime = require('mime')
 const fs = require('fs-extra')
 
 module.exports.ImageToHexArray = class {
@@ -26,34 +26,7 @@ module.exports.ImageToHexArray = class {
       })
     })
   }
-  static convert(filename, callback) {
-    let _this = this
-    // 获取文件类型
-    let ext = mime.getType(filename)
-    if (ext == 'image/png') {
-      // 图片取模
-      _this.pngtolcd(filename, function (err, buffer) {
-        err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
-      })
-    } else {
-      new Jimp(filename, function (err, image) {
-        let uname = 'krambil'
-        let hashname = Crypto.createHash('md5').update(uname).digest('hex') + '.png'
-        let tmppath = path.join(os.tmpdir(), hashname)
-        if (!err) {
-          image.write(tmppath, function (err, status) {
-            if (err) return callback(err, null)
-            // 图片取模
-            _this.pngtolcd(tmppath, function (err, buffer) {
-              err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
-            })
-          })
-        } else {
-          callback(err, null)
-        }
-      })
-    }
-  }
+
   // 根据 base64 生成临时文件
   static generateTemFile(base64) {
     let hashname = Crypto.createHash('md5').update('angular-tmp-img').digest('hex') + '.bmp'
@@ -62,16 +35,38 @@ module.exports.ImageToHexArray = class {
     fs.writeFileSync(temFilePath, dataBuffer)
     return temFilePath
   }
+
+  // ---------------------------------- TODO ---------------------------------------
+  static convert(filename, callback) {
+    let _this = this
+    // 获取文件类型
+    // let ext = mime.getType(filename)
+    // if (ext == 'image/png') {
+    // 图片取模
+    _this.pngtolcd(filename, function (err, buffer) {
+      err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
+    })
+  }
+
   // 图片取模
   static pngtolcd = (filename, callback) => {
     let _this = this
+    // ------------------------- TODO ---------------------------------------
     // 获取图片的数据对象
     pngparse.parseFile(filename, function (err, img) {
       if (err) {
-        return callback(err)
+        let bufferStirng = _this.imgFileToBuffer(filename)
+        return callback(null, bufferStirng)
       }
       let buffer = _this.imageDataToHexArray(img)
-      callback(err, buffer)
+      callback(null, buffer)
+    })
+  }
+
+  // 图像转 buffer 数组
+  static imgFileToBuffer = (filename) => {
+    sharp(filename).toBuffer().then(outputBuffer => {
+      return outputBuffer
     })
   }
 
@@ -84,7 +79,7 @@ module.exports.ImageToHexArray = class {
     let height = pimage.height
     let width = pimage.width
     let pixelsLen = pixels.length
-    
+
     // ------------------ 根据配置选用取模方式 --------------------------
     // 单色图片取模
     if (this.configArray[4] == 1) {
@@ -108,18 +103,19 @@ module.exports.ImageToHexArray = class {
       return this.colorImageSampling(pixels, width, height)
     }
   }
+
   static colorImageSampling = (pixels, width, height) => {
     // console.info('unpackedBufferL -> ', unpackedBuffer.length)
     // 缓冲数组，作为存储 16 位真彩色
     const buffer = Buffer.alloc((width * height) * 2)
     // console.info('bufferL -> ', buffer.length);
     let i = 0, j = 0
-    while(i < buffer.length && j < pixels.length) {
+    while (i < buffer.length && j < pixels.length) {
       buffer[i] |= (pixels[j] >> 3) << 3
       buffer[i] |= pixels[j + 1] >> 5
       buffer[i + 1] |= (pixels[j + 1] >> 2) << 5
       buffer[i + 1] |= pixels[j + 2] >> 3
-      if(this.configArray[0] == 0 || this.configArray[2] == 1) {
+      if (this.configArray[0] == 0 || this.configArray[2] == 1) {
         buffer[i] = ~buffer[i]
         buffer[i + 1] = ~buffer[i + 1]
       }
@@ -128,6 +124,7 @@ module.exports.ImageToHexArray = class {
     }
     return buffer
   }
+
   //------------------------------ 逐行式 ------------------------------------
   static ImageSamplingRow = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
@@ -181,6 +178,7 @@ module.exports.ImageToHexArray = class {
     // 返回转换后的lcd数据
     return buffer
   }
+
   //------------------------------ 列行式 ------------------------------------
   static ImageSamplingColRow = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
@@ -208,6 +206,7 @@ module.exports.ImageToHexArray = class {
     // 返回转换后的lcd数据
     return buffer
   }
+
   //------------------------------ 行列式 ------------------------------------
   static ImageSamplingRowCol = (unpackedBuffer, width, height) => {
     // 创建一个缓冲区，用于存储转换后的字节数据
@@ -234,8 +233,10 @@ module.exports.ImageToHexArray = class {
     // 返回转换后的lcd数据
     return buffer
   }
+
   // 取模方式数组
   static imageSamplingArr = [this.ImageSamplingRow, this.ImageSamplingCol, this.ImageSamplingColRow, this.ImageSamplingRowCol]
+
   // 创建 ImageData 对象
   static createImageDate = (imageData) => {
     // 创建一个缓冲区，用于存储图像数据
@@ -253,6 +254,7 @@ module.exports.ImageToHexArray = class {
     return imageData
     // return new ImageData(new Uint8ClampedArray(buffer), imageData.width, imageData.height)
   }
+
   // 获取指定位置的像素值
   static getPixel = (image, x, y) => {
     x = x | 0
@@ -290,6 +292,7 @@ module.exports.ImageToHexArray = class {
     // 将颜色值转换为十六进制像素值并返回
     return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0
   }
+
   // 十六进制数据加 '0x'
   static hex2hex = (hex) => {
     for (var bytes = [], c = 0; c < hex.length; c += 2) {

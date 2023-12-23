@@ -30,7 +30,7 @@ const createWindow = () => {
             // nodeIntegration: true,
             // contextIsolation:false,
             // nodeIntegrationInWorker: true,
-            // webSecurity: false,
+            webSecurity: false,
             // sandbox: false,
             nodeIntegration: true,
             preload: path.join(__dirname, './preload.js'),
@@ -38,7 +38,7 @@ const createWindow = () => {
     })
     win.setMenu(null)
     if (app.isPackaged) {
-        win.loadURL(`file://${path.join(__dirname, '../dist/index.html')}`)
+        win.loadURL(`file://${path.join(__dirname, '../../dist/index.html')}`)
         // win.webContents.openDevTools()
 
     } else {
@@ -65,5 +65,10 @@ app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit()
 })
 
+// 必要的全局错误捕获
+process.on('uncaughtException', error => {
+    console.error(error.stack || JSON.stringify(error));
+    app.exit();
+});
 
 

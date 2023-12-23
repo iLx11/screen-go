@@ -2,7 +2,7 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive, ref, watch } from 'vue'
-import { createCanvas } from 'canvas'
+// import { createCanvas } from 'canvas'
 // const { ipcRenderer } = require('electron')
 const win = window as any
 const screenStore = useScreenStore()
@@ -10,7 +10,7 @@ const shadowImg = ref(null)
 const cropImg = ref(null)
 const cropBox = ref(null)
 const imgEditorBox = ref(null)
-// const fullImg = ref(null)
+const fullCanvas= ref(null)
 const cropMoveChangeFlag = ref<boolean>(false)
 const resizeMoveChangeFlag = ref<boolean>(false)
 const resizeMoveNum = ref<number>(0)
@@ -72,13 +72,17 @@ watch(
 const confirmCrop = () => {
   let cropWidth = cropSizeData['width'] * imgRate
   let cropHeight = cropSizeData['height'] * imgRate
-  const canvas = createCanvas(cropSizeData['width'], cropSizeData['height'])
-  const ctx = canvas.getContext('2d')
-  let leftCrop = parseInt(cropBox.value.style.left) - (cropImg.value.offsetLeft - cropImg.value.width / 2)
-  let topCrop = parseInt(cropBox.value.style.top) - (cropImg.value.offsetTop - cropImg.value.height / 2)
+  fullCanvas.value.width = cropSizeData['width']
+  fullCanvas.value.height = cropSizeData['height']
+  let ctx = fullCanvas.value.getContext('2d')
+  // import 'canvas'
+  // const canvas = createCanvas(cropSizeData['width'], cropSizeData['height'])
+  // const ctx = canvas.getContext('2d')
+  const leftCrop = parseInt(cropBox.value.style.left) - (cropImg.value.offsetLeft - cropImg.value.width / 2)
+  const topCrop = parseInt(cropBox.value.style.top) - (cropImg.value.offsetTop - cropImg.value.height / 2)
   ctx.drawImage(shadowImg.value, leftCrop * imgRate, topCrop * imgRate, cropWidth, cropHeight, 0, 0, cropSizeData['width'], cropSizeData['height'])
   // 替换裁剪后的数据
-  screenStore.setEiditorPicData(canvas.toDataURL())
+  screenStore.setEiditorPicData(fullCanvas.value.toDataURL())
   screenStore.setResizeWidth(cropSizeData['width'])
   screenStore.setResizeHeight(cropSizeData['height'])
   screenStore.setCroped(true)
@@ -217,6 +221,7 @@ const resizeleave = () => {
 
 <template>
   <div id="crop-config-box">
+    <canvas id="full-img" ref="fullCanvas"></canvas>
     <!-- <img src="" alt="" id="full-img" ref="fullImg"> -->
     <div id="img-editor-box" ref="imgEditorBox" @mousemove="resizeMove">
       <img ref="shadowImg" src="" alt="" />

@@ -11,6 +11,7 @@ let presetCount: number = 0
 const commit = async () => {
   if (screenStore.editorPicData != '') {
     if (screenStore.resizeWidth != 0 && screenStore.resizeHeight != 0) {
+      screenStore.setWaitExecute(true)
       // 缩放图片
       const data = await win.myApi.resizeImage(screenStore.resizeWidth, screenStore.resizeHeight, screenStore.editorPicData, screenStore.configArray[4])
       // console.log('pic-data-editor', data)
@@ -25,6 +26,7 @@ const commit = async () => {
       screenStore.showText('生成成功！')
       screenStore.setCountModify(true)
       screenStore.setPreCount(presetCount)
+      screenStore.setWaitExecute(false)
       let preA = JSON.parse(getItem('presetArray'))
       if (preA != null) {
         // while (Object.keys(preA[presetCount]).length != 0 && presetCount <= 2) presetCount++
