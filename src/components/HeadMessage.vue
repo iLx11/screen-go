@@ -94,10 +94,10 @@ const vCopy = {
   </div>
   <div id="message-show-box" v-if="messageBoxShow" @click.stop="hideMessageBox"></div>
   <div id="message-show" v-if="messageBoxShow">
-    &nbsp;&nbsp;本项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 的开源项目所开发，并遵循 MIT 开源协议<br /><br />
-    &nbsp;&nbsp;本项目为图片取模软件，可以直接对屏幕的布局以及显示进行编辑，包括导入任何类型的图片，编辑文字与图形，并直接生成可修改的数据（支持正则替换），并直接在硬件显示！！<br /><br />
-    &nbsp;&nbsp;项目 <span href="" v-copy="copyText[1]"> 开源地址 </span><br><br><br>
-    &nbsp;&nbsp;之后会不断优化此软件或开发更多有意思的软件，十分感谢您的支持！！！
+    &nbsp;&nbsp;此项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 的项目思路所开发，并遵循 MIT 开源协议<br /><br />
+    &nbsp;&nbsp;此项目为图片取模软件<br>&nbsp;&nbsp;🍚 可以直接模拟对硬件屏幕的布局和显示进行编辑和调整<br>&nbsp;&nbsp;🍫  可以导入任何类型的图片<br>&nbsp;&nbsp;🍜 编辑文字与图形<br>&nbsp;&nbsp;🥘 添加与调整不同滤镜<br>&nbsp;&nbsp;🥠 任意缩放与裁剪图片<br>&nbsp;&nbsp;🍵 支持单色和彩色图片取模，并直接生成可修改可一键复制的图片取模数组（支持正则替换修改）。<br /><br />
+    &nbsp;&nbsp;项目 <span href="" v-copy="copyText[1]"> 开源地址 </span><br><br>
+    &nbsp;&nbsp;之后应该会不断优化此软件或开发更多有意思的软件，感谢您的支持！！！
   </div>
 </template>
 
@@ -138,8 +138,8 @@ const vCopy = {
   z-index: 999;
 }
 #message-show {
-  width: 50%;
-  height: 50%;
+  width: 75%;
+  height: 75%;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -151,7 +151,7 @@ const vCopy = {
   color: var(--text-color-1);
   z-index: 999;
   overflow-y: scroll;
-  line-height: 25px;
+  line-height: 32px;
   span {
     text-decoration: none;
     color: var(--span-text-color);

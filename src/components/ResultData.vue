@@ -12,6 +12,7 @@ watch(
     if(resultString.value.length > 10000) {
         resultStrShow.value = resultString.value.substring(0, 10000)
         screenStore.showText('数据过长，显示截取，复制时为全部文本')
+        resultStrShow.value += '......数据过长，显示已截取，点击复制时为全部文本'
     } else
         resultStrShow.value =  resultString.value
   }
@@ -35,6 +36,7 @@ watch(
       if(resultString.value.length > 10000) {
         resultStrShow.value = resultString.value.substring(0, 10000)
         screenStore.showText('数据过长，显示截取，复制时为全部文本')
+        resultStrShow.value += '......数据过长，显示已截取，点击复制时为全部文本'
       } else
         resultStrShow.value =  resultString.value
     }
