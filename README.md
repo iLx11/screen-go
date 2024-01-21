@@ -46,53 +46,39 @@ pnpm electron:build
 
 ```bash
 │  .gitignore
-	// 2.0.0 版本的图标 PS 文件
-│  2_0_0icon.psd
+│  2_0_0icon.psd // 2.0.0 版本的图标 PS 文件
 │  env.d.ts
 │  icon.psd
 │  index.html
 │  package.json
 │  pnpm-lock.yaml
-	// 介绍文件
-│  README.md
+│  README.md // 介绍文件
 │  tsconfig.app.json
 │  tsconfig.json
 │  tsconfig.node.json
-	// 修改的 tui-image-editor 组件的样式，导入包后替换即可
-│  tui-image-editor.css
+│  tui-image-editor.css // 修改的 tui-image-editor 组件的样式，导入包后替换即可
 │  vite.config.ts
 │  
-	// 主进程
-├─electron
-		// 主进程逻辑的执行层
-│  ├─controller
-			// 包检查脚本
-│  │      checkPackage.js
-			// 图片信息转取模数组的执行脚本
-│  │      ImageToHexArray.js
-			// 图片编辑与裁剪的执行脚本
-│  │      picDataEditor.js
-			// 窗口事件的执行
-│  │      windowControl.js
+├─electron // 主进程
+│  ├─controller	// 主进程逻辑的执行层
+│  │      checkPackage.js // 包检查脚本
+│  │      ImageToHexArray.js // 图片信息转取模数组的执行脚本
+│  │      picDataEditor.js // 图片编辑与裁剪的执行脚本
+│  │      windowControl.js // 窗口事件的执行
 │  │      
 │  └─main
-			// 主进程入口文件
-│          main.js
-			// 预加载文件，渲染进程与主进程在此文件中交互
-│          preload.js
+│          main.js // 主进程入口文件
+│          preload.js // 预加载文件，渲染进程与主进程在此文件中交互
 │          
 ├─public
 │  │  favicon.ico
-		// 软件图标文件，可以进行替换
-│  │  icon.ico
+│  │  icon.ico // 软件图标文件，可以进行替换
 │  │  
-│  └─img
-			// 黑白色的画布基础图片
+│  └─img // 黑白色的画布基础图片
 │          black.png
 │          blank.png
 │  
-	// 渲染进程
-└─src
+└─src // 渲染进程
     │  App.vue
     │  main.ts
     │  
@@ -104,8 +90,7 @@ pnpm electron:build
     │          black.png
     │          blank.png
     │    
-    	// 所有没有通过路由显示的组件
-    ├─components
+    ├─components // 所有没有通过路由显示的组件
     │      CommitBox.vue
     │      CropConfig.vue
     │      FuncBox.vue
@@ -121,19 +106,16 @@ pnpm electron:build
     ├─router
     │      index.ts
     │      
-    	// pinia stores （没有进一步解耦，所有的都写在一起了）
-    ├─stores
+    ├─stores // pinia stores （没有进一步解耦，所有的都写在一起了）
     │      counter.ts
     │      store.ts
     │  
-    	// 默认与基础样式
-    ├─styles
+    ├─styles // 默认与基础样式
     │      index.scss
     │      reset.scss
     │      variable.scss
     │  
-    	// 渲染进程所使用的工具函数，操作图片的函数适用于渲染层使用 Node 包，但是不推荐
-    ├─utils
+    ├─utils // 渲染进程所使用的工具函数，操作图片的函数适用于渲染层使用 Node 包，但是不推荐
     │      ImageToHexArray.ts
     │      imgTools.ts
     │      storage.ts
