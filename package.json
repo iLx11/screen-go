@@ -16,24 +16,12 @@
     "build:test": "node ./electron/controller/checkPackage.js"
   },
   "dependencies": {
-    "color": "^4.2.3",
-    "detect-libc": "^2.0.2",
     "electron-store": "^8.1.0",
     "fs-extra": "^11.1.0",
-    "optional": "^0.1.4",
     "pinia": "^2.1.6",
     "pngparse": "^2.0.1",
-    "semver": "^7.5.4",
     "sharp": "0.32.6",
-    "tui-image-editor": "^3.15.3",
-    "color-convert": "^2.0.1",
-    "color-string": "^1.9.0",
-    "color-name": "~1.1.4",
-    "simple-swizzle": "^0.2.2",
-    "is-arrayish": "^0.3.1",
-    "graceful-fs": "^4.2.0",
-    "jsonfile": "^6.0.1",
-    "universalify": "^2.0.0"
+    "tui-image-editor": "^3.15.3"
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
