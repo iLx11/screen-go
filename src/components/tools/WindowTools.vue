@@ -3,7 +3,6 @@ import { onMounted, ref, onUnmounted } from 'vue'
 // const { ipcRenderer } = require('electron')
 // import os from 'os'
 const win = window as any
-defineProps<{ title?: string }>()
 
 // let isMac = ref<boolean>(os.platform() == 'darwin')
 
@@ -38,15 +37,16 @@ let minimizeMainWindow = () => {
   </div>
 </template>
 <style scoped lang="scss">
+
 .topBar {
-  height: 25px;
+  height: 27px;
   line-height: 25px;
-  width:10%;
+  width:125px;
   position: absolute;
-  top: 30px;
-  right: 30px;
+  top: 1em;
+  right: 1em;
   z-index: 9999;
-  -webkit-app-region: drag;
+  -webkit-app-region: no-drag;
 }
 .winTool {
   height: 100%;
@@ -64,8 +64,8 @@ let minimizeMainWindow = () => {
   cursor: pointer;
   line-height: 25px;
   .window-tools {
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     cursor: pointer;
   }

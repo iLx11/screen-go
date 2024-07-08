@@ -2,17 +2,17 @@
   "name": "screen-go",
   "version": "2.0.0",
   "private": true,
-  "main": "electron/main/main.js",
+  "main": "appDir/main/main.js",
   "author": "iLx1",
   "description": "图片取模软件",
   "scripts": {
-    "start": "vite | electron .",
+    "start": "vite && electron .",
     "dev": "vite",
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "electron:build": "vite build && electron-builder",
+    "electron:build": "rimraf dist && vite build && electron-builder",
     "build:test": "node ./electron/controller/checkPackage.js"
   },
   "dependencies": {
@@ -39,20 +39,18 @@
     "vite-plugin-optimizer": "^1.4.2",
     "vue": "^3.3.4",
     "vue-router": "^4.2.5",
-    "vue-tsc": "^1.8.11"
+    "vue-tsc": "^1.8.11",
+    "vite-plugin-electron": "^0.4.5"
   },
   "build": {
-    "appId": "com.iLx1.app",
-    "productName": "ScreenGo",
+    "appId": "com.xxx.MultiPad",
+    "productName": "MultiPad",
     "copyright": "Copyright © 2023 iLx1",
     "directories": {
       "output": "dist_electron"
     },
     "win": {
       "icon": "./public/icon.ico",
-      "asarUnpack": [
-        "**/node_modules/sharp/**/*"
-      ],
       "target": [
         {
           "target": "nsis",
@@ -60,6 +58,9 @@
             "x64"
           ]
         }
+      ],
+      "asarUnpack": [
+        "**/node_modules/electron-store/**/*"
       ]
     },
     "dmg": {
@@ -86,7 +87,8 @@
     },
     "files": [
       "./dist",
-      "./electron"
+      "./electron",
+      "./appDir"
     ],
     "asar": false,
     "nsis": {
@@ -98,13 +100,6 @@
       "installerHeaderIcon": "./public/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
-    },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "iLx11",
-        "repo": "screen-go"
-      }
-    ]
+    }
   }
 }

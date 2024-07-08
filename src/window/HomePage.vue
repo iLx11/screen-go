@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WindowTools from '../components/WindowTools.vue'
+import WindowTools from '../components/tools/WindowTools.vue'
 import { onMounted, nextTick, ref, watch } from 'vue'
 import ImageEditor from '../components/ImageEditor.vue'
 import ImageConfig from '../components/ImageConfig.vue'
@@ -9,7 +9,7 @@ import ResultData from '../components/ResultData.vue'
 import HeadMessage from '../components/HeadMessage.vue'
 import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
-import PopBox from '../components/PopBox.vue'
+import PopBox from '../components/tools/PopBox.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
 
@@ -209,7 +209,7 @@ watch(
   left: 50%;
   transform: translate(-50%, -50%);
   border: 0.1px solid rgba(173, 171, 171, 0.4);
-  border-radius: 16px;
+  border-radius: 22px;
   overflow: hidden;
   display: grid;
   grid-template-columns: repeat(2, 1fr);

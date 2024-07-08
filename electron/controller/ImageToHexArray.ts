@@ -7,7 +7,7 @@ const sharp = require('sharp')
 // const mime = require('mime')
 const fs = require('fs-extra')
 
-module.exports.ImageToHexArray = class {
+export default class ImageToHexArray{
   static configArray
   static threshold
   static generate = (picData, thresholdData, config) => {

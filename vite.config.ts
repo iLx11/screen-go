@@ -1,7 +1,10 @@
 import { fileURLToPath, URL } from 'node:url'
-
+import * as path from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import electron from 'vite-plugin-electron'
+import electronRenderer from 'vite-plugin-electron/renderer'
+import polyfillExports from 'vite-plugin-electron/polyfill-exports'
 // import optimizer from 'vite-plugin-optimizer'
 
 let getReplacer = () => {
@@ -18,10 +21,32 @@ let getReplacer = () => {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: "./",
+  base: "./",   
   plugins: [
     // optimizer(getReplacer()),
-    vue(),
+    vue(), 
+    electron({
+      main:{
+        // 入口文件的路径
+        entry: "electron/main/main.ts",
+        vite: {
+          build: {
+            // 将入口文件转为 js 后输出到指定目录
+            outDir: "appDir/main"
+          }
+        }
+      },
+      preload: {
+        // 预加载文件的绝对路径 
+        input: path.join(__dirname, "./electron/main/preload.ts"), // 预加载文件
+        vite: {
+          build: {
+            // 将预加载文件转为 js 后输出到指定目录
+            outDir: "appDir/preload"
+          }
+        }
+      }
+    })
   ],
   resolve: {
     alias: {
@@ -32,7 +57,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         javascriptEnabled: true,
-        additionalData: '@import "./src/styles/variable.scss";',
+        additionalData: '@import "./src/styles/global.scss";',
       },
     },
   },

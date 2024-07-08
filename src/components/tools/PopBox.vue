@@ -18,25 +18,24 @@ const showPop = (text: string) => {
       (popBoxRef as any).value, // element to animate
       [
         {
-          width: '30%',
-          opacity: '100%', 
-          top: '10%'
+          width: '43%',
+          opacity: '100%',
+          top: '11%'
         },
         {
-          width: '26%',
-          opacity: '100%', 
-          top: '10%',
-          height: '50px'
+          width: '45%',
+          opacity: '70%',
+          top: '12%'
         },
         {
-          width: '35%',
           opacity: '0%',
           top: '8%',
-          height: '30px'
+          width: '40%',
+          height: '47px'
         }
       ],
       {
-        duration: 250
+        duration: 300
       } // keyframe options
     )
     const backAnimation = new Animation(backAnimationEffect, document.timeline)
@@ -88,8 +87,8 @@ defineExpose({
 
 <style lang="scss" scoped>
 #pop-box {
-  width: 30%;
-  height: 30px;
+  width: 42%;
+  height: 40px;
   position: fixed;
   top: 10%;
   left: 50%;
@@ -98,20 +97,17 @@ defineExpose({
   border-radius: 25px;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   border: 0.1 solid rgba(0, 0, 0, 0.12);
-  display: flex;
-  justify-content: space-around;
-  align-items: center;
-  padding: 2em;
-  z-index: 99999999;
-  animation: begin 0.35s ease-in-out;
+  @include flex_config(0, flex-start);
+  padding: 2em 0.2em;
+  z-index: 9999;
+  animation: begin 0.3s ease-in-out;
   color: var(--text-color-1);
+  text-align: center;
   div {
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    @include flex-center;
   }
   #font-box {
-    width: 15%;
+    width: 20%;
     height: 100%;
     font-size: 12px;
   }
@@ -125,15 +121,10 @@ defineExpose({
   0% {
     opacity: 0%;
     top: 1%;
-    width: 20%;
-  }
-  50% {
-    width: 35%;
-    opacity: 100%;
-    top: 12%;
+    width: 30%;
   }
   100% {
-    width: 30%;
+    width: 42%;
     opacity: 100%;
     top: 10%;
   }
@@ -142,13 +133,10 @@ defineExpose({
   100% {
     opacity: 0%;
     top: 1%;
-    width: 60%;
-  }
-  50% {
-    width: 20%;
+    width: 42%;
   }
   0% {
-    width: 30%;
+    width: 40%;
     opacity: 100%;
     top: 10%;
   }
