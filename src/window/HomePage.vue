@@ -9,9 +9,10 @@ import ResultData from '../components/ResultData.vue'
 import HeadMessage from '../components/HeadMessage.vue'
 import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
-import PopBox from '../components/tools/PopBox.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
+import {XBox} from '@/utils/xBox/xBox.js'
+
 
 const screenStore = useScreenStore()
 
@@ -21,7 +22,10 @@ const thresholdShow = ref<boolean>(false)
 const cropShow = ref<boolean>(false)
 
 const screenImg = ref<HTMLElement | null>(null)
-const popBoxRef = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  XBox.popMes("sdfasfasd")
+})
 
 const closeEditor = () => {
   if (!screenStore.waitExecute) {
@@ -84,19 +88,7 @@ watch(
     immediate: false
   }
 )
-watch(
-  () => screenStore.isTextShow,
-  () => {
-    if (screenStore.isTextShow == true) {
-      screenStore.setTextShow(false)
-      popBoxRef.value['showPop'](screenStore.popText)
-    }
-  },
-  {
-    deep: true,
-    immediate: false
-  }
-)
+
 watch(
   () => screenStore.isResized,
   () => {
@@ -130,7 +122,7 @@ watch(
   () => screenStore.waitExecute,
   () => {
     if (screenStore.waitExecute) {
-      screenStore.showText('请等待执行...')
+      XBox.popMes('请等待执行...')
       coverShow.value = true
     } else {
       coverShow.value = false
@@ -142,7 +134,6 @@ watch(
 <template>
   <CropConfig v-if="cropShow" />
   <thresholdConfig v-if="thresholdShow" />
-  <PopBox ref="popBoxRef" />
   <div id="cover" v-if="coverShow" @click="closeEditor"></div>
   <div id="image-editor-box" v-if="editorShow">
     <ImageEditor @editorCancle="editorCancle" @editorCommit="editorCommit" />
@@ -181,7 +172,7 @@ watch(
   transform: translate(-50%, -50%);
   background: rgba(51, 51, 51, 0.2);
   border-radius: 15px;
-  z-index: 99998;
+  z-index: 998;
 }
 
 #image-editor-box {
@@ -193,11 +184,11 @@ watch(
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 99999;
-  border-radius: 12px;
+  z-index: 999;
+  border-radius: 25px;
   border: 0.2px solid rgba(51, 51, 51, 0.1);
   // box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
-  padding: 0.7em;
+  padding: 1.2em;
   overflow: scroll;
 }
 
@@ -209,11 +200,11 @@ watch(
   left: 50%;
   transform: translate(-50%, -50%);
   border: 0.1px solid rgba(173, 171, 171, 0.4);
-  border-radius: 22px;
+  border-radius: 30px;
   overflow: hidden;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(9, 1fr);
+  grid-template-rows: repeat(12, 1fr);
   column-gap: 10px;
   row-gap: 10px;
   box-sizing: border-box;
@@ -225,7 +216,7 @@ watch(
   padding-bottom: 12px;
 
   div {
-    border-radius: 12px;
+    border-radius: 16px;
     border: 0.2px solid rgba(51, 51, 51, 0.1);
     z-index: 999;
     box-sizing: border-box;
@@ -235,6 +226,7 @@ watch(
 #head-tool-box {
   grid-area: 1 / 1 / 2 / 3;
   background: rgba(51, 51, 51, 0.05);
+  border: none;
   // position: relative;
   -webkit-app-region: drag;
   padding: 0.6em;
@@ -257,7 +249,7 @@ watch(
 }
 
 #screen-box {
-  grid-area: 2 / 1 / 5 / 2;
+  grid-area: 2 / 1 / 6 / 2;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
@@ -289,7 +281,7 @@ watch(
 }
 
 #result-data-box {
-  grid-area: 2 / 2 / 7 / 3;
+  grid-area: 2 / 2 / 9 / 3;
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;
@@ -297,15 +289,16 @@ watch(
 }
 
 #config-tool-box {
-  grid-area: 5 / 1 / 9 / 2;
+  grid-area: 6 / 1 / 12 / 2;
 }
 
 #commit-box {
-  grid-area: 9 / 1 / 10 / 2;
+  grid-area: 12 / 1 / 13 / 2;
   border: none;
+  color: rgb(255, 255, 255) !important;
 }
 
 #data-setting-box {
-  grid-area: 7 / 2 / 10 / 2;
+  grid-area: 9 / 2 / 13 / 2;
 }
 </style>

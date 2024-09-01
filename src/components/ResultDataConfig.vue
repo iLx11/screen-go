@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
+import {XBox} from '@/utils/xBox/xBox.js'
 
 const screenStore = useScreenStore()
 const configData = reactive({
@@ -21,7 +22,7 @@ watch(configData, () => {
 })
 const modifyData = () => {
   screenStore.setModify(true)
-  screenStore.showText("数据修改成功！")
+  XBox.popMes("数据修改成功！")
 }
 </script>
 

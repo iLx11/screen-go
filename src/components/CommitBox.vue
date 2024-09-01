@@ -2,6 +2,8 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive } from 'vue'
+import {XBox} from '@/utils/xBox/xBox.js'
+
 // const { ipcRenderer } = require('electron')
 const win = window as any
 const screenStore = useScreenStore()
@@ -23,7 +25,7 @@ const commit = async () => {
        
       screenStore.setDataLength(arrData.length)
       screenStore.setResultString(arrData.join(','))
-      screenStore.showText('生成成功！')
+      XBox.popMes('生成成功！')
       screenStore.setCountModify(true)
       screenStore.setPreCount(presetCount)
       screenStore.setWaitExecute(false)
@@ -45,10 +47,10 @@ const commit = async () => {
       }
       presetCount >= 2 ? (presetCount = 0) : presetCount++
     } else {
-      screenStore.showText('请设置图片的大小！')
+      XBox.popMes('请设置图片的大小！')
     }
   } else {
-    screenStore.showText('请先编辑一个图片！')
+    XBox.popMes('请先编辑一个图片！')
   }
 }
 </script>

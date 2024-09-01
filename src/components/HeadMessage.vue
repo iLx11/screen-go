@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { useScreenStore } from '../stores/store'
+import {XBox} from '@/utils/xBox/xBox.js'
 
 const screenStore = useScreenStore()
 const messageBoxShow = ref<boolean>(false)
@@ -25,11 +26,11 @@ const vCopy = {
         navigator.clipboard
           .writeText(el.$value)
           .then(() => {
-            screenStore.showText('复制成功!')
+            XBox.popMes('复制成功!')
           })
           .catch((error) => {
             console.error('复制失败:', error)
-            screenStore.showText('复制失败!')
+            XBox.popMes('复制失败!')
           })
       } else {
         const textarea = document.createElement('textarea')
@@ -40,7 +41,7 @@ const vCopy = {
         document.body.appendChild(textarea)
         textarea.select()
         if (document.execCommand('Copy')) {
-          screenStore.showText('复制成功!')
+          XBox.popMes('复制成功!')
         }
         document.body.removeChild(textarea)
       }
@@ -88,9 +89,8 @@ const vCopy = {
           data-spm-anchor-id="a313x.search_index.0.i14.77e73a81rcqrwa"
         ></path>
       </svg>
-      <h1>SCREEN-GO</h1>
+      <h1>ScreenGo-iLx1</h1>
     </div>
-    <div>_iLx1_</div>
   </div>
   <div id="message-show-box" v-if="messageBoxShow" @click.stop="hideMessageBox"></div>
   <div id="message-show" v-if="messageBoxShow">
@@ -108,7 +108,7 @@ const vCopy = {
   position: absolute;
   top: 28px;
   left: 30px;
-  z-index: 9999;
+  z-index: 99;
   -webkit-app-region: no-drag;
   cursor: pointer;
   div {
@@ -135,7 +135,7 @@ const vCopy = {
   top: 0;
   left: 0;
   background: rgba(51, 51, 51, 0.2);
-  z-index: 999;
+  z-index: 99;
 }
 #message-show {
   width: 75%;

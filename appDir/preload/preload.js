@@ -1,1 +1,37 @@
-"use strict";const{contextBridge:s,ipcRenderer:i}=require("electron"),d=()=>{i.send("window-min")},a=()=>{i.send("window-max")},c=()=>{i.send("window-close")},r=async(n,e,t,o)=>await i.invoke("pic-data-editor",n,e,t,o),m=async(n,e=120,...t)=>i.invoke("pic-data-parse",n,e,...t);s.exposeInMainWorld("myApi",{minimizeWindow:d,maximizeWindow:a,closeWindow:c,resizeImage:r,generateResultArray:m});window.addEventListener("DOMContentLoaded",()=>{const n=(e,t)=>{const o=document.getElementById(e);o&&(o.innerText=t)};for(const e of["chrome","node","electron"])n(`${e}-version`,process.versions[e])});
+"use strict";
+const { contextBridge, ipcRenderer } = require("electron");
+const minimizeWindow = () => {
+  ipcRenderer.send("window-min");
+};
+const maximizeWindow = () => {
+  ipcRenderer.send("window-max");
+};
+const closeWindow = () => {
+  ipcRenderer.send("window-close");
+};
+const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) => {
+  const data = await ipcRenderer.invoke("pic-data-editor", resizeWidth, resizeHeight, editorPicData, colorMode);
+  return data;
+};
+const generateResultArray = async (picData, threshold = 120, ...configArray) => {
+  const data = ipcRenderer.invoke("pic-data-parse", picData, threshold, ...configArray);
+  return data;
+};
+contextBridge.exposeInMainWorld("myApi", {
+  // handleSend: handleSend
+  minimizeWindow,
+  maximizeWindow,
+  closeWindow,
+  resizeImage,
+  generateResultArray
+});
+window.addEventListener("DOMContentLoaded", () => {
+  const replaceText = (selector, text) => {
+    const element = document.getElementById(selector);
+    if (element)
+      element.innerText = text;
+  };
+  for (const dependency of ["chrome", "node", "electron"]) {
+    replaceText(`${dependency}-version`, process.versions[dependency]);
+  }
+});

@@ -12,8 +12,6 @@ export const useScreenStore = defineStore('screen', {
       resultString: '',
       configData: {},
       isConfigModify: false,
-      isTextShow: false,
-      popText: '',
       preSizeCount: 0,
       isCountModify: false,
       resultDataLength: 0,
@@ -53,13 +51,6 @@ export const useScreenStore = defineStore('screen', {
     },
     setModify(state: boolean) {
       this.isConfigModify = state
-    },
-    showText(text: string) {
-      this.setTextShow(true)
-      this.popText = text
-    },
-    setTextShow(state: boolean) {
-      this.isTextShow = state
     },
     setCountModify(state: boolean) {
       this.isCountModify = state

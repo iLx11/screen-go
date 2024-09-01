@@ -2,6 +2,7 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive, ref } from 'vue'
+import {XBox} from '@/utils/xBox/xBox.js'
 
 // const { ipcRenderer } = require('electron')
 const win = window as any
@@ -23,11 +24,11 @@ const chromeMode = () => {
 // 单色阈值调整
 const thresholdShow = () => {
   if(screenStore.configArray[4] == 0) {
-    screenStore.showText('彩色取模不支持调整阈值！')
+    XBox.popMes('彩色取模不支持调整阈值！')
     return
   }
   if(screenStore.editorPicData == '') {
-    screenStore.showText('请先编辑一张图片')
+    XBox.popMes('请先编辑一张图片')
     return 
   }
   screenStore.setThresholdShow(true)
@@ -36,7 +37,7 @@ const thresholdShow = () => {
 // 图片裁剪
 const cropShow = () => {
   if(screenStore.editorPicData == '') {
-    screenStore.showText('请先编辑一张图片')
+    XBox.popMes('请先编辑一张图片')
     return 
   }
   screenStore.setCropShow(true)

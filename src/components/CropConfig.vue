@@ -2,6 +2,8 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive, ref, watch } from 'vue'
+import {XBox} from '@/utils/xBox/xBox.js'
+
 // import { createCanvas } from 'canvas'
 // const { ipcRenderer } = require('electron')
 const win = window as any
@@ -30,7 +32,7 @@ onMounted(() => {
   tempImage.src = screenStore.editorPicData
   originImgSize.width = tempImage.width
   originImgSize.height = tempImage.height
-  screenStore.showText('按所需等比例设置数值即可（可缩放）')
+  XBox.popMes('按所需等比例设置数值即可（可缩放）')
   shadowImg.value.src = screenStore.editorPicData
   cropImg.value.src = screenStore.editorPicData
   cropBox.value.style.width = cropImg.value.width + 'px'
@@ -47,11 +49,11 @@ watch(
   cropSizeData,
   () => {
     if (!Number(cropSizeData['width']) || !Number(cropSizeData['height'])) {
-      screenStore.showText('请输入有效纯数字')
+      XBox.popMes('请输入有效纯数字')
       return
     }
     if (cropSizeData['width'] > cropImg.value.width || cropSizeData['height'] > cropImg.value.height) {
-      screenStore.showText('数值越界')
+      XBox.popMes('数值越界')
       cropSizeData['width'] = cropImg.value.width
       cropSizeData['height'] = cropImg.value.height
       cropBox.value.style.width = cropSizeData['width'] + 'px'

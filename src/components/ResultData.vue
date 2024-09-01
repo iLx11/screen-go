@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
+import {XBox} from '@/utils/xBox/xBox.js'
+
 
 const screenStore = useScreenStore()
 const resultString = ref<string>('')
@@ -11,7 +13,7 @@ watch(
     resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']}[${screenStore.resultDataLength}] = {\n  ${screenStore.resultString}\n};\n${(screenStore.configData as any).backComment}\n`
     if(resultString.value.length > 10000) {
         resultStrShow.value = resultString.value.substring(0, 10000)
-        screenStore.showText('数据过长，显示截取，复制时为全部文本')
+        XBox.popMes('数据过长，显示截取，复制时为全部文本')
         resultStrShow.value += '......（数据过长，显示已截取，点击复制时为全部文本）'
     } else
         resultStrShow.value =  resultString.value
@@ -35,7 +37,7 @@ watch(
       }
       if(resultString.value.length > 10000) {
         resultStrShow.value = resultString.value.substring(0, 10000)
-        screenStore.showText('数据过长，显示截取，复制时为全部文本')
+        XBox.popMes('数据过长，显示截取，复制时为全部文本')
         resultStrShow.value += '......（数据过长，显示已截取，点击复制时为全部文本）'
       } else
         resultStrShow.value =  resultString.value
@@ -57,11 +59,11 @@ const vCopy = {
         navigator.clipboard
           .writeText(el.$value)
           .then(() => {
-            screenStore.showText('复制成功!')
+            XBox.popMes('复制成功!')
           })
           .catch((error) => {
             console.error('复制失败:', error)
-            screenStore.showText('复制失败!')
+            XBox.popMes('复制失败!')
           })
       } else {
         const textarea = document.createElement('textarea')
@@ -72,7 +74,7 @@ const vCopy = {
         document.body.appendChild(textarea)
         textarea.select()
         if (document.execCommand('Copy')) {
-          screenStore.showText('复制成功!')
+          XBox.popMes('复制成功!')
         }
         document.body.removeChild(textarea)
       }

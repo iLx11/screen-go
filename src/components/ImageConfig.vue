@@ -3,6 +3,8 @@ import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import FuncBox from "../components/FuncBox.vue"
+import {XBox} from '@/utils/xBox/xBox.js'
+
 // const { ipcRenderer } = require('electron')
 const win = window as any
 
@@ -91,7 +93,7 @@ const resizePic = async () => {
     // 图片裁剪
     if (picSizeData.height != '' && picSizeData.width != '') {
       if(picSizeData.height == '0' || picSizeData.width == '0') {
-        screenStore.showText('请正确设置图片大小!')
+        XBox.popMes('请正确设置图片大小!')
         return
       }
       screenStore.setWaitExecute(true)
@@ -99,12 +101,12 @@ const resizePic = async () => {
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'
-      screenStore.showText('执行完成')
+      XBox.popMes('执行完成')
       screenStore.setWaitExecute(false)
       return
-    } else screenStore.showText('请设置图片的大小！')
+    } else XBox.popMes('请设置图片的大小！')
   } else {
-    if (screenStore.editorPicData == '') screenStore.showText('请先设置一个图片！')
+    if (screenStore.editorPicData == '') XBox.popMes('请先设置一个图片！')
   }
   if (screenStore.resizePicData != '' && screenStore.isResized == true) {
     screenStore.setResized(false)
@@ -125,7 +127,7 @@ const moveBoxLeft = ref<string>(2 + '%')
 const modeMethod = reactive<string[]>(['逐行式', '逐列式', '列行式', '行列式'])
 const setModeMethod = (k: number) => {
   if(!screenStore.configArray[4] && screenStore.configArray[1] != 0)
-    screenStore.showText('目前彩色取模只支持逐行哦！')
+    XBox.popMes('目前彩色取模只支持逐行哦！')
   moveBoxLeft.value = k * 25 + 2 + '%'
   screenStore.setConfigArray(1, k)
 }
@@ -264,7 +266,7 @@ watch(
       align-items: center;
       padding: 0.5em;
       background: var(--data-config-input-color);
-
+      
       > div {
         border: none;
       }
