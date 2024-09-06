@@ -20,9 +20,9 @@ const imgHandle = async () => {
     return
   }
   screenStore.setWaitExecute(true)
-  console.info('-----------------------------')
+  // console.info('-----------------------------')
   // + data:image/png;base64,
-  console.info(screenStore.editorPicData)
+  // console.info(screenStore.editorPicData)
   // 缩放图片
   const data = await win.myApi.resizeImage(
     screenStore.resizeWidth,
@@ -56,8 +56,6 @@ const imgHandle = async () => {
 
 // 视频取模处理
 const videoHandle = async () => {
-  console.info(screenStore.resizeWidth)
-  console.info(screenStore.resizeHeight)
   if (screenStore.resizeWidth == 0 || screenStore.resizeHeight == 0) {
     XBox.popMes('请设置要取模的大小！')
     return
@@ -85,7 +83,17 @@ const videoHandle = async () => {
     screenStore.configArray[3],
     screenStore.configArray[4]
   )
-  console.info(data)
+  // console.info(data)
+  let result = ''
+  data.forEach(o => {
+    result += `{${o.join(',')}},`
+  })
+  // console.info(data[0].length)
+  screenStore.setDataLength(data[0].length)
+  screenStore.setResultString(result)
+  XBox.popMes('生成成功！')
+  screenStore.setCountModify(true)
+  screenStore.setPreCount(presetCount)
   screenStore.setWaitExecute(false)
 }
 
@@ -118,7 +126,6 @@ const commit = async () => {
     await imgHandle()
     // 记录处理的大小预设
     imgPreSet()
-
     // 视频取模
   } else {
     await videoHandle()

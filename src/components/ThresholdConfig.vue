@@ -124,12 +124,12 @@ watch(
   transform: translate(-50%, -50%);
   box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 1);
-  border-radius: 14px;
+  border-radius: 25px;
   border: 0.2px solid rgba(51, 51, 51, 0.1);
   // box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
   padding: 2.5em;
   overflow: scroll;
-  z-index: 99999;
+  z-index: 999;
   display: flex;
   flex-flow: column nowrap;
   justify-content: space-between;

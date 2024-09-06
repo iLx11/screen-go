@@ -68,59 +68,36 @@ export const ffmpegListener = async () => {
         console.info('video frame error')
         return
       }
-      let resultData = ''
+      let resultData = []
       // 生成图片取模数据
       const files = fs.readdirSync(tempDirPath, {
         withFileTypes: true,
       })
 
-      try {
-        // 读取图片文件
-        const imageBuffer = fs.readFileSync(
-          path.join(tempDirPath, files[0].name)
-        )
-        // 将图片内容转换为 Base64
-        const base64Image = imageBuffer.toString('base64')
-        // 处理图片数据
-        const arrData = await ImageToHexArray.generate(
-          base64Image,
-          threshold,
-          configArray
-        )
-        console.info(arrData)
-
-        console.info('------------- do')
-      } catch (error) {
-        console.error('Error reading image:', error)
-        return null
+      for (let o of files) {
+        try {
+          // 读取图片文件
+          const imageBuffer = fs.readFileSync(path.join(tempDirPath, o.name))
+          // 将图片内容转换为 Base64
+          const base64Image = imageBuffer.toString('base64')
+          // 处理图片数据
+          const arrData = await ImageToHexArray.generate(
+            base64Image,
+            threshold,
+            configArray
+          )
+          // console.info('------------- do')
+          resultData.push(arrData)
+        } catch (error) {
+          console.error('Error reading image:', error)
+          return null
+        }
+        // 删除文件
+        fs.unlinkSync(path.join(tempDirPath, o.name))
       }
-
-      // for (let o of files) {
-      //   try {
-      //     // 读取图片文件
-      //     const imageBuffer = fs.readFileSync(path.join(tempDirPath, o.name))
-      //     // 将图片内容转换为 Base64
-      //     const base64Image = imageBuffer.toString('base64')
-      //     console.info(base64Image)
-      //     // 处理图片数据
-      //     // const data = await dataHandle(
-      //     //   base64Image,
-      //     //   threshold,
-      //     //   configArray
-      //     // )
-      //     console.info('------------- do')
-      //   } catch (error) {
-      //     console.error('Error reading image:', error)
-      //     return null
-      //   }
-      //   // 删除文件
-      //   fs.unlinkSync(path.join(tempDirPath, o.name))
-      // }
-
-      console.info('------------------- ok ')
-
+      // console.info('------------------- ok ')
       // 删除 temp 目录
-      // fs.rmdir(tempDirPath)
+      fs.rmdir(tempDirPath)
       return resultData
     }
   )

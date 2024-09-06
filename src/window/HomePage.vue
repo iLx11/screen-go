@@ -210,7 +210,7 @@ const setConfigShow = (state) => {
   left: 50%;
   transform: translate(-50%, -50%);
   background: rgba(51, 51, 51, 0.2);
-  border-radius: 15px;
+  border-radius: 25px;
   z-index: 998;
 }
 

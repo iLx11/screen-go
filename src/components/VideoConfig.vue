@@ -42,7 +42,7 @@ watch(
   () => {
     screenStore.setResizeWidth(parseInt(videoConfigValue.width))
     screenStore.setResizeHeight(parseInt(videoConfigValue.height))
-    console.info(screenStore.resizeWidth)
+    // console.info(screenStore.resizeWidth)
   },
   {
     immediate: false,

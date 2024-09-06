@@ -8,7 +8,7 @@ export default class ImageToHexArray {
     // console.info('config', config)
     this.configArray = config
     this.threshold = thresholdData
-    console.info('basetoimagedata ----------------')
+    // console.info('basetoimagedata ----------------')
     const picImageData = await this.base64ToImageData(picData)
     const bufferData = this.imageDataToHexArray(picImageData)
     return this.configArray[3] == 0
