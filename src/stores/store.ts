@@ -1,4 +1,4 @@
-import { defineStore } from "pinia";
+import { defineStore } from 'pinia'
 
 export const useScreenStore = defineStore('screen', {
   state: () => {
@@ -21,7 +21,11 @@ export const useScreenStore = defineStore('screen', {
       cropWidthData: 0,
       cropHeightData: 0,
       isCroped: false,
-      waitExecute: false
+      waitExecute: false,
+      videoDur: 0,
+      videoFrame: 0,
+      curMode: false,
+      videoPath: ''
     }
   },
   actions: {
@@ -81,6 +85,15 @@ export const useScreenStore = defineStore('screen', {
     },
     setWaitExecute(state: boolean) {
       this.waitExecute = state
+    },
+    setVideoDur(data: number) {
+      this.videoDur = data
+    },
+    setVideoFrame(data: number) {
+      this.videoFrame = data
+    },
+    setVideoPath(path: string) {
+      this.videoPath = path
     }
-  }
+  },
 })

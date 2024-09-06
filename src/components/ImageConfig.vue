@@ -2,8 +2,8 @@
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
-import FuncBox from "../components/FuncBox.vue"
-import {XBox} from '@/utils/xBox/xBox.js'
+import FuncBox from '../components/FuncBox.vue'
+import { XBox } from '@/utils/xBox/xBox.js'
 
 // const { ipcRenderer } = require('electron')
 const win = window as any
@@ -27,30 +27,37 @@ onMounted(() => {
 const resizeText = ref<string>('图片缩放预览')
 const picSizeData = reactive({
   width: '',
-  height: ''
+  height: '',
 })
 
-watch(() => screenStore.configArray[4], () => {
-  if(screenStore.configArray[4]) {
-    setLatticeFormat(1)
-    setModeMethod(2)
-    setModeDirection(0)
-    setOutputDecimal(0)
-  }else {
-    setLatticeFormat(1)
-    setModeMethod(0)
-    setModeDirection(0)
-    setOutputDecimal(0)
+watch(
+  () => screenStore.configArray[4],
+  () => {
+    if (screenStore.configArray[4]) {
+      setLatticeFormat(1)
+      setModeMethod(2)
+      setModeDirection(0)
+      setOutputDecimal(0)
+    } else {
+      setLatticeFormat(1)
+      setModeMethod(0)
+      setModeDirection(0)
+      setOutputDecimal(0)
+    }
   }
-})
+)
 
-watch(() => screenStore.isCroped, () => {
+watch(
+  () => screenStore.isCroped,
+  () => {
     picSizeData.width = screenStore.resizeWidth.toString()
     picSizeData.height = screenStore.resizeHeight.toString()
-}, {
-  deep: true,
-  immediate: true
-})
+  },
+  {
+    deep: true,
+    immediate: true,
+  }
+)
 
 watch(
   picSizeData,
@@ -60,7 +67,7 @@ watch(
   },
   {
     deep: true,
-    immediate: false
+    immediate: false,
   }
 )
 
@@ -73,12 +80,12 @@ watch(
       screenStore.setCountModify(false)
       preSize[screenStore.preSizeCount] = {
         width: picSizeData.width,
-        height: picSizeData.height
+        height: picSizeData.height,
       }
     }
   },
   {
-    immediate: true
+    immediate: true,
   }
 )
 
@@ -92,12 +99,17 @@ const resizePic = async () => {
   if (screenStore.editorPicData != '' && screenStore.isResized == false) {
     // 图片裁剪
     if (picSizeData.height != '' && picSizeData.width != '') {
-      if(picSizeData.height == '0' || picSizeData.width == '0') {
+      if (picSizeData.height == '0' || picSizeData.width == '0') {
         XBox.popMes('请正确设置图片大小!')
         return
       }
       screenStore.setWaitExecute(true)
-      const data = await win.myApi.resizeImage(parseInt(picSizeData.width), parseInt(picSizeData.height), screenStore.editorPicData, screenStore.configArray[4])
+      const data = await win.myApi.resizeImage(
+        parseInt(picSizeData.width),
+        parseInt(picSizeData.height),
+        screenStore.editorPicData,
+        screenStore.configArray[4]
+      )
       screenStore.setResizePicData(data)
       screenStore.setResized(true)
       resizeText.value = '返回原始图片'
@@ -126,7 +138,7 @@ const setLatticeFormat = (k: number) => {
 const moveBoxLeft = ref<string>(2 + '%')
 const modeMethod = reactive<string[]>(['逐行式', '逐列式', '列行式', '行列式'])
 const setModeMethod = (k: number) => {
-  if(!screenStore.configArray[4] && screenStore.configArray[1] != 0)
+  if (!screenStore.configArray[4] && screenStore.configArray[1] != 0)
     XBox.popMes('目前彩色取模只支持逐行哦！')
   moveBoxLeft.value = k * 25 + 2 + '%'
   screenStore.setConfigArray(1, k)
@@ -152,7 +164,7 @@ watch(
   },
   {
     deep: true,
-    immediate: true
+    immediate: true,
   }
 )
 </script>
@@ -165,47 +177,89 @@ watch(
       </div>
       <div id="resize-config-box">
         <div class="input-group">
-          <input type="text" class="input" v-model="picSizeData.width" />
+          <input
+            type="text"
+            class="input"
+            v-model="picSizeData.width"
+          />
           <label class="user-label">宽度:</label>
         </div>
         <div class="input-group">
-          <input type="text" class="input" v-model="picSizeData.height" />
+          <input
+            type="text"
+            class="input"
+            v-model="picSizeData.height"
+          />
           <label class="user-label">高度:</label>
         </div>
       </div>
       <div id="size-choose-box">
-        <div v-for="(v, k) in preSize" :key="k" @click="setPreSize(v)">{{ v['width'] }} - {{ v['height'] }}</div>
+        <div
+          v-for="(v, k) in preSize"
+          :key="k"
+          @click="setPreSize(v)"
+        >
+          {{ v['width'] }} - {{ v['height'] }}
+        </div>
       </div>
       <div @click="resizePic">{{ resizeText }}</div>
     </div>
     <div id="img-data-config">
       <div class="div1">点阵<br />格式</div>
       <div class="div2">
-        <div v-for="(v, k) in latticeFormat" :key="k" @click="setLatticeFormat(k)">
+        <div
+          v-for="(v, k) in latticeFormat"
+          :key="k"
+          @click="setLatticeFormat(k)"
+        >
           {{ v }}
         </div>
-        <div id="format-move-box" :style="{ left: formatBoxLeft }"></div>
+        <div
+          id="format-move-box"
+          :style="{ left: formatBoxLeft }"
+        ></div>
       </div>
       <div class="div3">取模方式</div>
       <div class="div4">
-        <div v-for="(v, k) in modeMethod" :key="k" @click="setModeMethod(k)">
+        <div
+          v-for="(v, k) in modeMethod"
+          :key="k"
+          @click="setModeMethod(k)"
+        >
           {{ v }}
         </div>
-        <div id="mode-move-box" :style="{ left: moveBoxLeft }"></div>
+        <div
+          id="mode-move-box"
+          :style="{ left: moveBoxLeft }"
+        ></div>
       </div>
       <div class="div5">取模走向</div>
       <div class="div6">
-        <div v-for="(v, k) in modeDirection" :key="k" @click="setModeDirection(k)">
+        <div
+          v-for="(v, k) in modeDirection"
+          :key="k"
+          @click="setModeDirection(k)"
+        >
           {{ v }}
         </div>
-        <div id="mode-direction-move-box" :style="{ left: moveDirectionBoxLeft }"></div>
+        <div
+          id="mode-direction-move-box"
+          :style="{ left: moveDirectionBoxLeft }"
+        ></div>
       </div>
       <div class="div7">输出进制</div>
       <div class="div8">
-        <div v-for="(v, k) in outputDecimal" :key="k" @click="setOutputDecimal(k)">
+        <div
+          v-for="(v, k) in outputDecimal"
+          :key="k"
+          @click="setOutputDecimal(k)"
+        >
           {{ v }}
         </div>
-        <div id="output-move-box" :style="{ left: outputBoxLeft }"></div>
+        <div
+          id="output-move-box"
+          :style="{ left: outputBoxLeft }"
+        ></div>
       </div>
       <div class="div9"></div>
       <div class="div10"></div>
@@ -227,7 +281,7 @@ watch(
   border: none;
 
   > div {
-    width: 48.5%;
+    width: 49%;
     height: 100%;
     border-radius: 10px;
     border: none;
@@ -266,9 +320,10 @@ watch(
       align-items: center;
       padding: 0.5em;
       background: var(--data-config-input-color);
-      
+
       > div {
         border: none;
+        overflow: visible;
       }
 
       .input-group {
@@ -289,7 +344,7 @@ watch(
         .input {
           width: 100%;
           height: 100%;
-          border-radius: 12px;
+          border-radius: 15px;
           display: block;
           border: none;
           font-size: 18px;
@@ -299,8 +354,8 @@ watch(
         }
 
         .user-label {
-          width: 29px;
-          height: 50%;
+          width: auto;
+          height: auto;
           position: absolute;
           font-size: 12px;
           left: 6%;
@@ -402,7 +457,8 @@ watch(
         transition: all 0.6s ease-in-out;
         border-radius: 8px;
         border: 0.1px solid rgba(51, 51, 51, 0.2);
-        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023),
+          21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -437,7 +493,8 @@ watch(
         transition: all 0.6s ease-in-out;
         border: 0.1px solid rgba(51, 51, 51, 0.2);
         border-radius: 8px;
-        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023),
+          21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -471,7 +528,8 @@ watch(
         border-radius: 8px;
         border: 0.1px solid rgba(51, 51, 51, 0.2);
         transition: all 0.5s ease-in-out;
-        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023),
+          21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 
@@ -505,7 +563,8 @@ watch(
         border-radius: 8px;
         border: 0.1px solid rgba(51, 51, 51, 0.15);
         transition: all 0.5s ease-in-out;
-        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023), 21px 4px 80px rgba(0, 0, 0, 0.07);
+        box-shadow: 2.6px 0.5px 10px rgba(0, 0, 0, 0.023),
+          21px 4px 80px rgba(0, 0, 0, 0.07);
       }
     }
 

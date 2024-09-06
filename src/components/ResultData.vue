@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
-import {XBox} from '@/utils/xBox/xBox.js'
-
+import { XBox } from '@/utils/xBox/xBox.js'
 
 const screenStore = useScreenStore()
 const resultString = ref<string>('')
@@ -10,13 +9,26 @@ const resultStrShow = ref<string>('')
 watch(
   () => screenStore.resultString,
   () => {
-    resultString.value = `${screenStore.configData['preComment']}\n${screenStore.configData['arrayName']}[${screenStore.resultDataLength}] = {\n  ${screenStore.resultString}\n};\n${(screenStore.configData as any).backComment}\n`
-    if(resultString.value.length > 10000) {
-        resultStrShow.value = resultString.value.substring(0, 10000)
-        XBox.popMes('数据过长，显示截取，复制时为全部文本')
-        resultStrShow.value += '......（数据过长，显示已截取，点击复制时为全部文本）'
-    } else
-        resultStrShow.value =  resultString.value
+    if (!screenStore.curMode) {
+      resultString.value = `${screenStore.configData['preComment']}\n${
+        screenStore.configData['arrayName']
+      }[${screenStore.resultDataLength}] = {\n  ${
+        screenStore.resultString
+      }\n};\n${(screenStore.configData as any).backComment}\n`
+    } else {
+      resultString.value = `${screenStore.configData['preComment']}\n${
+        screenStore.configData['arrayName']
+    }[${screenStore.videoDur * screenStore.videoFrame}][${screenStore.resultDataLength}] = {\n  ${
+        screenStore.resultString
+      }\n};\n${(screenStore.configData as any).backComment}\n`
+    }
+
+    if (resultString.value.length > 10000) {
+      resultStrShow.value = resultString.value.substring(0, 10000)
+      XBox.popMes('数据过长，显示截取，复制时为全部文本')
+      resultStrShow.value +=
+        '......（数据过长，显示已截取，点击复制时为全部文本）'
+    } else resultStrShow.value = resultString.value
   }
 )
 watch(
@@ -30,17 +42,23 @@ watch(
       let repS2 = screenStore.configData['replaceSource2']
       let repT2 = screenStore.configData['replaceTarget2']
       if (repS1 != '') {
-        resultString.value = resultString.value.replace(eval('/' + repS1 + '/gi'), repT1)
+        resultString.value = resultString.value.replace(
+          eval('/' + repS1 + '/gi'),
+          repT1
+        )
       }
       if (repS2 != '') {
-        resultString.value = resultString.value.replace(eval('/' + repS2 + '/gi'), repT2)
+        resultString.value = resultString.value.replace(
+          eval('/' + repS2 + '/gi'),
+          repT2
+        )
       }
-      if(resultString.value.length > 10000) {
+      if (resultString.value.length > 10000) {
         resultStrShow.value = resultString.value.substring(0, 10000)
         XBox.popMes('数据过长，显示截取，复制时为全部文本')
-        resultStrShow.value += '......（数据过长，显示已截取，点击复制时为全部文本）'
-      } else
-        resultStrShow.value =  resultString.value
+        resultStrShow.value +=
+          '......（数据过长，显示已截取，点击复制时为全部文本）'
+      } else resultStrShow.value = resultString.value
     }
   }
 )
@@ -89,13 +107,16 @@ const vCopy = {
   //指令与元素解绑的时候
   unMounted(el) {
     el.removeEventListener('click', el.handler)
-  }
+  },
 }
 </script>
 
 <template>
   <!-- <PopBox /> -->
-  <div id="result-data-content" v-copy="resultString">
+  <div
+    id="result-data-content"
+    v-copy="resultString"
+  >
     {{ resultStrShow }}
     <div id="info">点击文本可复制</div>
   </div>
@@ -127,9 +148,9 @@ const vCopy = {
   display: flex;
   justify-content: center;
   align-items: center;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   font-size: 12px;
   color: var(--text-color-1);
-
 }
 </style>

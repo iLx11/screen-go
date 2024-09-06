@@ -1,79 +1,25 @@
-const os = require('os')
-const path = require('path')
-const Crypto = require('crypto')
-// png 文件转像素
-const pngparse = require('pngparse')
 const sharp = require('sharp')
-// const mime = require('mime')
-const fs = require('fs-extra')
 
-export default class ImageToHexArray{
+export default class ImageToHexArray {
   static configArray
   static threshold
-  static generate = (picData, thresholdData, config) => {
+  static generate = async (picData, thresholdData, config) => {
     // console.info('thresholdData', thresholdData)
     // console.info('config', config)
     this.configArray = config
     this.threshold = thresholdData
-    return new Promise((resolve, reject) => {
-      this.convert(this.generateTemFile(picData), function (err, hex) {
-        if (!err) {
-          // let dataList = hex.split(',')
-          resolve(hex)
-        } else {
-          reject(err)
-        }
-      })
-    })
-  }
-
-  // 根据 base64 生成临时文件
-  static generateTemFile(base64) {
-    let hashname = Crypto.createHash('md5').update('angular-tmp-img').digest('hex') + '.bmp'
-    let temFilePath = path.join(os.tmpdir(), hashname)
-    let dataBuffer = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ''), 'base64')
-    fs.writeFileSync(temFilePath, dataBuffer)
-    return temFilePath
-  }
-
-  // ---------------------------------- TODO ---------------------------------------
-  static convert(filename, callback) {
-    let _this = this
-    // 获取文件类型
-    // let ext = mime.getType(filename)
-    // if (ext == 'image/png') {
-    // 图片取模
-    _this.pngtolcd(filename, function (err, buffer) {
-      err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString('hex')) : buffer)
-    })
-  }
-
-  // 图片取模
-  static pngtolcd = (filename, callback) => {
-    let _this = this
-    // ------------------------- TODO ---------------------------------------
-    // 获取图片的数据对象
-    pngparse.parseFile(filename, function (err, img) {
-      if (err) {
-        let bufferStirng = _this.imgFileToBuffer(filename)
-        return callback(null, bufferStirng)
-      }
-      let buffer = _this.imageDataToHexArray(img)
-      callback(null, buffer)
-    })
-  }
-
-  // 图像转 buffer 数组
-  static imgFileToBuffer = (filename) => {
-    sharp(filename).toBuffer().then(outputBuffer => {
-      return outputBuffer
-    })
+    console.info('basetoimagedata ----------------')
+    const picImageData = await this.base64ToImageData(picData)
+    const bufferData = this.imageDataToHexArray(picImageData)
+    return this.configArray[3] == 0
+      ? this.hex2hex(bufferData.toString('hex'))
+      : bufferData
   }
 
   // ImageData 对象转 hexArray
   static imageDataToHexArray = (imageData) => {
     // 创建 ImageData 对象，重新构建 data
-    const pimage = this.createImageDate(imageData)
+    const pimage = this.createImageData(imageData)
     // 获取像素数据、高度、宽度和透明度等信息
     let pixels = pimage.data
     let height = pimage.height
@@ -97,7 +43,11 @@ export default class ImageToHexArray{
         // 存储转换后的像素值到数组中
         unpackedBuffer[i / depth] = pixelVal
       }
-      return this.imageSamplingArr[this.configArray[1]](unpackedBuffer, width, height)
+      return this.imageSamplingArr[this.configArray[1]](
+        unpackedBuffer,
+        width,
+        height
+      )
     } else {
       // 彩色图片取模, pixels 为图片的 r, g, b, a 信息
       return this.colorImageSampling(pixels, width, height)
@@ -107,9 +57,10 @@ export default class ImageToHexArray{
   static colorImageSampling = (pixels, width, height) => {
     // console.info('unpackedBufferL -> ', unpackedBuffer.length)
     // 缓冲数组，作为存储 16 位真彩色
-    const buffer = Buffer.alloc((width * height) * 2)
+    const buffer = Buffer.alloc(width * height * 2)
     // console.info('bufferL -> ', buffer.length);
-    let i = 0, j = 0
+    let i = 0,
+      j = 0
     while (i < buffer.length && j < pixels.length) {
       buffer[i] |= (pixels[j] >> 3) << 3
       buffer[i] |= pixels[j + 1] >> 5
@@ -136,12 +87,15 @@ export default class ImageToHexArray{
       // 确定取模的 page
       let page = y
       // 每个 page 的字节的位
-      let pageShift = 0x01 << (x % 8)
+      let pageShift = 0x01 << x % 8
       if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * Math.floor(width / 8) + Math.floor(x / 8)
       // 根据转换后的像素值设置缓冲区的相应位
-      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0)
+        unpackedBuffer[i] === 0
+          ? (unpackedBuffer[i] = 1)
+          : (unpackedBuffer[i] = 0)
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -163,12 +117,15 @@ export default class ImageToHexArray{
       // 确定取模的 page
       let page = x
       // 每个 page 的字节的位
-      let pageShift = 0x01 << (y % 8)
+      let pageShift = 0x01 << y % 8
       if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (y % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * Math.floor(height / 8) + Math.floor(y / 8)
       // 根据转换后的像素值设置缓冲区的相应位
-      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0)
+        unpackedBuffer[i] === 0
+          ? (unpackedBuffer[i] = 1)
+          : (unpackedBuffer[i] = 0)
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -195,7 +152,10 @@ export default class ImageToHexArray{
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       page === 0 ? (byte = x) : (byte = x + width * page)
       // 根据转换后的像素值设置缓冲区的相应位
-      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0)
+        unpackedBuffer[i] === 0
+          ? (unpackedBuffer[i] = 1)
+          : (unpackedBuffer[i] = 0)
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -218,12 +178,15 @@ export default class ImageToHexArray{
       // 确定取模的 page
       let page = Math.floor(x / 8)
       // 每个 page 的字节的位
-      let pageShift = 0x01 << (x % 8)
+      let pageShift = 0x01 << x % 8
       if (this.configArray[2] != 0) pageShift = 0x01 << (7 - (x % 8))
       // 计算字节位置，后面的 page 的字节需要加上前面的 page 的位置
       byte = page * height + y
       // 根据转换后的像素值设置缓冲区的相应位
-      if (this.configArray[0] !== 0) unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0
+      if (this.configArray[0] !== 0)
+        unpackedBuffer[i] === 0
+          ? (unpackedBuffer[i] = 1)
+          : (unpackedBuffer[i] = 0)
       if (unpackedBuffer[i] === 0) {
         buffer[byte] |= pageShift
       } else {
@@ -235,10 +198,15 @@ export default class ImageToHexArray{
   }
 
   // 取模方式数组
-  static imageSamplingArr = [this.ImageSamplingRow, this.ImageSamplingCol, this.ImageSamplingColRow, this.ImageSamplingRowCol]
+  static imageSamplingArr = [
+    this.ImageSamplingRow,
+    this.ImageSamplingCol,
+    this.ImageSamplingColRow,
+    this.ImageSamplingRowCol,
+  ]
 
   // 创建 ImageData 对象
-  static createImageDate = (imageData) => {
+  static createImageData = (imageData) => {
     // 创建一个缓冲区，用于存储图像数据
     let buffer = Buffer.alloc(imageData.width * imageData.height * 4)
     // 重组 ImageData 的数据
@@ -249,8 +217,8 @@ export default class ImageToHexArray{
       }
     }
     // 更新图像数据为缓冲区中的数据
-    // imageData.data = buffer
-    imageData.data.set(buffer)
+    imageData.data = buffer
+    // imageData.data.set(buffer)
     return imageData
     // return new ImageData(new Uint8ClampedArray(buffer), imageData.width, imageData.height)
   }
@@ -293,21 +261,45 @@ export default class ImageToHexArray{
     return ((r << 24) | (g << 16) | (b << 8) | a) >>> 0
   }
 
+  // Buffer 转 ImageData 对象
+  static bufferToImageData = async (buffer) => {
+    // 使用 sharp 从 Buffer 中读取图像
+    const { data, info } = await sharp(buffer)
+      // 获取原始像素数据（未压缩的像素格式）
+      .raw()
+      // 确保包含 Alpha 通道（透明度）
+      .ensureAlpha()
+      // 返回像素数据和图像信息
+      .toBuffer({ resolveWithObject: true })
+
+    // 根据 sharp 返回的图片信息构建 ImageData 结构
+    const channels = info.channels // 图像的通道数（如 3 = RGB, 4 = RGBA）
+    // console.log(data)
+    // 创建类似于浏览器中的 ImageData 对象
+    return {
+      width: info.width,
+      height: info.height,
+      // 像素数据
+      data: new Uint8ClampedArray(data),
+      channels,
+    }
+  }
+
+  // base64 转 ImageData 对象
+  static base64ToImageData = async (base64) => {
+    // 将 Base64 转换为 Buffer
+    const imgBuffer = Buffer.from(
+      base64.replace(/^data:image\/\w+;base64,/, ''),
+      'base64'
+    )
+    return await this.bufferToImageData(imgBuffer)
+  }
+
   // 十六进制数据加 '0x'
   static hex2hex = (hex) => {
     for (var bytes = [], c = 0; c < hex.length; c += 2) {
       bytes.push('0x' + hex.substr(c, 2))
     }
     return bytes
-  }
-
-  static pngtohexarray = (filename, callback) => {
-    this.pngtolcd(filename, function (err, buffer) {
-      if (err) {
-        callback(err, null)
-      } else {
-        callback(null, this.hex2hex(buffer.toString('hex')))
-      }
-    })
   }
 }

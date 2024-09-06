@@ -3,6 +3,7 @@ import WindowTools from '../components/tools/WindowTools.vue'
 import { onMounted, nextTick, ref, watch } from 'vue'
 import ImageEditor from '../components/ImageEditor.vue'
 import ImageConfig from '../components/ImageConfig.vue'
+import VideoConfig from '../components/VideoConfig.vue'
 import ResultDataConfig from '../components/ResultDataConfig.vue'
 import CommitBox from '../components/CommitBox.vue'
 import ResultData from '../components/ResultData.vue'
@@ -11,8 +12,7 @@ import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
-import {XBox} from '@/utils/xBox/xBox.js'
-
+import { XBox } from '@/utils/xBox/xBox.js'
 
 const screenStore = useScreenStore()
 
@@ -22,10 +22,6 @@ const thresholdShow = ref<boolean>(false)
 const cropShow = ref<boolean>(false)
 
 const screenImg = ref<HTMLElement | null>(null)
-
-onMounted(() => {
-  XBox.popMes("sdfasfasd")
-})
 
 const closeEditor = () => {
   if (!screenStore.waitExecute) {
@@ -68,7 +64,7 @@ watch(
   },
   {
     deep: true,
-    immediate: false
+    immediate: false,
   }
 )
 
@@ -85,7 +81,7 @@ watch(
   },
   {
     deep: true,
-    immediate: false
+    immediate: false,
   }
 )
 
@@ -93,14 +89,19 @@ watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value['src'] = `data:image/png;base64,${screenStore.resizePicData}`
-    } else if (screenStore.isResized == false && screenStore.editorPicData != '') {
+      screenImg.value[
+        'src'
+      ] = `data:image/png;base64,${screenStore.resizePicData}`
+    } else if (
+      screenStore.isResized == false &&
+      screenStore.editorPicData != ''
+    ) {
       screenImg.value['src'] = screenStore.editorPicData
     }
   },
   {
     deep: true,
-    immediate: false
+    immediate: false,
   }
 )
 
@@ -114,7 +115,7 @@ watch(
   },
   {
     deep: true,
-    immediate: true
+    immediate: true,
   }
 )
 
@@ -129,27 +130,65 @@ watch(
     }
   }
 )
+
+const configShow = ref<boolean>(false)
+const setConfigShow = (state) => {
+  configShow.value = state
+  screenStore.curMode = state
+}
 </script>
 
 <template>
   <CropConfig v-if="cropShow" />
   <thresholdConfig v-if="thresholdShow" />
-  <div id="cover" v-if="coverShow" @click="closeEditor"></div>
-  <div id="image-editor-box" v-if="editorShow">
-    <ImageEditor @editorCancle="editorCancle" @editorCommit="editorCommit" />
+  <div
+    id="cover"
+    v-if="coverShow"
+    @click="closeEditor"
+  ></div>
+  <div
+    id="image-editor-box"
+    v-if="editorShow"
+  >
+    <ImageEditor
+      @editorCancle="editorCancle"
+      @editorCommit="editorCommit"
+    />
   </div>
   <div class="container">
     <div id="head-tool-box"></div>
-    <div id="screen-box" @click="showEditor">
+    <div
+      id="screen-box"
+      @click="showEditor"
+      v-if="!configShow"
+    >
       <div>
-        <img id="screen-box-img" ref="screenImg" src="" alt="" />
+        <img
+          id="screen-box-img"
+          ref="screenImg"
+          src=""
+          alt=""
+        />
       </div>
     </div>
     <div id="result-data-box">
       <ResultData />
     </div>
-    <div id="config-tool-box">
+    <div
+      id="config-tool-box"
+      v-if="!configShow"
+    >
       <ImageConfig />
+    </div>
+    <div
+      id="video-config-box"
+      v-if="configShow"
+    >
+      <VideoConfig />
+    </div>
+    <div id="func-switch">
+      <div @click="setConfigShow(false)">图片取模</div>
+      <div @click="setConfigShow(true)">视频取模</div>
     </div>
     <div id="commit-box">
       <CommitBox />
@@ -179,7 +218,8 @@ watch(
   width: 87%;
   height: 87%;
   background: rgb(255, 255, 255);
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
   left: 50%;
@@ -193,8 +233,8 @@ watch(
 }
 
 .container {
-  width: 99%;
-  height: 99%;
+  width: 100%;
+  height: 100%;
   position: absolute;
   top: 50%;
   left: 50%;
@@ -220,10 +260,13 @@ watch(
     border: 0.2px solid rgba(51, 51, 51, 0.1);
     z-index: 999;
     box-sizing: border-box;
+    flex-grow: 0 !important;
+    overflow: hidden;
   }
 }
 
 #head-tool-box {
+  max-height: 54px;
   grid-area: 1 / 1 / 2 / 3;
   background: rgba(51, 51, 51, 0.05);
   border: none;
@@ -250,21 +293,25 @@ watch(
 
 #screen-box {
   grid-area: 2 / 1 / 6 / 2;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-
+  padding: 1.2em;
   > div {
-    width: 80%;
-    height: 80%;
+    // width: 88%;
+    // height: 88%;
+    width: 100%;
+    height: 100%;
     background: white;
     overflow: hidden;
-    border-radius: 11px;
-    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+    border-radius: 16px;
+    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+      7px 0px 81px -34px rgba(0, 0, 0, 0.12);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -282,14 +329,37 @@ watch(
 
 #result-data-box {
   grid-area: 2 / 2 / 9 / 3;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;
   padding: 1.5em;
 }
 
 #config-tool-box {
-  grid-area: 6 / 1 / 12 / 2;
+  grid-area: 6 / 1 / 11 / 2;
+}
+#video-config-box {
+  grid-area: 2 / 1 / 11 / 2;
+}
+
+#func-switch {
+  grid-area: 11 / 1 / 12 / 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px;
+  div {
+    width: 48.5%;
+    height: 100%;
+    background: rgb(232, 237, 237);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+  }
 }
 
 #commit-box {

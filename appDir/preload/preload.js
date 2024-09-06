@@ -1,5 +1,20 @@
 "use strict";
 const { contextBridge, ipcRenderer } = require("electron");
+const selectVideoFile = async () => {
+  return await ipcRenderer.invoke("select-video-file");
+};
+const getVideoFrameData = async (videPath, resizeWidth, resizeHeight, videoDur, videoFrame, threshold = 120, ...configArray) => {
+  return await ipcRenderer.invoke(
+    "get-video-frame-data",
+    videPath,
+    resizeWidth,
+    resizeHeight,
+    videoDur,
+    videoFrame,
+    threshold,
+    ...configArray
+  );
+};
 const minimizeWindow = () => {
   ipcRenderer.send("window-min");
 };
@@ -10,15 +25,25 @@ const closeWindow = () => {
   ipcRenderer.send("window-close");
 };
 const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) => {
-  const data = await ipcRenderer.invoke("pic-data-editor", resizeWidth, resizeHeight, editorPicData, colorMode);
-  return data;
+  return await ipcRenderer.invoke(
+    "pic-data-editor",
+    resizeWidth,
+    resizeHeight,
+    editorPicData,
+    colorMode
+  );
 };
 const generateResultArray = async (picData, threshold = 120, ...configArray) => {
-  const data = ipcRenderer.invoke("pic-data-parse", picData, threshold, ...configArray);
-  return data;
+  return ipcRenderer.invoke(
+    "pic-data-parse",
+    picData,
+    threshold,
+    ...configArray
+  );
 };
 contextBridge.exposeInMainWorld("myApi", {
-  // handleSend: handleSend
+  getVideoFrameData,
+  selectVideoFile,
   minimizeWindow,
   maximizeWindow,
   closeWindow,

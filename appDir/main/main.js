@@ -6,14 +6,14 @@ const require$$0 = require("constants");
 const require$$0$1 = require("stream");
 const require$$4 = require("util");
 const require$$5 = require("assert");
-const { ipcMain: ipcMain$2, BrowserWindow: BrowserWindow$1 } = require("electron");
+const { ipcMain: ipcMain$3, BrowserWindow: BrowserWindow$1 } = require("electron");
 const windowControlListener = () => {
-  ipcMain$2.on("window-min", (event) => {
+  ipcMain$3.on("window-min", (event) => {
     const webContent = event.sender;
     const win = BrowserWindow$1.fromWebContents(webContent);
     win.minimize();
   });
-  ipcMain$2.on("window-max", (event) => {
+  ipcMain$3.on("window-max", (event) => {
     const webContent = event.sender;
     const win = BrowserWindow$1.fromWebContents(webContent);
     if (win.isMaximized()) {
@@ -22,13 +22,13 @@ const windowControlListener = () => {
       win.maximize();
     }
   });
-  ipcMain$2.on("window-close", (event) => {
+  ipcMain$3.on("window-close", (event) => {
     const webContent = event.sender;
     const win = BrowserWindow$1.fromWebContents(webContent);
     win.close();
   });
 };
-const path$f = require("path");
+const path$e = require("path");
 const _CreateWindow = class _CreateWindow2 {
   constructor() {
     this.getWindowById = (id) => {
@@ -99,7 +99,7 @@ const _CreateWindow = class _CreateWindow2 {
         webSecurity: false,
         // sandbox: false,
         nodeIntegration: true,
-        preload: path$f.join(__dirname, "../preload/preload.js")
+        preload: path$e.join(__dirname, "../preload/preload.js")
       }
     };
   }
@@ -168,8 +168,276 @@ const _CreateWindow = class _CreateWindow2 {
 _CreateWindow.group = [];
 _CreateWindow.main = null;
 let CreateWindow = _CreateWindow;
+const sharp$1 = require("sharp");
+const _ImageToHexArray = class _ImageToHexArray2 {
+};
+_ImageToHexArray.generate = async (picData, thresholdData, config) => {
+  _ImageToHexArray.configArray = config;
+  _ImageToHexArray.threshold = thresholdData;
+  console.info("basetoimagedata ----------------");
+  const picImageData = await _ImageToHexArray.base64ToImageData(picData);
+  const bufferData = _ImageToHexArray.imageDataToHexArray(picImageData);
+  return _ImageToHexArray.configArray[3] == 0 ? _ImageToHexArray.hex2hex(bufferData.toString("hex")) : bufferData;
+};
+_ImageToHexArray.imageDataToHexArray = (imageData) => {
+  const pimage = _ImageToHexArray.createImageData(imageData);
+  let pixels = pimage.data;
+  let height = pimage.height;
+  let width = pimage.width;
+  let pixelsLen = pixels.length;
+  if (_ImageToHexArray.configArray[4] == 1) {
+    let threshold = _ImageToHexArray.threshold;
+    let unpackedBuffer = [];
+    let depth = 4;
+    let pixelVal;
+    for (let i = 0; i < pixelsLen; i += depth) {
+      pixelVal = pixels[i + 1] = pixels[i + 2] = pixels[i];
+      pixelVal > threshold ? pixelVal = 1 : pixelVal = 0;
+      unpackedBuffer[i / depth] = pixelVal;
+    }
+    return _ImageToHexArray.imageSamplingArr[_ImageToHexArray.configArray[1]](
+      unpackedBuffer,
+      width,
+      height
+    );
+  } else {
+    return _ImageToHexArray.colorImageSampling(pixels, width, height);
+  }
+};
+_ImageToHexArray.colorImageSampling = (pixels, width, height) => {
+  const buffer = Buffer.alloc(width * height * 2);
+  let i = 0, j = 0;
+  while (i < buffer.length && j < pixels.length) {
+    buffer[i] |= pixels[j] >> 3 << 3;
+    buffer[i] |= pixels[j + 1] >> 5;
+    buffer[i + 1] |= pixels[j + 1] >> 2 << 5;
+    buffer[i + 1] |= pixels[j + 2] >> 3;
+    if (_ImageToHexArray.configArray[0] == 0 || _ImageToHexArray.configArray[2] == 1) {
+      buffer[i] = ~buffer[i];
+      buffer[i + 1] = ~buffer[i + 1];
+    }
+    i += 2;
+    j += 4;
+  }
+  return buffer;
+};
+_ImageToHexArray.ImageSamplingRow = (unpackedBuffer, width, height) => {
+  const buffer = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = y;
+    let pageShift = 1 << x % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - x % 8;
+    byte = page * Math.floor(width / 8) + Math.floor(x / 8);
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer[byte] |= pageShift;
+    } else {
+      buffer[byte] &= ~pageShift;
+    }
+  }
+  return buffer;
+};
+_ImageToHexArray.ImageSamplingCol = (unpackedBuffer, width, height) => {
+  const buffer = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = x;
+    let pageShift = 1 << y % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - y % 8;
+    byte = page * Math.floor(height / 8) + Math.floor(y / 8);
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer[byte] |= pageShift;
+    } else {
+      buffer[byte] &= ~pageShift;
+    }
+  }
+  return buffer;
+};
+_ImageToHexArray.ImageSamplingColRow = (unpackedBuffer, width, height) => {
+  const buffer = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = Math.floor(y / 8);
+    let pageShift = 1 << y - 8 * page;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - (y - 8 * page);
+    page === 0 ? byte = x : byte = x + width * page;
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer[byte] |= pageShift;
+    } else {
+      buffer[byte] &= ~pageShift;
+    }
+  }
+  return buffer;
+};
+_ImageToHexArray.ImageSamplingRowCol = (unpackedBuffer, width, height) => {
+  const buffer = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = Math.floor(x / 8);
+    let pageShift = 1 << x % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - x % 8;
+    byte = page * height + y;
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer[byte] |= pageShift;
+    } else {
+      buffer[byte] &= ~pageShift;
+    }
+  }
+  return buffer;
+};
+_ImageToHexArray.imageSamplingArr = [
+  _ImageToHexArray.ImageSamplingRow,
+  _ImageToHexArray.ImageSamplingCol,
+  _ImageToHexArray.ImageSamplingColRow,
+  _ImageToHexArray.ImageSamplingRowCol
+];
+_ImageToHexArray.createImageData = (imageData) => {
+  let buffer = Buffer.alloc(imageData.width * imageData.height * 4);
+  for (let y = 0, pos = 0; y < imageData.height; y++) {
+    for (let x = 0; x < imageData.width; x++) {
+      buffer.writeUInt32BE(_ImageToHexArray.getPixel(imageData, x, y), pos);
+      pos += 4;
+    }
+  }
+  imageData.data = buffer;
+  return imageData;
+};
+_ImageToHexArray.getPixel = (image, x, y) => {
+  x = x | 0;
+  y = y | 0;
+  if (x < 0 || y < 0 || x >= image.width || y >= image.height)
+    return 0;
+  let index = (y * image.width + x) * image.channels, r, g, b, a;
+  switch (image.channels) {
+    case 1:
+      r = g = b = image.data[index];
+      a = 255;
+      break;
+    case 2:
+      r = g = b = image.data[index];
+      a = image.data[index + 1];
+      break;
+    case 3:
+      r = image.data[index];
+      g = image.data[index + 1];
+      b = image.data[index + 2];
+      a = 255;
+      break;
+    case 4:
+      r = image.data[index];
+      g = image.data[index + 1];
+      b = image.data[index + 2];
+      a = image.data[index + 3];
+      break;
+  }
+  return (r << 24 | g << 16 | b << 8 | a) >>> 0;
+};
+_ImageToHexArray.bufferToImageData = async (buffer) => {
+  const { data, info } = await sharp$1(buffer).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
+  const channels = info.channels;
+  return {
+    width: info.width,
+    height: info.height,
+    // 像素数据
+    data: new Uint8ClampedArray(data),
+    channels
+  };
+};
+_ImageToHexArray.base64ToImageData = async (base64) => {
+  const imgBuffer = Buffer.from(
+    base64.replace(/^data:image\/\w+;base64,/, ""),
+    "base64"
+  );
+  return await _ImageToHexArray.bufferToImageData(imgBuffer);
+};
+_ImageToHexArray.hex2hex = (hex) => {
+  for (var bytes = [], c = 0; c < hex.length; c += 2) {
+    bytes.push("0x" + hex.substr(c, 2));
+  }
+  return bytes;
+};
+let ImageToHexArray = _ImageToHexArray;
+const { ipcMain: ipcMain$2 } = require("electron");
+const sharp = require("sharp");
+const Crypto = require("crypto");
+const os = require("os");
+const fs$j = require("fs-extra");
+const path$d = require("path");
+const imgEditorHandle = async (width, height, picData, colorMode) => {
+  if (width == 0 || height == 0)
+    return;
+  let hashname = Crypto.createHash("md5").update("angular-cir-img").digest("hex") + ".bmp";
+  let originFilePath = path$d.join(os.tmpdir(), hashname);
+  let dataBuffer = Buffer.from(
+    picData.replace(/^data:image\/\w+;base64,/, ""),
+    "base64"
+  );
+  await fs$j.writeFile(originFilePath, dataBuffer);
+  return new Promise((resolve, reject) => {
+    if (!colorMode) {
+      sharp(originFilePath).resize(width, height).toBuffer().then((outputBuffer) => {
+        resolve(outputBuffer.toString("base64"));
+      });
+    } else {
+      sharp(originFilePath).resize(width, height).greyscale().toBuffer().then((outputBuffer) => {
+        resolve(outputBuffer.toString("base64"));
+      });
+    }
+  });
+};
+const picDataListener = () => {
+  ipcMain$2.handle(
+    "pic-data-editor",
+    async (event, width, height, picData, colorMode) => {
+      const result = await imgEditorHandle(width, height, picData, colorMode);
+      return result;
+    }
+  );
+  ipcMain$2.handle(
+    "pic-data-parse",
+    async (event, data, threshold, ...configArray) => {
+      const result = await ImageToHexArray.generate(
+        data,
+        threshold,
+        configArray
+      );
+      return result;
+    }
+  );
+};
+const Store = require("electron-store");
+const store = new Store();
+const setItem = (name, item) => {
+  store.set(name, item);
+};
+const getItem = (name) => {
+  return store.get(name);
+};
+const delItem = (name) => {
+  store.delete(name);
+};
 var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
-var fs$j = {};
+var fs$i = {};
 var universalify$1 = {};
 universalify$1.fromCallback = function(fn) {
   return Object.defineProperty(function(...args) {
@@ -612,7 +880,7 @@ function clone$1(obj) {
   });
   return copy2;
 }
-var fs$i = require$$0$2;
+var fs$h = require$$0$2;
 var polyfills = polyfills$1;
 var legacy = legacyStreams;
 var clone = clone_1;
@@ -644,12 +912,12 @@ else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
     m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
     console.error(m);
   };
-if (!fs$i[gracefulQueue]) {
+if (!fs$h[gracefulQueue]) {
   var queue = commonjsGlobal[gracefulQueue] || [];
-  publishQueue(fs$i, queue);
-  fs$i.close = function(fs$close) {
+  publishQueue(fs$h, queue);
+  fs$h.close = function(fs$close) {
     function close(fd, cb) {
-      return fs$close.call(fs$i, fd, function(err) {
+      return fs$close.call(fs$h, fd, function(err) {
         if (!err) {
           resetQueue();
         }
@@ -661,31 +929,31 @@ if (!fs$i[gracefulQueue]) {
       value: fs$close
     });
     return close;
-  }(fs$i.close);
-  fs$i.closeSync = function(fs$closeSync) {
+  }(fs$h.close);
+  fs$h.closeSync = function(fs$closeSync) {
     function closeSync(fd) {
-      fs$closeSync.apply(fs$i, arguments);
+      fs$closeSync.apply(fs$h, arguments);
       resetQueue();
     }
     Object.defineProperty(closeSync, previousSymbol, {
       value: fs$closeSync
     });
     return closeSync;
-  }(fs$i.closeSync);
+  }(fs$h.closeSync);
   if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
     process.on("exit", function() {
-      debug(fs$i[gracefulQueue]);
-      require$$5.equal(fs$i[gracefulQueue].length, 0);
+      debug(fs$h[gracefulQueue]);
+      require$$5.equal(fs$h[gracefulQueue].length, 0);
     });
   }
 }
 if (!commonjsGlobal[gracefulQueue]) {
-  publishQueue(commonjsGlobal, fs$i[gracefulQueue]);
+  publishQueue(commonjsGlobal, fs$h[gracefulQueue]);
 }
-var gracefulFs = patch(clone(fs$i));
-if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs$i.__patched) {
-  gracefulFs = patch(fs$i);
-  fs$i.__patched = true;
+var gracefulFs = patch(clone(fs$h));
+if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs$h.__patched) {
+  gracefulFs = patch(fs$h);
+  fs$h.__patched = true;
 }
 function patch(fs2) {
   polyfills(fs2);
@@ -927,16 +1195,16 @@ function patch(fs2) {
 }
 function enqueue(elem) {
   debug("ENQUEUE", elem[0].name, elem[1]);
-  fs$i[gracefulQueue].push(elem);
+  fs$h[gracefulQueue].push(elem);
   retry();
 }
 var retryTimer;
 function resetQueue() {
   var now = Date.now();
-  for (var i = 0; i < fs$i[gracefulQueue].length; ++i) {
-    if (fs$i[gracefulQueue][i].length > 2) {
-      fs$i[gracefulQueue][i][3] = now;
-      fs$i[gracefulQueue][i][4] = now;
+  for (var i = 0; i < fs$h[gracefulQueue].length; ++i) {
+    if (fs$h[gracefulQueue][i].length > 2) {
+      fs$h[gracefulQueue][i][3] = now;
+      fs$h[gracefulQueue][i][4] = now;
     }
   }
   retry();
@@ -944,9 +1212,9 @@ function resetQueue() {
 function retry() {
   clearTimeout(retryTimer);
   retryTimer = void 0;
-  if (fs$i[gracefulQueue].length === 0)
+  if (fs$h[gracefulQueue].length === 0)
     return;
-  var elem = fs$i[gracefulQueue].shift();
+  var elem = fs$h[gracefulQueue].shift();
   var fn = elem[0];
   var args = elem[1];
   var err = elem[2];
@@ -968,7 +1236,7 @@ function retry() {
       debug("RETRY", fn.name, args);
       fn.apply(null, args.concat([startTime]));
     } else {
-      fs$i[gracefulQueue].push(elem);
+      fs$h[gracefulQueue].push(elem);
     }
   }
   if (retryTimer === void 0) {
@@ -1085,13 +1353,13 @@ function retry() {
       "fs-extra-WARN0003"
     );
   }
-})(fs$j);
+})(fs$i);
 var makeDir$1 = {};
 var utils$1 = {};
-const path$e = require$$1;
+const path$c = require$$1;
 utils$1.checkPath = function checkPath(pth) {
   if (process.platform === "win32") {
-    const pathHasInvalidWinCharacters = /[<>:"|?*]/.test(pth.replace(path$e.parse(pth).root, ""));
+    const pathHasInvalidWinCharacters = /[<>:"|?*]/.test(pth.replace(path$c.parse(pth).root, ""));
     if (pathHasInvalidWinCharacters) {
       const error = new Error(`Path contains invalid characters: ${pth}`);
       error.code = "EINVAL";
@@ -1099,7 +1367,7 @@ utils$1.checkPath = function checkPath(pth) {
     }
   }
 };
-const fs$h = fs$j;
+const fs$g = fs$i;
 const { checkPath: checkPath2 } = utils$1;
 const getMode = (options) => {
   const defaults = { mode: 511 };
@@ -1109,14 +1377,14 @@ const getMode = (options) => {
 };
 makeDir$1.makeDir = async (dir, options) => {
   checkPath2(dir);
-  return fs$h.mkdir(dir, {
+  return fs$g.mkdir(dir, {
     mode: getMode(options),
     recursive: true
   });
 };
 makeDir$1.makeDirSync = (dir, options) => {
   checkPath2(dir);
-  return fs$h.mkdirSync(dir, {
+  return fs$g.mkdirSync(dir, {
     mode: getMode(options),
     recursive: true
   });
@@ -1134,24 +1402,24 @@ var mkdirs$2 = {
   ensureDirSync: makeDirSync
 };
 const u$d = universalify$1.fromPromise;
-const fs$g = fs$j;
+const fs$f = fs$i;
 function pathExists$6(path2) {
-  return fs$g.access(path2).then(() => true).catch(() => false);
+  return fs$f.access(path2).then(() => true).catch(() => false);
 }
 var pathExists_1 = {
   pathExists: u$d(pathExists$6),
-  pathExistsSync: fs$g.existsSync
+  pathExistsSync: fs$f.existsSync
 };
-const fs$f = fs$j;
+const fs$e = fs$i;
 const u$c = universalify$1.fromPromise;
 async function utimesMillis$1(path2, atime, mtime) {
-  const fd = await fs$f.open(path2, "r+");
+  const fd = await fs$e.open(path2, "r+");
   let closeErr = null;
   try {
-    await fs$f.futimes(fd, atime, mtime);
+    await fs$e.futimes(fd, atime, mtime);
   } finally {
     try {
-      await fs$f.close(fd);
+      await fs$e.close(fd);
     } catch (e) {
       closeErr = e;
     }
@@ -1161,19 +1429,19 @@ async function utimesMillis$1(path2, atime, mtime) {
   }
 }
 function utimesMillisSync$1(path2, atime, mtime) {
-  const fd = fs$f.openSync(path2, "r+");
-  fs$f.futimesSync(fd, atime, mtime);
-  return fs$f.closeSync(fd);
+  const fd = fs$e.openSync(path2, "r+");
+  fs$e.futimesSync(fd, atime, mtime);
+  return fs$e.closeSync(fd);
 }
 var utimes = {
   utimesMillis: u$c(utimesMillis$1),
   utimesMillisSync: utimesMillisSync$1
 };
-const fs$e = fs$j;
-const path$d = require$$1;
+const fs$d = fs$i;
+const path$b = require$$1;
 const u$b = universalify$1.fromPromise;
 function getStats$1(src, dest, opts) {
-  const statFunc = opts.dereference ? (file2) => fs$e.stat(file2, { bigint: true }) : (file2) => fs$e.lstat(file2, { bigint: true });
+  const statFunc = opts.dereference ? (file2) => fs$d.stat(file2, { bigint: true }) : (file2) => fs$d.lstat(file2, { bigint: true });
   return Promise.all([
     statFunc(src),
     statFunc(dest).catch((err) => {
@@ -1185,7 +1453,7 @@ function getStats$1(src, dest, opts) {
 }
 function getStatsSync(src, dest, opts) {
   let destStat;
-  const statFunc = opts.dereference ? (file2) => fs$e.statSync(file2, { bigint: true }) : (file2) => fs$e.lstatSync(file2, { bigint: true });
+  const statFunc = opts.dereference ? (file2) => fs$d.statSync(file2, { bigint: true }) : (file2) => fs$d.lstatSync(file2, { bigint: true });
   const srcStat = statFunc(src);
   try {
     destStat = statFunc(dest);
@@ -1200,8 +1468,8 @@ async function checkPaths(src, dest, funcName, opts) {
   const { srcStat, destStat } = await getStats$1(src, dest, opts);
   if (destStat) {
     if (areIdentical$2(srcStat, destStat)) {
-      const srcBaseName = path$d.basename(src);
-      const destBaseName = path$d.basename(dest);
+      const srcBaseName = path$b.basename(src);
+      const destBaseName = path$b.basename(dest);
       if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
         return { srcStat, destStat, isChangingCase: true };
       }
@@ -1223,8 +1491,8 @@ function checkPathsSync(src, dest, funcName, opts) {
   const { srcStat, destStat } = getStatsSync(src, dest, opts);
   if (destStat) {
     if (areIdentical$2(srcStat, destStat)) {
-      const srcBaseName = path$d.basename(src);
-      const destBaseName = path$d.basename(dest);
+      const srcBaseName = path$b.basename(src);
+      const destBaseName = path$b.basename(dest);
       if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
         return { srcStat, destStat, isChangingCase: true };
       }
@@ -1243,13 +1511,13 @@ function checkPathsSync(src, dest, funcName, opts) {
   return { srcStat, destStat };
 }
 async function checkParentPaths(src, srcStat, dest, funcName) {
-  const srcParent = path$d.resolve(path$d.dirname(src));
-  const destParent = path$d.resolve(path$d.dirname(dest));
-  if (destParent === srcParent || destParent === path$d.parse(destParent).root)
+  const srcParent = path$b.resolve(path$b.dirname(src));
+  const destParent = path$b.resolve(path$b.dirname(dest));
+  if (destParent === srcParent || destParent === path$b.parse(destParent).root)
     return;
   let destStat;
   try {
-    destStat = await fs$e.stat(destParent, { bigint: true });
+    destStat = await fs$d.stat(destParent, { bigint: true });
   } catch (err) {
     if (err.code === "ENOENT")
       return;
@@ -1261,13 +1529,13 @@ async function checkParentPaths(src, srcStat, dest, funcName) {
   return checkParentPaths(src, srcStat, destParent, funcName);
 }
 function checkParentPathsSync(src, srcStat, dest, funcName) {
-  const srcParent = path$d.resolve(path$d.dirname(src));
-  const destParent = path$d.resolve(path$d.dirname(dest));
-  if (destParent === srcParent || destParent === path$d.parse(destParent).root)
+  const srcParent = path$b.resolve(path$b.dirname(src));
+  const destParent = path$b.resolve(path$b.dirname(dest));
+  if (destParent === srcParent || destParent === path$b.parse(destParent).root)
     return;
   let destStat;
   try {
-    destStat = fs$e.statSync(destParent, { bigint: true });
+    destStat = fs$d.statSync(destParent, { bigint: true });
   } catch (err) {
     if (err.code === "ENOENT")
       return;
@@ -1282,8 +1550,8 @@ function areIdentical$2(srcStat, destStat) {
   return destStat.ino && destStat.dev && destStat.ino === srcStat.ino && destStat.dev === srcStat.dev;
 }
 function isSrcSubdir(src, dest) {
-  const srcArr = path$d.resolve(src).split(path$d.sep).filter((i) => i);
-  const destArr = path$d.resolve(dest).split(path$d.sep).filter((i) => i);
+  const srcArr = path$b.resolve(src).split(path$b.sep).filter((i) => i);
+  const destArr = path$b.resolve(dest).split(path$b.sep).filter((i) => i);
   return srcArr.every((cur, i) => destArr[i] === cur);
 }
 function errMsg(src, dest, funcName) {
@@ -1300,8 +1568,8 @@ var stat$4 = {
   isSrcSubdir,
   areIdentical: areIdentical$2
 };
-const fs$d = fs$j;
-const path$c = require$$1;
+const fs$c = fs$i;
+const path$a = require$$1;
 const { mkdirs: mkdirs$1 } = mkdirs$2;
 const { pathExists: pathExists$5 } = pathExists_1;
 const { utimesMillis } = utimes;
@@ -1324,7 +1592,7 @@ async function copy$2(src, dest, opts = {}) {
   const include = await runFilter(src, dest, opts);
   if (!include)
     return;
-  const destParent = path$c.dirname(dest);
+  const destParent = path$a.dirname(dest);
   const dirExists = await pathExists$5(destParent);
   if (!dirExists) {
     await mkdirs$1(destParent);
@@ -1337,7 +1605,7 @@ async function runFilter(src, dest, opts) {
   return opts.filter(src, dest);
 }
 async function getStatsAndPerformCopy(destStat, src, dest, opts) {
-  const statFn = opts.dereference ? fs$d.stat : fs$d.lstat;
+  const statFn = opts.dereference ? fs$c.stat : fs$c.lstat;
   const srcStat = await statFn(src);
   if (srcStat.isDirectory())
     return onDir$1(srcStat, destStat, src, dest, opts);
@@ -1355,7 +1623,7 @@ async function onFile$1(srcStat, destStat, src, dest, opts) {
   if (!destStat)
     return copyFile$1(srcStat, src, dest, opts);
   if (opts.overwrite) {
-    await fs$d.unlink(dest);
+    await fs$c.unlink(dest);
     return copyFile$1(srcStat, src, dest, opts);
   }
   if (opts.errorOnExist) {
@@ -1363,30 +1631,30 @@ async function onFile$1(srcStat, destStat, src, dest, opts) {
   }
 }
 async function copyFile$1(srcStat, src, dest, opts) {
-  await fs$d.copyFile(src, dest);
+  await fs$c.copyFile(src, dest);
   if (opts.preserveTimestamps) {
     if (fileIsNotWritable$1(srcStat.mode)) {
       await makeFileWritable$1(dest, srcStat.mode);
     }
-    const updatedSrcStat = await fs$d.stat(src);
+    const updatedSrcStat = await fs$c.stat(src);
     await utimesMillis(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
   }
-  return fs$d.chmod(dest, srcStat.mode);
+  return fs$c.chmod(dest, srcStat.mode);
 }
 function fileIsNotWritable$1(srcMode) {
   return (srcMode & 128) === 0;
 }
 function makeFileWritable$1(dest, srcMode) {
-  return fs$d.chmod(dest, srcMode | 128);
+  return fs$c.chmod(dest, srcMode | 128);
 }
 async function onDir$1(srcStat, destStat, src, dest, opts) {
   if (!destStat) {
-    await fs$d.mkdir(dest);
+    await fs$c.mkdir(dest);
   }
-  const items = await fs$d.readdir(src);
+  const items = await fs$c.readdir(src);
   await Promise.all(items.map(async (item) => {
-    const srcItem = path$c.join(src, item);
-    const destItem = path$c.join(dest, item);
+    const srcItem = path$a.join(src, item);
+    const destItem = path$a.join(dest, item);
     const include = await runFilter(srcItem, destItem, opts);
     if (!include)
       return;
@@ -1394,27 +1662,27 @@ async function onDir$1(srcStat, destStat, src, dest, opts) {
     return getStatsAndPerformCopy(destStat2, srcItem, destItem, opts);
   }));
   if (!destStat) {
-    await fs$d.chmod(dest, srcStat.mode);
+    await fs$c.chmod(dest, srcStat.mode);
   }
 }
 async function onLink$1(destStat, src, dest, opts) {
-  let resolvedSrc = await fs$d.readlink(src);
+  let resolvedSrc = await fs$c.readlink(src);
   if (opts.dereference) {
-    resolvedSrc = path$c.resolve(process.cwd(), resolvedSrc);
+    resolvedSrc = path$a.resolve(process.cwd(), resolvedSrc);
   }
   if (!destStat) {
-    return fs$d.symlink(resolvedSrc, dest);
+    return fs$c.symlink(resolvedSrc, dest);
   }
   let resolvedDest = null;
   try {
-    resolvedDest = await fs$d.readlink(dest);
+    resolvedDest = await fs$c.readlink(dest);
   } catch (e) {
     if (e.code === "EINVAL" || e.code === "UNKNOWN")
-      return fs$d.symlink(resolvedSrc, dest);
+      return fs$c.symlink(resolvedSrc, dest);
     throw e;
   }
   if (opts.dereference) {
-    resolvedDest = path$c.resolve(process.cwd(), resolvedDest);
+    resolvedDest = path$a.resolve(process.cwd(), resolvedDest);
   }
   if (stat$3.isSrcSubdir(resolvedSrc, resolvedDest)) {
     throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
@@ -1422,12 +1690,12 @@ async function onLink$1(destStat, src, dest, opts) {
   if (stat$3.isSrcSubdir(resolvedDest, resolvedSrc)) {
     throw new Error(`Cannot overwrite '${resolvedDest}' with '${resolvedSrc}'.`);
   }
-  await fs$d.unlink(dest);
-  return fs$d.symlink(resolvedSrc, dest);
+  await fs$c.unlink(dest);
+  return fs$c.symlink(resolvedSrc, dest);
 }
 var copy_1 = copy$2;
-const fs$c = gracefulFs;
-const path$b = require$$1;
+const fs$b = gracefulFs;
+const path$9 = require$$1;
 const mkdirsSync$1 = mkdirs$2.mkdirsSync;
 const utimesMillisSync = utimes.utimesMillisSync;
 const stat$2 = stat$4;
@@ -1449,13 +1717,13 @@ function copySync$1(src, dest, opts) {
   stat$2.checkParentPathsSync(src, srcStat, dest, "copy");
   if (opts.filter && !opts.filter(src, dest))
     return;
-  const destParent = path$b.dirname(dest);
-  if (!fs$c.existsSync(destParent))
+  const destParent = path$9.dirname(dest);
+  if (!fs$b.existsSync(destParent))
     mkdirsSync$1(destParent);
   return getStats(destStat, src, dest, opts);
 }
 function getStats(destStat, src, dest, opts) {
-  const statSync = opts.dereference ? fs$c.statSync : fs$c.lstatSync;
+  const statSync = opts.dereference ? fs$b.statSync : fs$b.lstatSync;
   const srcStat = statSync(src);
   if (srcStat.isDirectory())
     return onDir(srcStat, destStat, src, dest, opts);
@@ -1476,14 +1744,14 @@ function onFile(srcStat, destStat, src, dest, opts) {
 }
 function mayCopyFile(srcStat, src, dest, opts) {
   if (opts.overwrite) {
-    fs$c.unlinkSync(dest);
+    fs$b.unlinkSync(dest);
     return copyFile(srcStat, src, dest, opts);
   } else if (opts.errorOnExist) {
     throw new Error(`'${dest}' already exists`);
   }
 }
 function copyFile(srcStat, src, dest, opts) {
-  fs$c.copyFileSync(src, dest);
+  fs$b.copyFileSync(src, dest);
   if (opts.preserveTimestamps)
     handleTimestamps(srcStat.mode, src, dest);
   return setDestMode(dest, srcStat.mode);
@@ -1500,10 +1768,10 @@ function makeFileWritable(dest, srcMode) {
   return setDestMode(dest, srcMode | 128);
 }
 function setDestMode(dest, srcMode) {
-  return fs$c.chmodSync(dest, srcMode);
+  return fs$b.chmodSync(dest, srcMode);
 }
 function setDestTimestamps(src, dest) {
-  const updatedSrcStat = fs$c.statSync(src);
+  const updatedSrcStat = fs$b.statSync(src);
   return utimesMillisSync(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
 }
 function onDir(srcStat, destStat, src, dest, opts) {
@@ -1512,39 +1780,39 @@ function onDir(srcStat, destStat, src, dest, opts) {
   return copyDir(src, dest, opts);
 }
 function mkDirAndCopy(srcMode, src, dest, opts) {
-  fs$c.mkdirSync(dest);
+  fs$b.mkdirSync(dest);
   copyDir(src, dest, opts);
   return setDestMode(dest, srcMode);
 }
 function copyDir(src, dest, opts) {
-  fs$c.readdirSync(src).forEach((item) => copyDirItem(item, src, dest, opts));
+  fs$b.readdirSync(src).forEach((item) => copyDirItem(item, src, dest, opts));
 }
 function copyDirItem(item, src, dest, opts) {
-  const srcItem = path$b.join(src, item);
-  const destItem = path$b.join(dest, item);
+  const srcItem = path$9.join(src, item);
+  const destItem = path$9.join(dest, item);
   if (opts.filter && !opts.filter(srcItem, destItem))
     return;
   const { destStat } = stat$2.checkPathsSync(srcItem, destItem, "copy", opts);
   return getStats(destStat, srcItem, destItem, opts);
 }
 function onLink(destStat, src, dest, opts) {
-  let resolvedSrc = fs$c.readlinkSync(src);
+  let resolvedSrc = fs$b.readlinkSync(src);
   if (opts.dereference) {
-    resolvedSrc = path$b.resolve(process.cwd(), resolvedSrc);
+    resolvedSrc = path$9.resolve(process.cwd(), resolvedSrc);
   }
   if (!destStat) {
-    return fs$c.symlinkSync(resolvedSrc, dest);
+    return fs$b.symlinkSync(resolvedSrc, dest);
   } else {
     let resolvedDest;
     try {
-      resolvedDest = fs$c.readlinkSync(dest);
+      resolvedDest = fs$b.readlinkSync(dest);
     } catch (err) {
       if (err.code === "EINVAL" || err.code === "UNKNOWN")
-        return fs$c.symlinkSync(resolvedSrc, dest);
+        return fs$b.symlinkSync(resolvedSrc, dest);
       throw err;
     }
     if (opts.dereference) {
-      resolvedDest = path$b.resolve(process.cwd(), resolvedDest);
+      resolvedDest = path$9.resolve(process.cwd(), resolvedDest);
     }
     if (stat$2.isSrcSubdir(resolvedSrc, resolvedDest)) {
       throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
@@ -1556,8 +1824,8 @@ function onLink(destStat, src, dest, opts) {
   }
 }
 function copyLink(resolvedSrc, dest) {
-  fs$c.unlinkSync(dest);
-  return fs$c.symlinkSync(resolvedSrc, dest);
+  fs$b.unlinkSync(dest);
+  return fs$b.symlinkSync(resolvedSrc, dest);
 }
 var copySync_1 = copySync$1;
 const u$a = universalify$1.fromPromise;
@@ -1565,41 +1833,41 @@ var copy$1 = {
   copy: u$a(copy_1),
   copySync: copySync_1
 };
-const fs$b = gracefulFs;
+const fs$a = gracefulFs;
 const u$9 = universalify$1.fromCallback;
 function remove$2(path2, callback) {
-  fs$b.rm(path2, { recursive: true, force: true }, callback);
+  fs$a.rm(path2, { recursive: true, force: true }, callback);
 }
 function removeSync$1(path2) {
-  fs$b.rmSync(path2, { recursive: true, force: true });
+  fs$a.rmSync(path2, { recursive: true, force: true });
 }
 var remove_1 = {
   remove: u$9(remove$2),
   removeSync: removeSync$1
 };
 const u$8 = universalify$1.fromPromise;
-const fs$a = fs$j;
-const path$a = require$$1;
+const fs$9 = fs$i;
+const path$8 = require$$1;
 const mkdir$3 = mkdirs$2;
 const remove$1 = remove_1;
 const emptyDir = u$8(async function emptyDir2(dir) {
   let items;
   try {
-    items = await fs$a.readdir(dir);
+    items = await fs$9.readdir(dir);
   } catch {
     return mkdir$3.mkdirs(dir);
   }
-  return Promise.all(items.map((item) => remove$1.remove(path$a.join(dir, item))));
+  return Promise.all(items.map((item) => remove$1.remove(path$8.join(dir, item))));
 });
 function emptyDirSync(dir) {
   let items;
   try {
-    items = fs$a.readdirSync(dir);
+    items = fs$9.readdirSync(dir);
   } catch {
     return mkdir$3.mkdirsSync(dir);
   }
   items.forEach((item) => {
-    item = path$a.join(dir, item);
+    item = path$8.join(dir, item);
     remove$1.removeSync(item);
   });
 }
@@ -1610,48 +1878,48 @@ var empty = {
   emptydir: emptyDir
 };
 const u$7 = universalify$1.fromPromise;
-const path$9 = require$$1;
-const fs$9 = fs$j;
+const path$7 = require$$1;
+const fs$8 = fs$i;
 const mkdir$2 = mkdirs$2;
 async function createFile$1(file2) {
   let stats;
   try {
-    stats = await fs$9.stat(file2);
+    stats = await fs$8.stat(file2);
   } catch {
   }
   if (stats && stats.isFile())
     return;
-  const dir = path$9.dirname(file2);
+  const dir = path$7.dirname(file2);
   let dirStats = null;
   try {
-    dirStats = await fs$9.stat(dir);
+    dirStats = await fs$8.stat(dir);
   } catch (err) {
     if (err.code === "ENOENT") {
       await mkdir$2.mkdirs(dir);
-      await fs$9.writeFile(file2, "");
+      await fs$8.writeFile(file2, "");
       return;
     } else {
       throw err;
     }
   }
   if (dirStats.isDirectory()) {
-    await fs$9.writeFile(file2, "");
+    await fs$8.writeFile(file2, "");
   } else {
-    await fs$9.readdir(dir);
+    await fs$8.readdir(dir);
   }
 }
 function createFileSync$1(file2) {
   let stats;
   try {
-    stats = fs$9.statSync(file2);
+    stats = fs$8.statSync(file2);
   } catch {
   }
   if (stats && stats.isFile())
     return;
-  const dir = path$9.dirname(file2);
+  const dir = path$7.dirname(file2);
   try {
-    if (!fs$9.statSync(dir).isDirectory()) {
-      fs$9.readdirSync(dir);
+    if (!fs$8.statSync(dir).isDirectory()) {
+      fs$8.readdirSync(dir);
     }
   } catch (err) {
     if (err && err.code === "ENOENT")
@@ -1659,73 +1927,73 @@ function createFileSync$1(file2) {
     else
       throw err;
   }
-  fs$9.writeFileSync(file2, "");
+  fs$8.writeFileSync(file2, "");
 }
 var file = {
   createFile: u$7(createFile$1),
   createFileSync: createFileSync$1
 };
 const u$6 = universalify$1.fromPromise;
-const path$8 = require$$1;
-const fs$8 = fs$j;
+const path$6 = require$$1;
+const fs$7 = fs$i;
 const mkdir$1 = mkdirs$2;
 const { pathExists: pathExists$4 } = pathExists_1;
 const { areIdentical: areIdentical$1 } = stat$4;
 async function createLink$1(srcpath, dstpath) {
   let dstStat;
   try {
-    dstStat = await fs$8.lstat(dstpath);
+    dstStat = await fs$7.lstat(dstpath);
   } catch {
   }
   let srcStat;
   try {
-    srcStat = await fs$8.lstat(srcpath);
+    srcStat = await fs$7.lstat(srcpath);
   } catch (err) {
     err.message = err.message.replace("lstat", "ensureLink");
     throw err;
   }
   if (dstStat && areIdentical$1(srcStat, dstStat))
     return;
-  const dir = path$8.dirname(dstpath);
+  const dir = path$6.dirname(dstpath);
   const dirExists = await pathExists$4(dir);
   if (!dirExists) {
     await mkdir$1.mkdirs(dir);
   }
-  await fs$8.link(srcpath, dstpath);
+  await fs$7.link(srcpath, dstpath);
 }
 function createLinkSync$1(srcpath, dstpath) {
   let dstStat;
   try {
-    dstStat = fs$8.lstatSync(dstpath);
+    dstStat = fs$7.lstatSync(dstpath);
   } catch {
   }
   try {
-    const srcStat = fs$8.lstatSync(srcpath);
+    const srcStat = fs$7.lstatSync(srcpath);
     if (dstStat && areIdentical$1(srcStat, dstStat))
       return;
   } catch (err) {
     err.message = err.message.replace("lstat", "ensureLink");
     throw err;
   }
-  const dir = path$8.dirname(dstpath);
-  const dirExists = fs$8.existsSync(dir);
+  const dir = path$6.dirname(dstpath);
+  const dirExists = fs$7.existsSync(dir);
   if (dirExists)
-    return fs$8.linkSync(srcpath, dstpath);
+    return fs$7.linkSync(srcpath, dstpath);
   mkdir$1.mkdirsSync(dir);
-  return fs$8.linkSync(srcpath, dstpath);
+  return fs$7.linkSync(srcpath, dstpath);
 }
 var link = {
   createLink: u$6(createLink$1),
   createLinkSync: createLinkSync$1
 };
-const path$7 = require$$1;
-const fs$7 = fs$j;
+const path$5 = require$$1;
+const fs$6 = fs$i;
 const { pathExists: pathExists$3 } = pathExists_1;
 const u$5 = universalify$1.fromPromise;
 async function symlinkPaths$1(srcpath, dstpath) {
-  if (path$7.isAbsolute(srcpath)) {
+  if (path$5.isAbsolute(srcpath)) {
     try {
-      await fs$7.lstat(srcpath);
+      await fs$6.lstat(srcpath);
     } catch (err) {
       err.message = err.message.replace("lstat", "ensureSymlink");
       throw err;
@@ -1735,8 +2003,8 @@ async function symlinkPaths$1(srcpath, dstpath) {
       toDst: srcpath
     };
   }
-  const dstdir = path$7.dirname(dstpath);
-  const relativeToDst = path$7.join(dstdir, srcpath);
+  const dstdir = path$5.dirname(dstpath);
+  const relativeToDst = path$5.join(dstdir, srcpath);
   const exists = await pathExists$3(relativeToDst);
   if (exists) {
     return {
@@ -1745,19 +2013,19 @@ async function symlinkPaths$1(srcpath, dstpath) {
     };
   }
   try {
-    await fs$7.lstat(srcpath);
+    await fs$6.lstat(srcpath);
   } catch (err) {
     err.message = err.message.replace("lstat", "ensureSymlink");
     throw err;
   }
   return {
     toCwd: srcpath,
-    toDst: path$7.relative(dstdir, srcpath)
+    toDst: path$5.relative(dstdir, srcpath)
   };
 }
 function symlinkPathsSync$1(srcpath, dstpath) {
-  if (path$7.isAbsolute(srcpath)) {
-    const exists2 = fs$7.existsSync(srcpath);
+  if (path$5.isAbsolute(srcpath)) {
+    const exists2 = fs$6.existsSync(srcpath);
     if (!exists2)
       throw new Error("absolute srcpath does not exist");
     return {
@@ -1765,35 +2033,35 @@ function symlinkPathsSync$1(srcpath, dstpath) {
       toDst: srcpath
     };
   }
-  const dstdir = path$7.dirname(dstpath);
-  const relativeToDst = path$7.join(dstdir, srcpath);
-  const exists = fs$7.existsSync(relativeToDst);
+  const dstdir = path$5.dirname(dstpath);
+  const relativeToDst = path$5.join(dstdir, srcpath);
+  const exists = fs$6.existsSync(relativeToDst);
   if (exists) {
     return {
       toCwd: relativeToDst,
       toDst: srcpath
     };
   }
-  const srcExists = fs$7.existsSync(srcpath);
+  const srcExists = fs$6.existsSync(srcpath);
   if (!srcExists)
     throw new Error("relative srcpath does not exist");
   return {
     toCwd: srcpath,
-    toDst: path$7.relative(dstdir, srcpath)
+    toDst: path$5.relative(dstdir, srcpath)
   };
 }
 var symlinkPaths_1 = {
   symlinkPaths: u$5(symlinkPaths$1),
   symlinkPathsSync: symlinkPathsSync$1
 };
-const fs$6 = fs$j;
+const fs$5 = fs$i;
 const u$4 = universalify$1.fromPromise;
 async function symlinkType$1(srcpath, type) {
   if (type)
     return type;
   let stats;
   try {
-    stats = await fs$6.lstat(srcpath);
+    stats = await fs$5.lstat(srcpath);
   } catch {
     return "file";
   }
@@ -1804,7 +2072,7 @@ function symlinkTypeSync$1(srcpath, type) {
     return type;
   let stats;
   try {
-    stats = fs$6.lstatSync(srcpath);
+    stats = fs$5.lstatSync(srcpath);
   } catch {
     return "file";
   }
@@ -1815,8 +2083,8 @@ var symlinkType_1 = {
   symlinkTypeSync: symlinkTypeSync$1
 };
 const u$3 = universalify$1.fromPromise;
-const path$6 = require$$1;
-const fs$5 = fs$j;
+const path$4 = require$$1;
+const fs$4 = fs$i;
 const { mkdirs, mkdirsSync } = mkdirs$2;
 const { symlinkPaths, symlinkPathsSync } = symlinkPaths_1;
 const { symlinkType, symlinkTypeSync } = symlinkType_1;
@@ -1825,13 +2093,13 @@ const { areIdentical } = stat$4;
 async function createSymlink$1(srcpath, dstpath, type) {
   let stats;
   try {
-    stats = await fs$5.lstat(dstpath);
+    stats = await fs$4.lstat(dstpath);
   } catch {
   }
   if (stats && stats.isSymbolicLink()) {
     const [srcStat, dstStat] = await Promise.all([
-      fs$5.stat(srcpath),
-      fs$5.stat(dstpath)
+      fs$4.stat(srcpath),
+      fs$4.stat(dstpath)
     ]);
     if (areIdentical(srcStat, dstStat))
       return;
@@ -1839,33 +2107,33 @@ async function createSymlink$1(srcpath, dstpath, type) {
   const relative = await symlinkPaths(srcpath, dstpath);
   srcpath = relative.toDst;
   const toType = await symlinkType(relative.toCwd, type);
-  const dir = path$6.dirname(dstpath);
+  const dir = path$4.dirname(dstpath);
   if (!await pathExists$2(dir)) {
     await mkdirs(dir);
   }
-  return fs$5.symlink(srcpath, dstpath, toType);
+  return fs$4.symlink(srcpath, dstpath, toType);
 }
 function createSymlinkSync$1(srcpath, dstpath, type) {
   let stats;
   try {
-    stats = fs$5.lstatSync(dstpath);
+    stats = fs$4.lstatSync(dstpath);
   } catch {
   }
   if (stats && stats.isSymbolicLink()) {
-    const srcStat = fs$5.statSync(srcpath);
-    const dstStat = fs$5.statSync(dstpath);
+    const srcStat = fs$4.statSync(srcpath);
+    const dstStat = fs$4.statSync(dstpath);
     if (areIdentical(srcStat, dstStat))
       return;
   }
   const relative = symlinkPathsSync(srcpath, dstpath);
   srcpath = relative.toDst;
   type = symlinkTypeSync(relative.toCwd, type);
-  const dir = path$6.dirname(dstpath);
-  const exists = fs$5.existsSync(dir);
+  const dir = path$4.dirname(dstpath);
+  const exists = fs$4.existsSync(dir);
   if (exists)
-    return fs$5.symlinkSync(srcpath, dstpath, type);
+    return fs$4.symlinkSync(srcpath, dstpath, type);
   mkdirsSync(dir);
-  return fs$5.symlinkSync(srcpath, dstpath, type);
+  return fs$4.symlinkSync(srcpath, dstpath, type);
 }
 var symlink = {
   createSymlink: u$3(createSymlink$1),
@@ -1978,23 +2246,23 @@ var jsonfile = {
   writeJsonSync: jsonFile$1.writeFileSync
 };
 const u$2 = universalify$1.fromPromise;
-const fs$4 = fs$j;
-const path$5 = require$$1;
+const fs$3 = fs$i;
+const path$3 = require$$1;
 const mkdir = mkdirs$2;
 const pathExists$1 = pathExists_1.pathExists;
 async function outputFile$1(file2, data, encoding = "utf-8") {
-  const dir = path$5.dirname(file2);
+  const dir = path$3.dirname(file2);
   if (!await pathExists$1(dir)) {
     await mkdir.mkdirs(dir);
   }
-  return fs$4.writeFile(file2, data, encoding);
+  return fs$3.writeFile(file2, data, encoding);
 }
 function outputFileSync$1(file2, ...args) {
-  const dir = path$5.dirname(file2);
-  if (!fs$4.existsSync(dir)) {
+  const dir = path$3.dirname(file2);
+  if (!fs$3.existsSync(dir)) {
     mkdir.mkdirsSync(dir);
   }
-  fs$4.writeFileSync(file2, ...args);
+  fs$3.writeFileSync(file2, ...args);
 }
 var outputFile_1 = {
   outputFile: u$2(outputFile$1),
@@ -2025,8 +2293,8 @@ jsonFile.writeJSONSync = jsonFile.writeJsonSync;
 jsonFile.readJSON = jsonFile.readJson;
 jsonFile.readJSONSync = jsonFile.readJsonSync;
 var json = jsonFile;
-const fs$3 = fs$j;
-const path$4 = require$$1;
+const fs$2 = fs$i;
+const path$2 = require$$1;
 const { copy } = copy$1;
 const { remove } = remove_1;
 const { mkdirp } = mkdirs$2;
@@ -2036,8 +2304,8 @@ async function move$1(src, dest, opts = {}) {
   const overwrite = opts.overwrite || opts.clobber || false;
   const { srcStat, isChangingCase = false } = await stat$1.checkPaths(src, dest, "move", opts);
   await stat$1.checkParentPaths(src, srcStat, dest, "move");
-  const destParent = path$4.dirname(dest);
-  const parsedParentPath = path$4.parse(destParent);
+  const destParent = path$2.dirname(dest);
+  const parsedParentPath = path$2.parse(destParent);
   if (parsedParentPath.root !== destParent) {
     await mkdirp(destParent);
   }
@@ -2052,7 +2320,7 @@ async function doRename$1(src, dest, overwrite, isChangingCase) {
     }
   }
   try {
-    await fs$3.rename(src, dest);
+    await fs$2.rename(src, dest);
   } catch (err) {
     if (err.code !== "EXDEV") {
       throw err;
@@ -2070,8 +2338,8 @@ async function moveAcrossDevice$1(src, dest, overwrite) {
   return remove(src);
 }
 var move_1 = move$1;
-const fs$2 = gracefulFs;
-const path$3 = require$$1;
+const fs$1 = gracefulFs;
+const path$1 = require$$1;
 const copySync = copy$1.copySync;
 const removeSync = remove_1.removeSync;
 const mkdirpSync = mkdirs$2.mkdirpSync;
@@ -2082,12 +2350,12 @@ function moveSync(src, dest, opts) {
   const { srcStat, isChangingCase = false } = stat.checkPathsSync(src, dest, "move", opts);
   stat.checkParentPathsSync(src, srcStat, dest, "move");
   if (!isParentRoot(dest))
-    mkdirpSync(path$3.dirname(dest));
+    mkdirpSync(path$1.dirname(dest));
   return doRename(src, dest, overwrite, isChangingCase);
 }
 function isParentRoot(dest) {
-  const parent = path$3.dirname(dest);
-  const parsedPath = path$3.parse(parent);
+  const parent = path$1.dirname(dest);
+  const parsedPath = path$1.parse(parent);
   return parsedPath.root === parent;
 }
 function doRename(src, dest, overwrite, isChangingCase) {
@@ -2097,13 +2365,13 @@ function doRename(src, dest, overwrite, isChangingCase) {
     removeSync(dest);
     return rename(src, dest, overwrite);
   }
-  if (fs$2.existsSync(dest))
+  if (fs$1.existsSync(dest))
     throw new Error("dest already exists.");
   return rename(src, dest, overwrite);
 }
 function rename(src, dest, overwrite) {
   try {
-    fs$2.renameSync(src, dest);
+    fs$1.renameSync(src, dest);
   } catch (err) {
     if (err.code !== "EXDEV")
       throw err;
@@ -2127,7 +2395,7 @@ var move = {
 };
 var lib = {
   // Export promiseified graceful-fs:
-  ...fs$j,
+  ...fs$i,
   // Export extra methods:
   ...copy$1,
   ...empty,
@@ -2139,325 +2407,6 @@ var lib = {
   ...pathExists_1,
   ...remove_1
 };
-const { dialog: dialog$1 } = require("electron");
-const path$2 = require("path");
-const getFilePath = async () => {
-  let filePath = await dialog$1.showOpenDialog({
-    title: "选择一个文件",
-    buttonLabel: "确认选择",
-    // defaultPath: app.getPath('pictures'),
-    // 多选文件
-    // properties: ["multiSelections"],
-    filters: [
-      // 文件类型
-      { name: "应用/文件", extensions: [] }
-    ]
-  });
-  return filePath;
-};
-const writeConfigFile = async (fileName, context) => {
-  let dirPath = await selectDir();
-  if (dirPath == "" && dirPath == void 0)
-    return;
-  lib.writeJsonSync(path$2.join(dirPath, `${fileName}.json`), context);
-};
-const selectDir = async () => {
-  let path2 = await dialog$1.showOpenDialog({
-    properties: ["openDirectory"]
-  }).then((result) => {
-    if (!result.canceled) {
-      return result.filePaths[0];
-    }
-  }).catch((err) => {
-    console.error(err);
-  });
-  return path2;
-};
-const os$1 = require("os");
-const path$1 = require("path");
-const Crypto$1 = require("crypto");
-const pngparse = require("pngparse");
-const sharp$1 = require("sharp");
-const fs$1 = require("fs-extra");
-const _ImageToHexArray = class _ImageToHexArray2 {
-  // 根据 base64 生成临时文件
-  static generateTemFile(base64) {
-    let hashname = Crypto$1.createHash("md5").update("angular-tmp-img").digest("hex") + ".bmp";
-    let temFilePath = path$1.join(os$1.tmpdir(), hashname);
-    let dataBuffer = Buffer.from(base64.replace(/^data:image\/\w+;base64,/, ""), "base64");
-    fs$1.writeFileSync(temFilePath, dataBuffer);
-    return temFilePath;
-  }
-  // ---------------------------------- TODO ---------------------------------------
-  static convert(filename, callback) {
-    let _this = this;
-    _this.pngtolcd(filename, function(err, buffer) {
-      err ? callback(err, null) : callback(null, _this.configArray[3] == 0 ? _this.hex2hex(buffer.toString("hex")) : buffer);
-    });
-  }
-};
-_ImageToHexArray.generate = (picData, thresholdData, config) => {
-  _ImageToHexArray.configArray = config;
-  _ImageToHexArray.threshold = thresholdData;
-  return new Promise((resolve, reject) => {
-    _ImageToHexArray.convert(_ImageToHexArray.generateTemFile(picData), function(err, hex) {
-      if (!err) {
-        resolve(hex);
-      } else {
-        reject(err);
-      }
-    });
-  });
-};
-_ImageToHexArray.pngtolcd = (filename, callback) => {
-  let _this = _ImageToHexArray;
-  pngparse.parseFile(filename, function(err, img) {
-    if (err) {
-      let bufferStirng = _this.imgFileToBuffer(filename);
-      return callback(null, bufferStirng);
-    }
-    let buffer = _this.imageDataToHexArray(img);
-    callback(null, buffer);
-  });
-};
-_ImageToHexArray.imgFileToBuffer = (filename) => {
-  sharp$1(filename).toBuffer().then((outputBuffer) => {
-    return outputBuffer;
-  });
-};
-_ImageToHexArray.imageDataToHexArray = (imageData) => {
-  const pimage = _ImageToHexArray.createImageDate(imageData);
-  let pixels = pimage.data;
-  let height = pimage.height;
-  let width = pimage.width;
-  let pixelsLen = pixels.length;
-  if (_ImageToHexArray.configArray[4] == 1) {
-    let threshold = _ImageToHexArray.threshold;
-    let unpackedBuffer = [];
-    let depth = 4;
-    let pixelVal;
-    for (let i = 0; i < pixelsLen; i += depth) {
-      pixelVal = pixels[i + 1] = pixels[i + 2] = pixels[i];
-      pixelVal > threshold ? pixelVal = 1 : pixelVal = 0;
-      unpackedBuffer[i / depth] = pixelVal;
-    }
-    return _ImageToHexArray.imageSamplingArr[_ImageToHexArray.configArray[1]](unpackedBuffer, width, height);
-  } else {
-    return _ImageToHexArray.colorImageSampling(pixels, width, height);
-  }
-};
-_ImageToHexArray.colorImageSampling = (pixels, width, height) => {
-  const buffer = Buffer.alloc(width * height * 2);
-  let i = 0, j = 0;
-  while (i < buffer.length && j < pixels.length) {
-    buffer[i] |= pixels[j] >> 3 << 3;
-    buffer[i] |= pixels[j + 1] >> 5;
-    buffer[i + 1] |= pixels[j + 1] >> 2 << 5;
-    buffer[i + 1] |= pixels[j + 2] >> 3;
-    if (_ImageToHexArray.configArray[0] == 0 || _ImageToHexArray.configArray[2] == 1) {
-      buffer[i] = ~buffer[i];
-      buffer[i + 1] = ~buffer[i + 1];
-    }
-    i += 2;
-    j += 4;
-  }
-  return buffer;
-};
-_ImageToHexArray.ImageSamplingRow = (unpackedBuffer, width, height) => {
-  const buffer = Buffer.alloc(width * height / 8);
-  for (let i = 0; i < unpackedBuffer.length; i++) {
-    let x = Math.floor(i % width);
-    let y = Math.floor(i / width);
-    let byte = 0;
-    let page = y;
-    let pageShift = 1 << x % 8;
-    if (_ImageToHexArray.configArray[2] != 0)
-      pageShift = 1 << 7 - x % 8;
-    byte = page * Math.floor(width / 8) + Math.floor(x / 8);
-    if (_ImageToHexArray.configArray[0] !== 0)
-      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
-    if (unpackedBuffer[i] === 0) {
-      buffer[byte] |= pageShift;
-    } else {
-      buffer[byte] &= ~pageShift;
-    }
-  }
-  return buffer;
-};
-_ImageToHexArray.ImageSamplingCol = (unpackedBuffer, width, height) => {
-  const buffer = Buffer.alloc(width * height / 8);
-  for (let i = 0; i < unpackedBuffer.length; i++) {
-    let x = Math.floor(i % width);
-    let y = Math.floor(i / width);
-    let byte = 0;
-    let page = x;
-    let pageShift = 1 << y % 8;
-    if (_ImageToHexArray.configArray[2] != 0)
-      pageShift = 1 << 7 - y % 8;
-    byte = page * Math.floor(height / 8) + Math.floor(y / 8);
-    if (_ImageToHexArray.configArray[0] !== 0)
-      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
-    if (unpackedBuffer[i] === 0) {
-      buffer[byte] |= pageShift;
-    } else {
-      buffer[byte] &= ~pageShift;
-    }
-  }
-  return buffer;
-};
-_ImageToHexArray.ImageSamplingColRow = (unpackedBuffer, width, height) => {
-  const buffer = Buffer.alloc(width * height / 8);
-  for (let i = 0; i < unpackedBuffer.length; i++) {
-    let x = Math.floor(i % width);
-    let y = Math.floor(i / width);
-    let byte = 0;
-    let page = Math.floor(y / 8);
-    let pageShift = 1 << y - 8 * page;
-    if (_ImageToHexArray.configArray[2] != 0)
-      pageShift = 1 << 7 - (y - 8 * page);
-    page === 0 ? byte = x : byte = x + width * page;
-    if (_ImageToHexArray.configArray[0] !== 0)
-      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
-    if (unpackedBuffer[i] === 0) {
-      buffer[byte] |= pageShift;
-    } else {
-      buffer[byte] &= ~pageShift;
-    }
-  }
-  return buffer;
-};
-_ImageToHexArray.ImageSamplingRowCol = (unpackedBuffer, width, height) => {
-  const buffer = Buffer.alloc(width * height / 8);
-  for (let i = 0; i < unpackedBuffer.length; i++) {
-    let x = Math.floor(i % width);
-    let y = Math.floor(i / width);
-    let byte = 0;
-    let page = Math.floor(x / 8);
-    let pageShift = 1 << x % 8;
-    if (_ImageToHexArray.configArray[2] != 0)
-      pageShift = 1 << 7 - x % 8;
-    byte = page * height + y;
-    if (_ImageToHexArray.configArray[0] !== 0)
-      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
-    if (unpackedBuffer[i] === 0) {
-      buffer[byte] |= pageShift;
-    } else {
-      buffer[byte] &= ~pageShift;
-    }
-  }
-  return buffer;
-};
-_ImageToHexArray.imageSamplingArr = [_ImageToHexArray.ImageSamplingRow, _ImageToHexArray.ImageSamplingCol, _ImageToHexArray.ImageSamplingColRow, _ImageToHexArray.ImageSamplingRowCol];
-_ImageToHexArray.createImageDate = (imageData) => {
-  let buffer = Buffer.alloc(imageData.width * imageData.height * 4);
-  for (let y = 0, pos = 0; y < imageData.height; y++) {
-    for (let x = 0; x < imageData.width; x++) {
-      buffer.writeUInt32BE(_ImageToHexArray.getPixel(imageData, x, y), pos);
-      pos += 4;
-    }
-  }
-  imageData.data.set(buffer);
-  return imageData;
-};
-_ImageToHexArray.getPixel = (image, x, y) => {
-  x = x | 0;
-  y = y | 0;
-  if (x < 0 || y < 0 || x >= image.width || y >= image.height)
-    return 0;
-  let index = (y * image.width + x) * image.channels, r, g, b, a;
-  switch (image.channels) {
-    case 1:
-      r = g = b = image.data[index];
-      a = 255;
-      break;
-    case 2:
-      r = g = b = image.data[index];
-      a = image.data[index + 1];
-      break;
-    case 3:
-      r = image.data[index];
-      g = image.data[index + 1];
-      b = image.data[index + 2];
-      a = 255;
-      break;
-    case 4:
-      r = image.data[index];
-      g = image.data[index + 1];
-      b = image.data[index + 2];
-      a = image.data[index + 3];
-      break;
-  }
-  return (r << 24 | g << 16 | b << 8 | a) >>> 0;
-};
-_ImageToHexArray.hex2hex = (hex) => {
-  for (var bytes = [], c = 0; c < hex.length; c += 2) {
-    bytes.push("0x" + hex.substr(c, 2));
-  }
-  return bytes;
-};
-_ImageToHexArray.pngtohexarray = (filename, callback) => {
-  _ImageToHexArray.pngtolcd(filename, function(err, buffer) {
-    if (err) {
-      callback(err, null);
-    } else {
-      callback(null, this.hex2hex(buffer.toString("hex")));
-    }
-  });
-};
-let ImageToHexArray = _ImageToHexArray;
-const { ipcMain: ipcMain$1 } = require("electron");
-const sharp = require("sharp");
-const Crypto = require("crypto");
-const os = require("os");
-const fs = require("fs-extra");
-const path = require("path");
-let resultPicData = "";
-const imgEditorHandle = async (width, height, picData, colorMode) => {
-  if (width == 0 || height == 0)
-    return;
-  let hashname = Crypto.createHash("md5").update("angular-cir-img").digest("hex") + ".bmp";
-  let originFilePath = path.join(os.tmpdir(), hashname);
-  let dataBuffer = Buffer.from(picData.replace(/^data:image\/\w+;base64,/, ""), "base64");
-  fs.writeFileSync(originFilePath, dataBuffer);
-  path.join(
-    // 临时文件夹目录
-    os.tmpdir(),
-    Crypto.createHash("md5").update("angular-cir-img-zoom").digest("hex") + ".bmp"
-  );
-  if (!colorMode) {
-    sharp(originFilePath).resize(width, height).toBuffer().then((outputBuffer) => {
-      let base64String = outputBuffer.toString("base64");
-      resultPicData = base64String;
-    });
-  } else {
-    sharp(originFilePath).resize(width, height).greyscale().toBuffer().then((outputBuffer) => {
-      let base64String = outputBuffer.toString("base64");
-      resultPicData = base64String;
-    });
-  }
-};
-const picDataListener = () => {
-  ipcMain$1.handle("pic-data-editor", async (event, width, height, picData, colorMode) => {
-    imgEditorHandle(width, height, picData, colorMode);
-    await new Promise((resolve) => setTimeout(resolve, 700));
-    return resultPicData;
-  });
-  ipcMain$1.handle("pic-data-parse", async (event, data, threshold, ...configArray) => {
-    const result = await ImageToHexArray.generate(data, threshold, configArray);
-    return result;
-  });
-};
-const Store = require("electron-store");
-const store = new Store();
-const setItem = (name, item) => {
-  store.set(name, item);
-};
-const getItem = (name) => {
-  return store.get(name);
-};
-const delItem = (name) => {
-  store.delete(name);
-};
 const readShortcutsFile = (filePath) => {
   return lib.readJsonSync(require$$1.join(__dirname, `../../dist/shortcuts/${filePath}`));
 };
@@ -2466,11 +2415,129 @@ const fileReadListener = async () => {
     return await readShortcutsFile(filePath);
   });
 };
-const { app, protocol, BrowserWindow, ipcMain, dialog, shell } = require("electron");
+const { ipcMain: ipcMain$1 } = require("electron");
+const fs = require("fs-extra");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffprobePath = require("@ffprobe-installer/ffprobe").path;
+const ffmpeg = require("fluent-ffmpeg");
+const path = require("path");
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
+const ffmpegScreenShot = async (videoPath, timeArr, tempPath, sizedata) => {
+  return new Promise((resolve2, reject) => {
+    ffmpeg(videoPath).on("end", () => {
+      resolve2(true);
+      console.info("screeshot ok");
+    }).on("error", (err) => {
+      console.info("error ->", err);
+      reject(err);
+    }).screenshots({
+      timestamps: timeArr,
+      filename: "temp_%i.png",
+      folder: tempPath,
+      size: `${sizedata}`
+    });
+  });
+};
+const ffmpegListener = async () => {
+  ipcMain$1.handle(
+    "get-video-frame-data",
+    async (event, videoPath, width, height, videoDur, videoFrame, threshold, ...configArray) => {
+      const tempDirPath = path.join(__dirname, "../../temp");
+      if (!fs.existsSync(tempDirPath)) {
+        fs.mkdirSync(tempDirPath);
+      }
+      const frameStrArr = genTimestampArr(videoDur, videoFrame);
+      const result = await ffmpegScreenShot(
+        videoPath,
+        frameStrArr,
+        tempDirPath,
+        `${width}x${height}`
+      );
+      if (!result) {
+        console.info("video frame error");
+        return;
+      }
+      let resultData = "";
+      const files = fs.readdirSync(tempDirPath, {
+        withFileTypes: true
+      });
+      try {
+        const imageBuffer = fs.readFileSync(
+          path.join(tempDirPath, files[0].name)
+        );
+        const base64Image = imageBuffer.toString("base64");
+        const arrData = await ImageToHexArray.generate(
+          base64Image,
+          threshold,
+          configArray
+        );
+        console.info(arrData);
+        console.info("------------- do");
+      } catch (error) {
+        console.error("Error reading image:", error);
+        return null;
+      }
+      console.info("------------------- ok ");
+      return resultData;
+    }
+  );
+};
+const genTimestampArr = (videoDur, videoFrame) => {
+  let temp = 1 / videoFrame;
+  let strArr = [];
+  for (let i = 0; i < videoDur; i++) {
+    for (let j = 0; j < videoFrame; j++) {
+      strArr.push(String((i + temp * j).toFixed(2)));
+    }
+  }
+  return strArr;
+};
+const { dialog } = require("electron");
+require("path");
+const getFilePath = async () => {
+  let filePath = await dialog.showOpenDialog({
+    title: "选择一个文件",
+    buttonLabel: "确认选择",
+    properties: ["openFile"],
+    filters: [
+      {
+        name: "视频资源",
+        extensions: [
+          "mp4",
+          "avi",
+          "mkv",
+          "mov",
+          "flv",
+          "wmv",
+          "webm",
+          "mpeg",
+          "mpg",
+          "ogv",
+          "3gp",
+          "m4v",
+          "asf",
+          "rm",
+          "rmvb",
+          "ts"
+        ]
+      }
+    ]
+  });
+  return filePath;
+};
+const {
+  app,
+  protocol,
+  BrowserWindow,
+  ipcMain,
+  shell
+} = require("electron");
 require("path");
 windowControlListener();
 picDataListener();
 fileReadListener();
+ffmpegListener();
 ipcMain.on("set-item", (event, name, item) => {
   setItem(name, item);
 });
@@ -2487,10 +2554,7 @@ ipcMain.on("window-create", (event, optionObj, configObj) => {
   let cw = new CreateWindow();
   cw.createWindow(optionObj, configObj);
 });
-ipcMain.handle("write-config", async (event, fileName, context) => {
-  return await writeConfigFile(fileName, context);
-});
-ipcMain.handle("select-file", async () => {
+ipcMain.handle("select-video-file", async () => {
   return await getFilePath();
 });
 ipcMain.on("store-set", (event, objData) => {
@@ -2502,19 +2566,24 @@ ipcMain.on("store-set", (event, objData) => {
 });
 const createMainWindow = async () => {
   let mainW = new CreateWindow();
-  mainW.createWindow({
-    route: "/home",
-    isMainWin: true
-  }, {
-    width: 999,
-    height: 773,
-    minWidth: 688,
-    minHeight: 560
-  });
+  mainW.createWindow(
+    {
+      route: "/home",
+      isMainWin: true
+    },
+    {
+      width: 999,
+      height: 773,
+      minWidth: 688,
+      minHeight: 560
+    }
+  );
 };
 app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
-protocol.registerSchemesAsPrivileged([{ scheme: "app", privileges: { secure: true, standard: true } }]);
-app.whenReady().then(() => {
+protocol.registerSchemesAsPrivileged([
+  { scheme: "app", privileges: { secure: true, standard: true } }
+]);
+app.whenReady().then(async () => {
   createMainWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0)

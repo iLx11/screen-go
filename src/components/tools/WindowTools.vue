@@ -43,8 +43,8 @@ let minimizeMainWindow = () => {
   line-height: 25px;
   width:125px;
   position: absolute;
-  top: 1em;
-  right: 1em;
+  top: 1.9em;
+  right: 1.7em;
   z-index: 9999;
   -webkit-app-region: no-drag;
 }
