@@ -1,1 +1,62 @@
-"use strict";const{contextBridge:c,ipcRenderer:o}=require("electron"),d=async()=>await o.invoke("select-video-file"),m=async(n,e,t,i,s,r=120,...a)=>await o.invoke("get-video-frame-data",n,e,t,i,s,r,...a),w=()=>{o.send("window-min")},l=()=>{o.send("window-max")},p=()=>{o.send("window-close")},v=async(n,e,t,i)=>await o.invoke("pic-data-editor",n,e,t,i),u=async(n,e=120,...t)=>o.invoke("pic-data-parse",n,e,...t);c.exposeInMainWorld("myApi",{getVideoFrameData:m,selectVideoFile:d,minimizeWindow:w,maximizeWindow:l,closeWindow:p,resizeImage:v,generateResultArray:u});window.addEventListener("DOMContentLoaded",()=>{const n=(e,t)=>{const i=document.getElementById(e);i&&(i.innerText=t)};for(const e of["chrome","node","electron"])n(`${e}-version`,process.versions[e])});
+"use strict";
+const { contextBridge, ipcRenderer } = require("electron");
+const selectVideoFile = async () => {
+  return await ipcRenderer.invoke("select-video-file");
+};
+const getVideoFrameData = async (videPath, resizeWidth, resizeHeight, videoDur, videoFrame, threshold = 120, ...configArray) => {
+  return await ipcRenderer.invoke(
+    "get-video-frame-data",
+    videPath,
+    resizeWidth,
+    resizeHeight,
+    videoDur,
+    videoFrame,
+    threshold,
+    ...configArray
+  );
+};
+const minimizeWindow = () => {
+  ipcRenderer.send("window-min");
+};
+const maximizeWindow = () => {
+  ipcRenderer.send("window-max");
+};
+const closeWindow = () => {
+  ipcRenderer.send("window-close");
+};
+const resizeImage = async (resizeWidth, resizeHeight, editorPicData, colorMode) => {
+  return await ipcRenderer.invoke(
+    "pic-data-editor",
+    resizeWidth,
+    resizeHeight,
+    editorPicData,
+    colorMode
+  );
+};
+const generateResultArray = async (picData, threshold = 120, ...configArray) => {
+  return ipcRenderer.invoke(
+    "pic-data-parse",
+    picData,
+    threshold,
+    ...configArray
+  );
+};
+contextBridge.exposeInMainWorld("myApi", {
+  getVideoFrameData,
+  selectVideoFile,
+  minimizeWindow,
+  maximizeWindow,
+  closeWindow,
+  resizeImage,
+  generateResultArray
+});
+window.addEventListener("DOMContentLoaded", () => {
+  const replaceText = (selector, text) => {
+    const element = document.getElementById(selector);
+    if (element)
+      element.innerText = text;
+  };
+  for (const dependency of ["chrome", "node", "electron"]) {
+    replaceText(`${dependency}-version`, process.versions[dependency]);
+  }
+});

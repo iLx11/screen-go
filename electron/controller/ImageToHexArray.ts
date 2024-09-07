@@ -1,3 +1,5 @@
+import { buffer } from 'stream/consumers'
+
 const sharp = require('sharp')
 
 export default class ImageToHexArray {
@@ -286,13 +288,37 @@ export default class ImageToHexArray {
   }
 
   // base64 转 ImageData 对象
-  static base64ToImageData = async (base64) => {
+  static base64ToImageData = async (base64Data) => {
+    return await this.bufferToImageData(this.base64ToBuffer(base64Data))
+  }
+
+  // base64 转 buffer
+  static base64ToBuffer = (base64Data) => {
     // 将 Base64 转换为 Buffer
-    const imgBuffer = Buffer.from(
-      base64.replace(/^data:image\/\w+;base64,/, ''),
+    return Buffer.from(
+      base64Data.replace(/^data:image\/\w+;base64,/, ''),
       'base64'
     )
-    return await this.bufferToImageData(imgBuffer)
+  }
+
+  // 缩放图片
+  static resizeImage = async (width, height, picData, colorMode) => {
+    if (width == 0 || height == 0) return
+    // base64 转 buffer
+    const bufferData = this.base64ToBuffer(picData)
+    let resultBuffer
+    // 图片裁剪
+    if (!colorMode) {
+      resultBuffer = await sharp(bufferData)
+        .resize({ width, height, fastShrinkOnLoad: true })
+        .toBuffer()
+    } else {
+      resultBuffer = await sharp(bufferData)
+        .resize(width, height)
+        .greyscale()
+        .toBuffer()
+    }
+    return resultBuffer.toString('base64')
   }
 
   // 十六进制数据加 '0x'

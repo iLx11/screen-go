@@ -1,7 +1,2582 @@
-"use strict";const Z=require("electron"),R=require("path"),lt=require("fs"),Yt=require("constants"),Gt=require("stream"),Kt=require("util"),Qt=require("assert"),{ipcMain:be,BrowserWindow:Ee}=require("electron"),Xt=()=>{be.on("window-min",e=>{const t=e.sender;Ee.fromWebContents(t).minimize()}),be.on("window-max",e=>{const t=e.sender,n=Ee.fromWebContents(t);n.isMaximized()?n.unmaximize():n.maximize()}),be.on("window-close",e=>{const t=e.sender;Ee.fromWebContents(t).close()})},Zt=require("path"),_e=class q{constructor(){this.getWindowById=t=>Z.BrowserWindow.fromId(t),this.defaultConfig={id:null,title:"",width:null,height:null,minWidth:null,minHeight:null,route:"",resizable:!0,maximize:!1,backgroundColor:"#eee",data:null,isMultiWindow:!1,isMainWin:!1,parentId:null,modal:!0},this.defaultOptions={width:900,height:700,center:!0,frame:!1,show:!0,transparent:!0,maxWidth:null,maxHeight:null,minWidth:680,minHeight:500,backgroundColor:"rgba(0,0,0,0)",autoHideMenuBar:!0,resizable:!0,minimizable:!0,maximizable:!0,modal:!0,parent:null,webPreferences:{contextIsolation:!0,webSecurity:!1,nodeIntegration:!0,preload:Zt.join(__dirname,"../preload/preload.js")}}}createWindow(t,n){var l;let i=0;if(q.group.some((c,m)=>(i=m,c.route===t.route))){console.info("window is already created"),(l=this.getWindowById(i+1))==null||l.blur();return}let r=Object.assign({},this.defaultConfig,t),o=Object.assign({},this.defaultOptions,n);!r.isMainWin&&q.main&&(o.parent=q.main);let a=new Z.BrowserWindow(o);console.log("window id:"+a.id),q.group[a.id-1]={windowId:a.id,route:r.route},r.maximize&&r.resizable&&a.maximize(),r.isMainWin&&(q.main&&(console.info("main window already created"),delete q.group[0],q.main.close()),q.main=a);let s=this;a.on("close",()=>{q.group.forEach((c,m)=>{this.getWindowById(c.windowId)==a&&delete q.group[m],a==s.main&&Z.app.quit()}),a.setOpacity(0)});let u;return Z.app.isPackaged?a.loadFile(R.join(__dirname,"../../dist/index.html"),{hash:r.route}):(u=r.route?`http://localhost:${process.env.VITE_DEV_SERVER_PORT}/#${r.route}`:`http://localhost:${process.env.VITE_DEV_SERVER_PORT}/#`,a.loadURL(u)),console.info("new window address -> ",u),a.setMenu(null),Z.globalShortcut.register("CommandOrControl+Shift+i",function(){a.webContents.openDevTools()}),a.once("ready-to-show",()=>{a.show()}),a}};_e.group=[];_e.main=null;let ft=_e;const en=require("sharp"),w=class{};w.generate=async(e,t,n)=>{w.configArray=n,w.threshold=t;const i=await w.base64ToImageData(e),r=w.imageDataToHexArray(i);return w.configArray[3]==0?w.hex2hex(r.toString("hex")):r};w.imageDataToHexArray=e=>{const t=w.createImageData(e);let n=t.data,i=t.height,r=t.width,o=n.length;if(w.configArray[4]==1){let a=w.threshold,s=[],u=4,l;for(let c=0;c<o;c+=u)l=n[c+1]=n[c+2]=n[c],l>a?l=1:l=0,s[c/u]=l;return w.imageSamplingArr[w.configArray[1]](s,r,i)}else return w.colorImageSampling(n,r,i)};w.colorImageSampling=(e,t,n)=>{const i=Buffer.alloc(t*n*2);let r=0,o=0;for(;r<i.length&&o<e.length;)i[r]|=e[o]>>3<<3,i[r]|=e[o+1]>>5,i[r+1]|=e[o+1]>>2<<5,i[r+1]|=e[o+2]>>3,(w.configArray[0]==0||w.configArray[2]==1)&&(i[r]=~i[r],i[r+1]=~i[r+1]),r+=2,o+=4;return i};w.ImageSamplingRow=(e,t,n)=>{const i=Buffer.alloc(t*n/8);for(let r=0;r<e.length;r++){let o=Math.floor(r%t),a=Math.floor(r/t),s=0,u=a,l=1<<o%8;w.configArray[2]!=0&&(l=1<<7-o%8),s=u*Math.floor(t/8)+Math.floor(o/8),w.configArray[0]!==0&&(e[r]===0?e[r]=1:e[r]=0),e[r]===0?i[s]|=l:i[s]&=~l}return i};w.ImageSamplingCol=(e,t,n)=>{const i=Buffer.alloc(t*n/8);for(let r=0;r<e.length;r++){let o=Math.floor(r%t),a=Math.floor(r/t),s=0,u=o,l=1<<a%8;w.configArray[2]!=0&&(l=1<<7-a%8),s=u*Math.floor(n/8)+Math.floor(a/8),w.configArray[0]!==0&&(e[r]===0?e[r]=1:e[r]=0),e[r]===0?i[s]|=l:i[s]&=~l}return i};w.ImageSamplingColRow=(e,t,n)=>{const i=Buffer.alloc(t*n/8);for(let r=0;r<e.length;r++){let o=Math.floor(r%t),a=Math.floor(r/t),s=0,u=Math.floor(a/8),l=1<<a-8*u;w.configArray[2]!=0&&(l=1<<7-(a-8*u)),u===0?s=o:s=o+t*u,w.configArray[0]!==0&&(e[r]===0?e[r]=1:e[r]=0),e[r]===0?i[s]|=l:i[s]&=~l}return i};w.ImageSamplingRowCol=(e,t,n)=>{const i=Buffer.alloc(t*n/8);for(let r=0;r<e.length;r++){let o=Math.floor(r%t),a=Math.floor(r/t),s=0,u=Math.floor(o/8),l=1<<o%8;w.configArray[2]!=0&&(l=1<<7-o%8),s=u*n+a,w.configArray[0]!==0&&(e[r]===0?e[r]=1:e[r]=0),e[r]===0?i[s]|=l:i[s]&=~l}return i};w.imageSamplingArr=[w.ImageSamplingRow,w.ImageSamplingCol,w.ImageSamplingColRow,w.ImageSamplingRowCol];w.createImageData=e=>{let t=Buffer.alloc(e.width*e.height*4);for(let n=0,i=0;n<e.height;n++)for(let r=0;r<e.width;r++)t.writeUInt32BE(w.getPixel(e,r,n),i),i+=4;return e.data=t,e};w.getPixel=(e,t,n)=>{if(t=t|0,n=n|0,t<0||n<0||t>=e.width||n>=e.height)return 0;let i=(n*e.width+t)*e.channels,r,o,a,s;switch(e.channels){case 1:r=o=a=e.data[i],s=255;break;case 2:r=o=a=e.data[i],s=e.data[i+1];break;case 3:r=e.data[i],o=e.data[i+1],a=e.data[i+2],s=255;break;case 4:r=e.data[i],o=e.data[i+1],a=e.data[i+2],s=e.data[i+3];break}return(r<<24|o<<16|a<<8|s)>>>0};w.bufferToImageData=async e=>{const{data:t,info:n}=await en(e).raw().ensureAlpha().toBuffer({resolveWithObject:!0}),i=n.channels;return{width:n.width,height:n.height,data:new Uint8ClampedArray(t),channels:i}};w.base64ToImageData=async e=>{const t=Buffer.from(e.replace(/^data:image\/\w+;base64,/,""),"base64");return await w.bufferToImageData(t)};w.hex2hex=e=>{for(var t=[],n=0;n<e.length;n+=2)t.push("0x"+e.substr(n,2));return t};let mt=w;const{ipcMain:ze}=require("electron"),He=require("sharp"),tn=require("crypto"),nn=require("os"),rn=require("fs-extra"),on=require("path"),an=async(e,t,n,i)=>{if(e==0||t==0)return;let r=tn.createHash("md5").update("angular-cir-img").digest("hex")+".bmp",o=on.join(nn.tmpdir(),r),a=Buffer.from(n.replace(/^data:image\/\w+;base64,/,""),"base64");return await rn.writeFile(o,a),new Promise((s,u)=>{i?He(o).resize(e,t).greyscale().toBuffer().then(l=>{s(l.toString("base64"))}):He(o).resize(e,t).toBuffer().then(l=>{s(l.toString("base64"))})})},cn=()=>{ze.handle("pic-data-editor",async(e,t,n,i,r)=>await an(t,n,i,r)),ze.handle("pic-data-parse",async(e,t,n,...i)=>await mt.generate(t,n,i))},sn=require("electron-store"),Te=new sn,un=(e,t)=>{Te.set(e,t)},ln=e=>Te.get(e),fn=e=>{Te.delete(e)};var xe=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{},j={},O={};O.fromCallback=function(e){return Object.defineProperty(function(...t){if(typeof t[t.length-1]=="function")e.apply(this,t);else return new Promise((n,i)=>{t.push((r,o)=>r!=null?i(r):n(o)),e.apply(this,t)})},"name",{value:e.name})};O.fromPromise=function(e){return Object.defineProperty(function(...t){const n=t[t.length-1];if(typeof n!="function")return e.apply(this,t);t.pop(),e.apply(this,t).then(i=>n(null,i),n)},"name",{value:e.name})};var z=Yt,mn=process.cwd,we=null,yn=process.env.GRACEFUL_FS_PLATFORM||process.platform;process.cwd=function(){return we||(we=mn.call(process)),we};try{process.cwd()}catch{}if(typeof process.chdir=="function"){var Ve=process.chdir;process.chdir=function(e){we=null,Ve.call(process,e)},Object.setPrototypeOf&&Object.setPrototypeOf(process.chdir,Ve)}var dn=hn;function hn(e){z.hasOwnProperty("O_SYMLINK")&&process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)&&t(e),e.lutimes||n(e),e.chown=o(e.chown),e.fchown=o(e.fchown),e.lchown=o(e.lchown),e.chmod=i(e.chmod),e.fchmod=i(e.fchmod),e.lchmod=i(e.lchmod),e.chownSync=a(e.chownSync),e.fchownSync=a(e.fchownSync),e.lchownSync=a(e.lchownSync),e.chmodSync=r(e.chmodSync),e.fchmodSync=r(e.fchmodSync),e.lchmodSync=r(e.lchmodSync),e.stat=s(e.stat),e.fstat=s(e.fstat),e.lstat=s(e.lstat),e.statSync=u(e.statSync),e.fstatSync=u(e.fstatSync),e.lstatSync=u(e.lstatSync),e.chmod&&!e.lchmod&&(e.lchmod=function(c,m,y){y&&process.nextTick(y)},e.lchmodSync=function(){}),e.chown&&!e.lchown&&(e.lchown=function(c,m,y,f){f&&process.nextTick(f)},e.lchownSync=function(){}),yn==="win32"&&(e.rename=typeof e.rename!="function"?e.rename:function(c){function m(y,f,d){var g=Date.now(),S=0;c(y,f,function E(A){if(A&&(A.code==="EACCES"||A.code==="EPERM"||A.code==="EBUSY")&&Date.now()-g<6e4){setTimeout(function(){e.stat(f,function(N,oe){N&&N.code==="ENOENT"?c(y,f,E):d(A)})},S),S<100&&(S+=10);return}d&&d(A)})}return Object.setPrototypeOf&&Object.setPrototypeOf(m,c),m}(e.rename)),e.read=typeof e.read!="function"?e.read:function(c){function m(y,f,d,g,S,E){var A;if(E&&typeof E=="function"){var N=0;A=function(oe,Je,Ue){if(oe&&oe.code==="EAGAIN"&&N<10)return N++,c.call(e,y,f,d,g,S,A);E.apply(this,arguments)}}return c.call(e,y,f,d,g,S,A)}return Object.setPrototypeOf&&Object.setPrototypeOf(m,c),m}(e.read),e.readSync=typeof e.readSync!="function"?e.readSync:function(c){return function(m,y,f,d,g){for(var S=0;;)try{return c.call(e,m,y,f,d,g)}catch(E){if(E.code==="EAGAIN"&&S<10){S++;continue}throw E}}}(e.readSync);function t(c){c.lchmod=function(m,y,f){c.open(m,z.O_WRONLY|z.O_SYMLINK,y,function(d,g){if(d){f&&f(d);return}c.fchmod(g,y,function(S){c.close(g,function(E){f&&f(S||E)})})})},c.lchmodSync=function(m,y){var f=c.openSync(m,z.O_WRONLY|z.O_SYMLINK,y),d=!0,g;try{g=c.fchmodSync(f,y),d=!1}finally{if(d)try{c.closeSync(f)}catch{}else c.closeSync(f)}return g}}function n(c){z.hasOwnProperty("O_SYMLINK")&&c.futimes?(c.lutimes=function(m,y,f,d){c.open(m,z.O_SYMLINK,function(g,S){if(g){d&&d(g);return}c.futimes(S,y,f,function(E){c.close(S,function(A){d&&d(E||A)})})})},c.lutimesSync=function(m,y,f){var d=c.openSync(m,z.O_SYMLINK),g,S=!0;try{g=c.futimesSync(d,y,f),S=!1}finally{if(S)try{c.closeSync(d)}catch{}else c.closeSync(d)}return g}):c.futimes&&(c.lutimes=function(m,y,f,d){d&&process.nextTick(d)},c.lutimesSync=function(){})}function i(c){return c&&function(m,y,f){return c.call(e,m,y,function(d){l(d)&&(d=null),f&&f.apply(this,arguments)})}}function r(c){return c&&function(m,y){try{return c.call(e,m,y)}catch(f){if(!l(f))throw f}}}function o(c){return c&&function(m,y,f,d){return c.call(e,m,y,f,function(g){l(g)&&(g=null),d&&d.apply(this,arguments)})}}function a(c){return c&&function(m,y,f){try{return c.call(e,m,y,f)}catch(d){if(!l(d))throw d}}}function s(c){return c&&function(m,y,f){typeof y=="function"&&(f=y,y=null);function d(g,S){S&&(S.uid<0&&(S.uid+=4294967296),S.gid<0&&(S.gid+=4294967296)),f&&f.apply(this,arguments)}return y?c.call(e,m,y,d):c.call(e,m,d)}}function u(c){return c&&function(m,y){var f=y?c.call(e,m,y):c.call(e,m);return f&&(f.uid<0&&(f.uid+=4294967296),f.gid<0&&(f.gid+=4294967296)),f}}function l(c){if(!c||c.code==="ENOSYS")return!0;var m=!process.getuid||process.getuid()!==0;return!!(m&&(c.code==="EINVAL"||c.code==="EPERM"))}}var Ye=Gt.Stream,wn=pn;function pn(e){return{ReadStream:t,WriteStream:n};function t(i,r){if(!(this instanceof t))return new t(i,r);Ye.call(this);var o=this;this.path=i,this.fd=null,this.readable=!0,this.paused=!1,this.flags="r",this.mode=438,this.bufferSize=64*1024,r=r||{};for(var a=Object.keys(r),s=0,u=a.length;s<u;s++){var l=a[s];this[l]=r[l]}if(this.encoding&&this.setEncoding(this.encoding),this.start!==void 0){if(typeof this.start!="number")throw TypeError("start must be a Number");if(this.end===void 0)this.end=1/0;else if(typeof this.end!="number")throw TypeError("end must be a Number");if(this.start>this.end)throw new Error("start must be <= end");this.pos=this.start}if(this.fd!==null){process.nextTick(function(){o._read()});return}e.open(this.path,this.flags,this.mode,function(c,m){if(c){o.emit("error",c),o.readable=!1;return}o.fd=m,o.emit("open",m),o._read()})}function n(i,r){if(!(this instanceof n))return new n(i,r);Ye.call(this),this.path=i,this.fd=null,this.writable=!0,this.flags="w",this.encoding="binary",this.mode=438,this.bytesWritten=0,r=r||{};for(var o=Object.keys(r),a=0,s=o.length;a<s;a++){var u=o[a];this[u]=r[u]}if(this.start!==void 0){if(typeof this.start!="number")throw TypeError("start must be a Number");if(this.start<0)throw new Error("start must be >= zero");this.pos=this.start}this.busy=!1,this._queue=[],this.fd===null&&(this._open=e.open,this._queue.push([this._open,this.path,this.flags,this.mode,void 0]),this.flush())}}var Sn=gn,vn=Object.getPrototypeOf||function(e){return e.__proto__};function gn(e){if(e===null||typeof e!="object")return e;if(e instanceof Object)var t={__proto__:vn(e)};else var t=Object.create(null);return Object.getOwnPropertyNames(e).forEach(function(n){Object.defineProperty(t,n,Object.getOwnPropertyDescriptor(e,n))}),t}var F=lt,$n=dn,bn=wn,En=Sn,ye=Kt,T,pe;typeof Symbol=="function"&&typeof Symbol.for=="function"?(T=Symbol.for("graceful-fs.queue"),pe=Symbol.for("graceful-fs.previous")):(T="___graceful-fs.queue",pe="___graceful-fs.previous");function kn(){}function yt(e,t){Object.defineProperty(e,T,{get:function(){return t}})}var Y=kn;ye.debuglog?Y=ye.debuglog("gfs4"):/\bgfs4\b/i.test(process.env.NODE_DEBUG||"")&&(Y=function(){var e=ye.format.apply(ye,arguments);e="GFS4: "+e.split(/\n/).join(`
-GFS4: `),console.error(e)});if(!F[T]){var Fn=xe[T]||[];yt(F,Fn),F.close=function(e){function t(n,i){return e.call(F,n,function(r){r||Ge(),typeof i=="function"&&i.apply(this,arguments)})}return Object.defineProperty(t,pe,{value:e}),t}(F.close),F.closeSync=function(e){function t(n){e.apply(F,arguments),Ge()}return Object.defineProperty(t,pe,{value:e}),t}(F.closeSync),/\bgfs4\b/i.test(process.env.NODE_DEBUG||"")&&process.on("exit",function(){Y(F[T]),Qt.equal(F[T].length,0)})}xe[T]||yt(xe,F[T]);var re=We(En(F));process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH&&!F.__patched&&(re=We(F),F.__patched=!0);function We(e){$n(e),e.gracefulify=We,e.createReadStream=Je,e.createWriteStream=Ue;var t=e.readFile;e.readFile=n;function n(h,v,p){return typeof v=="function"&&(p=v,v=null),C(h,v,p);function C(I,x,k,P){return t(I,x,function($){$&&($.code==="EMFILE"||$.code==="ENFILE")?Q([C,[I,x,k],$,P||Date.now(),Date.now()]):typeof k=="function"&&k.apply(this,arguments)})}}var i=e.writeFile;e.writeFile=r;function r(h,v,p,C){return typeof p=="function"&&(C=p,p=null),I(h,v,p,C);function I(x,k,P,$,_){return i(x,k,P,function(b){b&&(b.code==="EMFILE"||b.code==="ENFILE")?Q([I,[x,k,P,$],b,_||Date.now(),Date.now()]):typeof $=="function"&&$.apply(this,arguments)})}}var o=e.appendFile;o&&(e.appendFile=a);function a(h,v,p,C){return typeof p=="function"&&(C=p,p=null),I(h,v,p,C);function I(x,k,P,$,_){return o(x,k,P,function(b){b&&(b.code==="EMFILE"||b.code==="ENFILE")?Q([I,[x,k,P,$],b,_||Date.now(),Date.now()]):typeof $=="function"&&$.apply(this,arguments)})}}var s=e.copyFile;s&&(e.copyFile=u);function u(h,v,p,C){return typeof p=="function"&&(C=p,p=0),I(h,v,p,C);function I(x,k,P,$,_){return s(x,k,P,function(b){b&&(b.code==="EMFILE"||b.code==="ENFILE")?Q([I,[x,k,P,$],b,_||Date.now(),Date.now()]):typeof $=="function"&&$.apply(this,arguments)})}}var l=e.readdir;e.readdir=m;var c=/^v[0-5]\./;function m(h,v,p){typeof v=="function"&&(p=v,v=null);var C=c.test(process.version)?function(k,P,$,_){return l(k,I(k,P,$,_))}:function(k,P,$,_){return l(k,P,I(k,P,$,_))};return C(h,v,p);function I(x,k,P,$){return function(_,b){_&&(_.code==="EMFILE"||_.code==="ENFILE")?Q([C,[x,k,P],_,$||Date.now(),Date.now()]):(b&&b.sort&&b.sort(),typeof P=="function"&&P.call(this,_,b))}}}if(process.version.substr(0,4)==="v0.8"){var y=bn(e);E=y.ReadStream,N=y.WriteStream}var f=e.ReadStream;f&&(E.prototype=Object.create(f.prototype),E.prototype.open=A);var d=e.WriteStream;d&&(N.prototype=Object.create(d.prototype),N.prototype.open=oe),Object.defineProperty(e,"ReadStream",{get:function(){return E},set:function(h){E=h},enumerable:!0,configurable:!0}),Object.defineProperty(e,"WriteStream",{get:function(){return N},set:function(h){N=h},enumerable:!0,configurable:!0});var g=E;Object.defineProperty(e,"FileReadStream",{get:function(){return g},set:function(h){g=h},enumerable:!0,configurable:!0});var S=N;Object.defineProperty(e,"FileWriteStream",{get:function(){return S},set:function(h){S=h},enumerable:!0,configurable:!0});function E(h,v){return this instanceof E?(f.apply(this,arguments),this):E.apply(Object.create(E.prototype),arguments)}function A(){var h=this;$e(h.path,h.flags,h.mode,function(v,p){v?(h.autoClose&&h.destroy(),h.emit("error",v)):(h.fd=p,h.emit("open",p),h.read())})}function N(h,v){return this instanceof N?(d.apply(this,arguments),this):N.apply(Object.create(N.prototype),arguments)}function oe(){var h=this;$e(h.path,h.flags,h.mode,function(v,p){v?(h.destroy(),h.emit("error",v)):(h.fd=p,h.emit("open",p))})}function Je(h,v){return new e.ReadStream(h,v)}function Ue(h,v){return new e.WriteStream(h,v)}var Vt=e.open;e.open=$e;function $e(h,v,p,C){return typeof p=="function"&&(C=p,p=null),I(h,v,p,C);function I(x,k,P,$,_){return Vt(x,k,P,function(b,Hi){b&&(b.code==="EMFILE"||b.code==="ENFILE")?Q([I,[x,k,P,$],b,_||Date.now(),Date.now()]):typeof $=="function"&&$.apply(this,arguments)})}}return e}function Q(e){Y("ENQUEUE",e[0].name,e[1]),F[T].push(e),Ne()}var de;function Ge(){for(var e=Date.now(),t=0;t<F[T].length;++t)F[T][t].length>2&&(F[T][t][3]=e,F[T][t][4]=e);Ne()}function Ne(){if(clearTimeout(de),de=void 0,F[T].length!==0){var e=F[T].shift(),t=e[0],n=e[1],i=e[2],r=e[3],o=e[4];if(r===void 0)Y("RETRY",t.name,n),t.apply(null,n);else if(Date.now()-r>=6e4){Y("TIMEOUT",t.name,n);var a=n.pop();typeof a=="function"&&a.call(null,i)}else{var s=Date.now()-o,u=Math.max(o-r,1),l=Math.min(u*1.2,100);s>=l?(Y("RETRY",t.name,n),t.apply(null,n.concat([r]))):F[T].push(e)}de===void 0&&(de=setTimeout(Ne,0))}}(function(e){const t=O.fromCallback,n=re,i=["access","appendFile","chmod","chown","close","copyFile","fchmod","fchown","fdatasync","fstat","fsync","ftruncate","futimes","lchmod","lchown","link","lstat","mkdir","mkdtemp","open","opendir","readdir","readFile","readlink","realpath","rename","rm","rmdir","stat","symlink","truncate","unlink","utimes","writeFile"].filter(r=>typeof n[r]=="function");Object.assign(e,n),i.forEach(r=>{e[r]=t(n[r])}),e.exists=function(r,o){return typeof o=="function"?n.exists(r,o):new Promise(a=>n.exists(r,a))},e.read=function(r,o,a,s,u,l){return typeof l=="function"?n.read(r,o,a,s,u,l):new Promise((c,m)=>{n.read(r,o,a,s,u,(y,f,d)=>{if(y)return m(y);c({bytesRead:f,buffer:d})})})},e.write=function(r,o,...a){return typeof a[a.length-1]=="function"?n.write(r,o,...a):new Promise((s,u)=>{n.write(r,o,...a,(l,c,m)=>{if(l)return u(l);s({bytesWritten:c,buffer:m})})})},e.readv=function(r,o,...a){return typeof a[a.length-1]=="function"?n.readv(r,o,...a):new Promise((s,u)=>{n.readv(r,o,...a,(l,c,m)=>{if(l)return u(l);s({bytesRead:c,buffers:m})})})},e.writev=function(r,o,...a){return typeof a[a.length-1]=="function"?n.writev(r,o,...a):new Promise((s,u)=>{n.writev(r,o,...a,(l,c,m)=>{if(l)return u(l);s({bytesWritten:c,buffers:m})})})},typeof n.realpath.native=="function"?e.realpath.native=t(n.realpath.native):process.emitWarning("fs.realpath.native is not a function. Is fs being monkey-patched?","Warning","fs-extra-WARN0003")})(j);var Le={},dt={};const Pn=R;dt.checkPath=function(t){if(process.platform==="win32"&&/[<>:"|?*]/.test(t.replace(Pn.parse(t).root,""))){const i=new Error(`Path contains invalid characters: ${t}`);throw i.code="EINVAL",i}};const ht=j,{checkPath:wt}=dt,pt=e=>{const t={mode:511};return typeof e=="number"?e:{...t,...e}.mode};Le.makeDir=async(e,t)=>(wt(e),ht.mkdir(e,{mode:pt(t),recursive:!0}));Le.makeDirSync=(e,t)=>(wt(e),ht.mkdirSync(e,{mode:pt(t),recursive:!0}));const On=O.fromPromise,{makeDir:xn,makeDirSync:ke}=Le,Fe=On(xn);var J={mkdirs:Fe,mkdirsSync:ke,mkdirp:Fe,mkdirpSync:ke,ensureDir:Fe,ensureDirSync:ke};const Dn=O.fromPromise,St=j;function Cn(e){return St.access(e).then(()=>!0).catch(()=>!1)}var G={pathExists:Dn(Cn),pathExistsSync:St.existsSync};const ee=j,In=O.fromPromise;async function _n(e,t,n){const i=await ee.open(e,"r+");let r=null;try{await ee.futimes(i,t,n)}finally{try{await ee.close(i)}catch(o){r=o}}if(r)throw r}function Tn(e,t,n){const i=ee.openSync(e,"r+");return ee.futimesSync(i,t,n),ee.closeSync(i)}var vt={utimesMillis:In(_n),utimesMillisSync:Tn};const te=j,D=R,Ke=O.fromPromise;function Wn(e,t,n){const i=n.dereference?r=>te.stat(r,{bigint:!0}):r=>te.lstat(r,{bigint:!0});return Promise.all([i(e),i(t).catch(r=>{if(r.code==="ENOENT")return null;throw r})]).then(([r,o])=>({srcStat:r,destStat:o}))}function Nn(e,t,n){let i;const r=n.dereference?a=>te.statSync(a,{bigint:!0}):a=>te.lstatSync(a,{bigint:!0}),o=r(e);try{i=r(t)}catch(a){if(a.code==="ENOENT")return{srcStat:o,destStat:null};throw a}return{srcStat:o,destStat:i}}async function Ln(e,t,n,i){const{srcStat:r,destStat:o}=await Wn(e,t,i);if(o){if(me(r,o)){const a=D.basename(e),s=D.basename(t);if(n==="move"&&a!==s&&a.toLowerCase()===s.toLowerCase())return{srcStat:r,destStat:o,isChangingCase:!0};throw new Error("Source and destination must not be the same.")}if(r.isDirectory()&&!o.isDirectory())throw new Error(`Cannot overwrite non-directory '${t}' with directory '${e}'.`);if(!r.isDirectory()&&o.isDirectory())throw new Error(`Cannot overwrite directory '${t}' with non-directory '${e}'.`)}if(r.isDirectory()&&Me(e,t))throw new Error(Se(e,t,n));return{srcStat:r,destStat:o}}function Mn(e,t,n,i){const{srcStat:r,destStat:o}=Nn(e,t,i);if(o){if(me(r,o)){const a=D.basename(e),s=D.basename(t);if(n==="move"&&a!==s&&a.toLowerCase()===s.toLowerCase())return{srcStat:r,destStat:o,isChangingCase:!0};throw new Error("Source and destination must not be the same.")}if(r.isDirectory()&&!o.isDirectory())throw new Error(`Cannot overwrite non-directory '${t}' with directory '${e}'.`);if(!r.isDirectory()&&o.isDirectory())throw new Error(`Cannot overwrite directory '${t}' with non-directory '${e}'.`)}if(r.isDirectory()&&Me(e,t))throw new Error(Se(e,t,n));return{srcStat:r,destStat:o}}async function gt(e,t,n,i){const r=D.resolve(D.dirname(e)),o=D.resolve(D.dirname(n));if(o===r||o===D.parse(o).root)return;let a;try{a=await te.stat(o,{bigint:!0})}catch(s){if(s.code==="ENOENT")return;throw s}if(me(t,a))throw new Error(Se(e,n,i));return gt(e,t,o,i)}function $t(e,t,n,i){const r=D.resolve(D.dirname(e)),o=D.resolve(D.dirname(n));if(o===r||o===D.parse(o).root)return;let a;try{a=te.statSync(o,{bigint:!0})}catch(s){if(s.code==="ENOENT")return;throw s}if(me(t,a))throw new Error(Se(e,n,i));return $t(e,t,o,i)}function me(e,t){return t.ino&&t.dev&&t.ino===e.ino&&t.dev===e.dev}function Me(e,t){const n=D.resolve(e).split(D.sep).filter(r=>r),i=D.resolve(t).split(D.sep).filter(r=>r);return n.every((r,o)=>i[o]===r)}function Se(e,t,n){return`Cannot ${n} '${e}' to a subdirectory of itself, '${t}'.`}var ie={checkPaths:Ke(Ln),checkPathsSync:Mn,checkParentPaths:Ke(gt),checkParentPathsSync:$t,isSrcSubdir:Me,areIdentical:me};const W=j,ce=R,{mkdirs:jn}=J,{pathExists:An}=G,{utimesMillis:Rn}=vt,se=ie;async function qn(e,t,n={}){typeof n=="function"&&(n={filter:n}),n.clobber="clobber"in n?!!n.clobber:!0,n.overwrite="overwrite"in n?!!n.overwrite:n.clobber,n.preserveTimestamps&&process.arch==="ia32"&&process.emitWarning(`Using the preserveTimestamps option in 32-bit node is not recommended;
-
-	see https://github.com/jprichardson/node-fs-extra/issues/269`,"Warning","fs-extra-WARN0001");const{srcStat:i,destStat:r}=await se.checkPaths(e,t,"copy",n);if(await se.checkParentPaths(e,i,t,"copy"),!await bt(e,t,n))return;const a=ce.dirname(t);await An(a)||await jn(a),await Et(r,e,t,n)}async function bt(e,t,n){return n.filter?n.filter(e,t):!0}async function Et(e,t,n,i){const o=await(i.dereference?W.stat:W.lstat)(t);if(o.isDirectory())return zn(o,e,t,n,i);if(o.isFile()||o.isCharacterDevice()||o.isBlockDevice())return Bn(o,e,t,n,i);if(o.isSymbolicLink())return Hn(e,t,n,i);throw o.isSocket()?new Error(`Cannot copy a socket file: ${t}`):o.isFIFO()?new Error(`Cannot copy a FIFO pipe: ${t}`):new Error(`Unknown file: ${t}`)}async function Bn(e,t,n,i,r){if(!t)return Qe(e,n,i,r);if(r.overwrite)return await W.unlink(i),Qe(e,n,i,r);if(r.errorOnExist)throw new Error(`'${i}' already exists`)}async function Qe(e,t,n,i){if(await W.copyFile(t,n),i.preserveTimestamps){Jn(e.mode)&&await Un(n,e.mode);const r=await W.stat(t);await Rn(n,r.atime,r.mtime)}return W.chmod(n,e.mode)}function Jn(e){return(e&128)===0}function Un(e,t){return W.chmod(e,t|128)}async function zn(e,t,n,i,r){t||await W.mkdir(i);const o=await W.readdir(n);await Promise.all(o.map(async a=>{const s=ce.join(n,a),u=ce.join(i,a);if(!await bt(s,u,r))return;const{destStat:c}=await se.checkPaths(s,u,"copy",r);return Et(c,s,u,r)})),t||await W.chmod(i,e.mode)}async function Hn(e,t,n,i){let r=await W.readlink(t);if(i.dereference&&(r=ce.resolve(process.cwd(),r)),!e)return W.symlink(r,n);let o=null;try{o=await W.readlink(n)}catch(a){if(a.code==="EINVAL"||a.code==="UNKNOWN")return W.symlink(r,n);throw a}if(i.dereference&&(o=ce.resolve(process.cwd(),o)),se.isSrcSubdir(r,o))throw new Error(`Cannot copy '${r}' to a subdirectory of itself, '${o}'.`);if(se.isSrcSubdir(o,r))throw new Error(`Cannot overwrite '${o}' with '${r}'.`);return await W.unlink(n),W.symlink(r,n)}var Vn=qn;const L=re,ue=R,Yn=J.mkdirsSync,Gn=vt.utimesMillisSync,le=ie;function Kn(e,t,n){typeof n=="function"&&(n={filter:n}),n=n||{},n.clobber="clobber"in n?!!n.clobber:!0,n.overwrite="overwrite"in n?!!n.overwrite:n.clobber,n.preserveTimestamps&&process.arch==="ia32"&&process.emitWarning(`Using the preserveTimestamps option in 32-bit node is not recommended;
-
-	see https://github.com/jprichardson/node-fs-extra/issues/269`,"Warning","fs-extra-WARN0002");const{srcStat:i,destStat:r}=le.checkPathsSync(e,t,"copy",n);if(le.checkParentPathsSync(e,i,t,"copy"),n.filter&&!n.filter(e,t))return;const o=ue.dirname(t);return L.existsSync(o)||Yn(o),kt(r,e,t,n)}function kt(e,t,n,i){const o=(i.dereference?L.statSync:L.lstatSync)(t);if(o.isDirectory())return rr(o,e,t,n,i);if(o.isFile()||o.isCharacterDevice()||o.isBlockDevice())return Qn(o,e,t,n,i);if(o.isSymbolicLink())return ar(e,t,n,i);throw o.isSocket()?new Error(`Cannot copy a socket file: ${t}`):o.isFIFO()?new Error(`Cannot copy a FIFO pipe: ${t}`):new Error(`Unknown file: ${t}`)}function Qn(e,t,n,i,r){return t?Xn(e,n,i,r):Ft(e,n,i,r)}function Xn(e,t,n,i){if(i.overwrite)return L.unlinkSync(n),Ft(e,t,n,i);if(i.errorOnExist)throw new Error(`'${n}' already exists`)}function Ft(e,t,n,i){return L.copyFileSync(t,n),i.preserveTimestamps&&Zn(e.mode,t,n),je(n,e.mode)}function Zn(e,t,n){return er(e)&&tr(n,e),nr(t,n)}function er(e){return(e&128)===0}function tr(e,t){return je(e,t|128)}function je(e,t){return L.chmodSync(e,t)}function nr(e,t){const n=L.statSync(e);return Gn(t,n.atime,n.mtime)}function rr(e,t,n,i,r){return t?Pt(n,i,r):ir(e.mode,n,i,r)}function ir(e,t,n,i){return L.mkdirSync(n),Pt(t,n,i),je(n,e)}function Pt(e,t,n){L.readdirSync(e).forEach(i=>or(i,e,t,n))}function or(e,t,n,i){const r=ue.join(t,e),o=ue.join(n,e);if(i.filter&&!i.filter(r,o))return;const{destStat:a}=le.checkPathsSync(r,o,"copy",i);return kt(a,r,o,i)}function ar(e,t,n,i){let r=L.readlinkSync(t);if(i.dereference&&(r=ue.resolve(process.cwd(),r)),e){let o;try{o=L.readlinkSync(n)}catch(a){if(a.code==="EINVAL"||a.code==="UNKNOWN")return L.symlinkSync(r,n);throw a}if(i.dereference&&(o=ue.resolve(process.cwd(),o)),le.isSrcSubdir(r,o))throw new Error(`Cannot copy '${r}' to a subdirectory of itself, '${o}'.`);if(le.isSrcSubdir(o,r))throw new Error(`Cannot overwrite '${o}' with '${r}'.`);return cr(r,n)}else return L.symlinkSync(r,n)}function cr(e,t){return L.unlinkSync(t),L.symlinkSync(e,t)}var sr=Kn;const ur=O.fromPromise;var Ae={copy:ur(Vn),copySync:sr};const Ot=re,lr=O.fromCallback;function fr(e,t){Ot.rm(e,{recursive:!0,force:!0},t)}function mr(e){Ot.rmSync(e,{recursive:!0,force:!0})}var ve={remove:lr(fr),removeSync:mr};const yr=O.fromPromise,xt=j,Dt=R,Ct=J,It=ve,Xe=yr(async function(t){let n;try{n=await xt.readdir(t)}catch{return Ct.mkdirs(t)}return Promise.all(n.map(i=>It.remove(Dt.join(t,i))))});function Ze(e){let t;try{t=xt.readdirSync(e)}catch{return Ct.mkdirsSync(e)}t.forEach(n=>{n=Dt.join(e,n),It.removeSync(n)})}var dr={emptyDirSync:Ze,emptydirSync:Ze,emptyDir:Xe,emptydir:Xe};const hr=O.fromPromise,_t=R,U=j,Tt=J;async function wr(e){let t;try{t=await U.stat(e)}catch{}if(t&&t.isFile())return;const n=_t.dirname(e);let i=null;try{i=await U.stat(n)}catch(r){if(r.code==="ENOENT"){await Tt.mkdirs(n),await U.writeFile(e,"");return}else throw r}i.isDirectory()?await U.writeFile(e,""):await U.readdir(n)}function pr(e){let t;try{t=U.statSync(e)}catch{}if(t&&t.isFile())return;const n=_t.dirname(e);try{U.statSync(n).isDirectory()||U.readdirSync(n)}catch(i){if(i&&i.code==="ENOENT")Tt.mkdirsSync(n);else throw i}U.writeFileSync(e,"")}var Sr={createFile:hr(wr),createFileSync:pr};const vr=O.fromPromise,Wt=R,H=j,Nt=J,{pathExists:gr}=G,{areIdentical:Lt}=ie;async function $r(e,t){let n;try{n=await H.lstat(t)}catch{}let i;try{i=await H.lstat(e)}catch(a){throw a.message=a.message.replace("lstat","ensureLink"),a}if(n&&Lt(i,n))return;const r=Wt.dirname(t);await gr(r)||await Nt.mkdirs(r),await H.link(e,t)}function br(e,t){let n;try{n=H.lstatSync(t)}catch{}try{const o=H.lstatSync(e);if(n&&Lt(o,n))return}catch(o){throw o.message=o.message.replace("lstat","ensureLink"),o}const i=Wt.dirname(t);return H.existsSync(i)||Nt.mkdirsSync(i),H.linkSync(e,t)}var Er={createLink:vr($r),createLinkSync:br};const V=R,ae=j,{pathExists:kr}=G,Fr=O.fromPromise;async function Pr(e,t){if(V.isAbsolute(e)){try{await ae.lstat(e)}catch(o){throw o.message=o.message.replace("lstat","ensureSymlink"),o}return{toCwd:e,toDst:e}}const n=V.dirname(t),i=V.join(n,e);if(await kr(i))return{toCwd:i,toDst:e};try{await ae.lstat(e)}catch(o){throw o.message=o.message.replace("lstat","ensureSymlink"),o}return{toCwd:e,toDst:V.relative(n,e)}}function Or(e,t){if(V.isAbsolute(e)){if(!ae.existsSync(e))throw new Error("absolute srcpath does not exist");return{toCwd:e,toDst:e}}const n=V.dirname(t),i=V.join(n,e);if(ae.existsSync(i))return{toCwd:i,toDst:e};if(!ae.existsSync(e))throw new Error("relative srcpath does not exist");return{toCwd:e,toDst:V.relative(n,e)}}var xr={symlinkPaths:Fr(Pr),symlinkPathsSync:Or};const Mt=j,Dr=O.fromPromise;async function Cr(e,t){if(t)return t;let n;try{n=await Mt.lstat(e)}catch{return"file"}return n&&n.isDirectory()?"dir":"file"}function Ir(e,t){if(t)return t;let n;try{n=Mt.lstatSync(e)}catch{return"file"}return n&&n.isDirectory()?"dir":"file"}var _r={symlinkType:Dr(Cr),symlinkTypeSync:Ir};const Tr=O.fromPromise,jt=R,B=j,{mkdirs:Wr,mkdirsSync:Nr}=J,{symlinkPaths:Lr,symlinkPathsSync:Mr}=xr,{symlinkType:jr,symlinkTypeSync:Ar}=_r,{pathExists:Rr}=G,{areIdentical:At}=ie;async function qr(e,t,n){let i;try{i=await B.lstat(t)}catch{}if(i&&i.isSymbolicLink()){const[s,u]=await Promise.all([B.stat(e),B.stat(t)]);if(At(s,u))return}const r=await Lr(e,t);e=r.toDst;const o=await jr(r.toCwd,n),a=jt.dirname(t);return await Rr(a)||await Wr(a),B.symlink(e,t,o)}function Br(e,t,n){let i;try{i=B.lstatSync(t)}catch{}if(i&&i.isSymbolicLink()){const s=B.statSync(e),u=B.statSync(t);if(At(s,u))return}const r=Mr(e,t);e=r.toDst,n=Ar(r.toCwd,n);const o=jt.dirname(t);return B.existsSync(o)||Nr(o),B.symlinkSync(e,t,n)}var Jr={createSymlink:Tr(qr),createSymlinkSync:Br};const{createFile:et,createFileSync:tt}=Sr,{createLink:nt,createLinkSync:rt}=Er,{createSymlink:it,createSymlinkSync:ot}=Jr;var Ur={createFile:et,createFileSync:tt,ensureFile:et,ensureFileSync:tt,createLink:nt,createLinkSync:rt,ensureLink:nt,ensureLinkSync:rt,createSymlink:it,createSymlinkSync:ot,ensureSymlink:it,ensureSymlinkSync:ot};function zr(e,{EOL:t=`
-`,finalEOL:n=!0,replacer:i=null,spaces:r}={}){const o=n?t:"";return JSON.stringify(e,i,r).replace(/\n/g,t)+o}function Hr(e){return Buffer.isBuffer(e)&&(e=e.toString("utf8")),e.replace(/^\uFEFF/,"")}var Re={stringify:zr,stripBom:Hr};let ne;try{ne=re}catch{ne=lt}const ge=O,{stringify:Rt,stripBom:qt}=Re;async function Vr(e,t={}){typeof t=="string"&&(t={encoding:t});const n=t.fs||ne,i="throws"in t?t.throws:!0;let r=await ge.fromCallback(n.readFile)(e,t);r=qt(r);let o;try{o=JSON.parse(r,t?t.reviver:null)}catch(a){if(i)throw a.message=`${e}: ${a.message}`,a;return null}return o}const Yr=ge.fromPromise(Vr);function Gr(e,t={}){typeof t=="string"&&(t={encoding:t});const n=t.fs||ne,i="throws"in t?t.throws:!0;try{let r=n.readFileSync(e,t);return r=qt(r),JSON.parse(r,t.reviver)}catch(r){if(i)throw r.message=`${e}: ${r.message}`,r;return null}}async function Kr(e,t,n={}){const i=n.fs||ne,r=Rt(t,n);await ge.fromCallback(i.writeFile)(e,r,n)}const Qr=ge.fromPromise(Kr);function Xr(e,t,n={}){const i=n.fs||ne,r=Rt(t,n);return i.writeFileSync(e,r,n)}const Zr={readFile:Yr,readFileSync:Gr,writeFile:Qr,writeFileSync:Xr};var ei=Zr;const he=ei;var ti={readJson:he.readFile,readJsonSync:he.readFileSync,writeJson:he.writeFile,writeJsonSync:he.writeFileSync};const ni=O.fromPromise,De=j,Bt=R,Jt=J,ri=G.pathExists;async function ii(e,t,n="utf-8"){const i=Bt.dirname(e);return await ri(i)||await Jt.mkdirs(i),De.writeFile(e,t,n)}function oi(e,...t){const n=Bt.dirname(e);De.existsSync(n)||Jt.mkdirsSync(n),De.writeFileSync(e,...t)}var qe={outputFile:ni(ii),outputFileSync:oi};const{stringify:ai}=Re,{outputFile:ci}=qe;async function si(e,t,n={}){const i=ai(t,n);await ci(e,i,n)}var ui=si;const{stringify:li}=Re,{outputFileSync:fi}=qe;function mi(e,t,n){const i=li(t,n);fi(e,i,n)}var yi=mi;const di=O.fromPromise,M=ti;M.outputJson=di(ui);M.outputJsonSync=yi;M.outputJSON=M.outputJson;M.outputJSONSync=M.outputJsonSync;M.writeJSON=M.writeJson;M.writeJSONSync=M.writeJsonSync;M.readJSON=M.readJson;M.readJSONSync=M.readJsonSync;var hi=M;const wi=j,at=R,{copy:pi}=Ae,{remove:Ut}=ve,{mkdirp:Si}=J,{pathExists:vi}=G,ct=ie;async function gi(e,t,n={}){const i=n.overwrite||n.clobber||!1,{srcStat:r,isChangingCase:o=!1}=await ct.checkPaths(e,t,"move",n);await ct.checkParentPaths(e,r,t,"move");const a=at.dirname(t);return at.parse(a).root!==a&&await Si(a),$i(e,t,i,o)}async function $i(e,t,n,i){if(!i){if(n)await Ut(t);else if(await vi(t))throw new Error("dest already exists.")}try{await wi.rename(e,t)}catch(r){if(r.code!=="EXDEV")throw r;await bi(e,t,n)}}async function bi(e,t,n){return await pi(e,t,{overwrite:n,errorOnExist:!0,preserveTimestamps:!0}),Ut(e)}var Ei=gi;const zt=re,Ce=R,ki=Ae.copySync,Ht=ve.removeSync,Fi=J.mkdirpSync,st=ie;function Pi(e,t,n){n=n||{};const i=n.overwrite||n.clobber||!1,{srcStat:r,isChangingCase:o=!1}=st.checkPathsSync(e,t,"move",n);return st.checkParentPathsSync(e,r,t,"move"),Oi(t)||Fi(Ce.dirname(t)),xi(e,t,i,o)}function Oi(e){const t=Ce.dirname(e);return Ce.parse(t).root===t}function xi(e,t,n,i){if(i)return Pe(e,t,n);if(n)return Ht(t),Pe(e,t,n);if(zt.existsSync(t))throw new Error("dest already exists.");return Pe(e,t,n)}function Pe(e,t,n){try{zt.renameSync(e,t)}catch(i){if(i.code!=="EXDEV")throw i;return Di(e,t,n)}}function Di(e,t,n){return ki(e,t,{overwrite:n,errorOnExist:!0,preserveTimestamps:!0}),Ht(e)}var Ci=Pi;const Ii=O.fromPromise;var _i={move:Ii(Ei),moveSync:Ci},Ti={...j,...Ae,...dr,...Ur,...hi,...J,..._i,...qe,...G,...ve};const Wi=e=>Ti.readJsonSync(R.join(__dirname,`../../dist/shortcuts/${e}`)),Ni=async()=>{Z.ipcMain.handle("get-shortcut",async(e,t)=>await Wi(t))},{ipcMain:Li}=require("electron"),X=require("fs-extra"),Mi=require("@ffmpeg-installer/ffmpeg").path,ji=require("@ffprobe-installer/ffprobe").path,Be=require("fluent-ffmpeg"),Oe=require("path");Be.setFfmpegPath(Mi);Be.setFfprobePath(ji);const Ai=async(e,t,n,i)=>new Promise((r,o)=>{Be(e).on("end",()=>{r(!0),console.info("screeshot ok")}).on("error",a=>{console.info("error ->",a),o(a)}).screenshots({timestamps:t,filename:"temp_%i.png",folder:n,size:`${i}`})}),Ri=async()=>{Li.handle("get-video-frame-data",async(e,t,n,i,r,o,a,...s)=>{const u=Oe.join(__dirname,"../../temp");X.existsSync(u)||X.mkdirSync(u);const l=qi(r,o);if(!await Ai(t,l,u,`${n}x${i}`)){console.info("video frame error");return}let m=[];const y=X.readdirSync(u,{withFileTypes:!0});for(let f of y){try{const g=X.readFileSync(Oe.join(u,f.name)).toString("base64"),S=await mt.generate(g,a,s);m.push(S)}catch(d){return console.error("Error reading image:",d),null}X.unlinkSync(Oe.join(u,f.name))}return X.rmdir(u),m})},qi=(e,t)=>{let n=1/t,i=[];for(let r=0;r<e;r++)for(let o=0;o<t;o++)i.push(String((r+n*o).toFixed(2)));return i},{dialog:Bi}=require("electron");require("path");const Ji=async()=>await Bi.showOpenDialog({title:"选择一个文件",buttonLabel:"确认选择",properties:["openFile"],filters:[{name:"视频资源",extensions:["mp4","avi","mkv","mov","flv","wmv","webm","mpeg","mpg","ogv","3gp","m4v","asf","rm","rmvb","ts"]}]}),{app:fe,protocol:Ui,BrowserWindow:Ie,ipcMain:K,shell:zi}=require("electron");require("path");Xt();cn();Ni();Ri();K.on("set-item",(e,t,n)=>{un(t,n)});K.on("del-item",(e,t)=>{fn(t)});K.handle("get-item",async(e,t)=>await ln(t));K.on("latest-download",(e,t)=>{zi.openExternal(t)});K.on("window-create",(e,t,n)=>{new ft().createWindow(t,n)});K.handle("select-video-file",async()=>await Ji());K.on("store-set",(e,t)=>{for(const n of Ie.getAllWindows())n!=Ie.fromWebContents(e.sender)&&n.webContents.send("store-get",t)});const ut=async()=>{new ft().createWindow({route:"/home",isMainWin:!0},{width:999,height:773,minWidth:688,minHeight:560})};fe.commandLine.appendSwitch("--ignore-certificate-errors","true");Ui.registerSchemesAsPrivileged([{scheme:"app",privileges:{secure:!0,standard:!0}}]);fe.whenReady().then(async()=>{ut(),fe.on("activate",()=>{Ie.getAllWindows().length===0&&ut()})});fe.on("window-all-closed",()=>{process.platform!=="darwin"&&fe.quit()});
+"use strict";
+const electron = require("electron");
+const require$$1 = require("path");
+const require$$0$2 = require("fs");
+const require$$0 = require("constants");
+const require$$0$1 = require("stream");
+const require$$4 = require("util");
+const require$$5 = require("assert");
+const { ipcMain: ipcMain$3, BrowserWindow: BrowserWindow$1 } = require("electron");
+const windowControlListener = () => {
+  ipcMain$3.on("window-min", (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow$1.fromWebContents(webContent);
+    win.minimize();
+  });
+  ipcMain$3.on("window-max", (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow$1.fromWebContents(webContent);
+    if (win.isMaximized()) {
+      win.unmaximize();
+    } else {
+      win.maximize();
+    }
+  });
+  ipcMain$3.on("window-close", (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow$1.fromWebContents(webContent);
+    win.close();
+  });
+};
+const path$d = require("path");
+const _CreateWindow = class _CreateWindow2 {
+  constructor() {
+    this.getWindowById = (id) => {
+      return electron.BrowserWindow.fromId(id);
+    };
+    this.defaultConfig = {
+      id: null,
+      //唯一 id
+      title: "",
+      //窗口标题
+      width: null,
+      //宽度
+      height: null,
+      //高度
+      minWidth: null,
+      //最小宽度
+      minHeight: null,
+      //最小高度
+      route: "",
+      // 页面路由 URL '/manage?id=123'
+      resizable: true,
+      //是否支持调整窗口大小
+      maximize: false,
+      //是否最大化
+      backgroundColor: "#eee",
+      //窗口背景色
+      data: null,
+      //数据
+      isMultiWindow: false,
+      //是否支持多开窗口 (如果为 false，当窗体存在，再次创建不会新建一个窗体 只 focus 显示即可，，如果为 true，即使窗体存在，也可以新建一个)
+      isMainWin: false,
+      //是否主窗口创建父子窗口 --(当为 true 时会替代当前主窗口)
+      parentId: null,
+      //父窗口 id   子窗口永远显示在父窗口顶部 【父窗口可以操作】
+      modal: true
+      //模态窗口 -- 模态窗口是禁用父窗口的子窗口，创建模态窗口必须设置 parent 和 modal 选项 【父窗口不能操作】
+    };
+    this.defaultOptions = {
+      width: 900,
+      height: 700,
+      //窗口是否在屏幕居中. 默认值为 false
+      center: true,
+      //设置为 false 时可以创建一个无边框窗口 默认值为 true。
+      frame: false,
+      //窗口是否在创建时显示。 默认值为 true。
+      show: true,
+      transparent: true,
+      maxWidth: null,
+      maxHeight: null,
+      minWidth: 680,
+      minHeight: 500,
+      backgroundColor: "rgba(0,0,0,0)",
+      autoHideMenuBar: true,
+      resizable: true,
+      minimizable: true,
+      maximizable: true,
+      /* 
+        【父窗口不能操作】
+         模态窗口 -- 模态窗口是禁用父窗口的子窗口，创
+         建模态窗口必须设置 parent 和 modal 选项
+      */
+      modal: true,
+      parent: null,
+      webPreferences: {
+        // nodeIntegration: true,
+        contextIsolation: true,
+        // nodeIntegrationInWorker: true,
+        webSecurity: false,
+        // sandbox: false,
+        nodeIntegration: true,
+        preload: path$d.join(__dirname, "../preload/preload.js")
+      }
+    };
+  }
+  // 创建窗口
+  createWindow(configurations, options) {
+    var _a;
+    let windowId = 0;
+    if (_CreateWindow2.group.some((o, i) => {
+      windowId = i;
+      return o.route === configurations.route;
+    })) {
+      console.info("window is already created");
+      (_a = this.getWindowById(windowId + 1)) == null ? void 0 : _a.blur();
+      return;
+    }
+    let windowConfig = Object.assign({}, this.defaultConfig, configurations);
+    let windowOptions = Object.assign({}, this.defaultOptions, options);
+    if (!windowConfig.isMainWin && _CreateWindow2.main) {
+      windowOptions.parent = _CreateWindow2.main;
+    }
+    let win = new electron.BrowserWindow(windowOptions);
+    console.log("window id:" + win.id);
+    _CreateWindow2.group[win.id - 1] = {
+      windowId: win.id,
+      route: windowConfig.route
+    };
+    if (windowConfig.maximize && windowConfig.resizable) {
+      win.maximize();
+    }
+    if (windowConfig.isMainWin) {
+      if (_CreateWindow2.main) {
+        console.info("main window already created");
+        delete _CreateWindow2.group[0];
+        _CreateWindow2.main.close();
+      }
+      _CreateWindow2.main = win;
+    }
+    let that = this;
+    win.on("close", () => {
+      _CreateWindow2.group.forEach((o, i) => {
+        if (this.getWindowById(o.windowId) == win)
+          delete _CreateWindow2.group[i];
+        if (win == that.main)
+          electron.app.quit();
+      });
+      win.setOpacity(0);
+    });
+    let winURL;
+    if (electron.app.isPackaged) {
+      win.loadFile(require$$1.join(__dirname, "../../dist/index.html"), { hash: windowConfig.route });
+    } else {
+      winURL = windowConfig.route ? `http://localhost:${process.env["VITE_DEV_SERVER_PORT"]}/#${windowConfig.route}` : `http://localhost:${process.env["VITE_DEV_SERVER_PORT"]}/#`;
+      win.loadURL(winURL);
+    }
+    console.info("new window address -> ", winURL);
+    win.setMenu(null);
+    electron.globalShortcut.register("CommandOrControl+Shift+i", function() {
+      win.webContents.openDevTools();
+    });
+    win.once("ready-to-show", () => {
+      win.show();
+    });
+    return win;
+  }
+};
+_CreateWindow.group = [];
+_CreateWindow.main = null;
+let CreateWindow = _CreateWindow;
+const sharp = require("sharp");
+const _ImageToHexArray = class _ImageToHexArray2 {
+};
+_ImageToHexArray.generate = async (picData, thresholdData, config) => {
+  _ImageToHexArray.configArray = config;
+  _ImageToHexArray.threshold = thresholdData;
+  const picImageData = await _ImageToHexArray.base64ToImageData(picData);
+  const bufferData = _ImageToHexArray.imageDataToHexArray(picImageData);
+  return _ImageToHexArray.configArray[3] == 0 ? _ImageToHexArray.hex2hex(bufferData.toString("hex")) : bufferData;
+};
+_ImageToHexArray.imageDataToHexArray = (imageData) => {
+  const pimage = _ImageToHexArray.createImageData(imageData);
+  let pixels = pimage.data;
+  let height = pimage.height;
+  let width = pimage.width;
+  let pixelsLen = pixels.length;
+  if (_ImageToHexArray.configArray[4] == 1) {
+    let threshold = _ImageToHexArray.threshold;
+    let unpackedBuffer = [];
+    let depth = 4;
+    let pixelVal;
+    for (let i = 0; i < pixelsLen; i += depth) {
+      pixelVal = pixels[i + 1] = pixels[i + 2] = pixels[i];
+      pixelVal > threshold ? pixelVal = 1 : pixelVal = 0;
+      unpackedBuffer[i / depth] = pixelVal;
+    }
+    return _ImageToHexArray.imageSamplingArr[_ImageToHexArray.configArray[1]](
+      unpackedBuffer,
+      width,
+      height
+    );
+  } else {
+    return _ImageToHexArray.colorImageSampling(pixels, width, height);
+  }
+};
+_ImageToHexArray.colorImageSampling = (pixels, width, height) => {
+  const buffer2 = Buffer.alloc(width * height * 2);
+  let i = 0, j = 0;
+  while (i < buffer2.length && j < pixels.length) {
+    buffer2[i] |= pixels[j] >> 3 << 3;
+    buffer2[i] |= pixels[j + 1] >> 5;
+    buffer2[i + 1] |= pixels[j + 1] >> 2 << 5;
+    buffer2[i + 1] |= pixels[j + 2] >> 3;
+    if (_ImageToHexArray.configArray[0] == 0 || _ImageToHexArray.configArray[2] == 1) {
+      buffer2[i] = ~buffer2[i];
+      buffer2[i + 1] = ~buffer2[i + 1];
+    }
+    i += 2;
+    j += 4;
+  }
+  return buffer2;
+};
+_ImageToHexArray.ImageSamplingRow = (unpackedBuffer, width, height) => {
+  const buffer2 = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = y;
+    let pageShift = 1 << x % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - x % 8;
+    byte = page * Math.floor(width / 8) + Math.floor(x / 8);
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer2[byte] |= pageShift;
+    } else {
+      buffer2[byte] &= ~pageShift;
+    }
+  }
+  return buffer2;
+};
+_ImageToHexArray.ImageSamplingCol = (unpackedBuffer, width, height) => {
+  const buffer2 = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = x;
+    let pageShift = 1 << y % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - y % 8;
+    byte = page * Math.floor(height / 8) + Math.floor(y / 8);
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer2[byte] |= pageShift;
+    } else {
+      buffer2[byte] &= ~pageShift;
+    }
+  }
+  return buffer2;
+};
+_ImageToHexArray.ImageSamplingColRow = (unpackedBuffer, width, height) => {
+  const buffer2 = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = Math.floor(y / 8);
+    let pageShift = 1 << y - 8 * page;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - (y - 8 * page);
+    page === 0 ? byte = x : byte = x + width * page;
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer2[byte] |= pageShift;
+    } else {
+      buffer2[byte] &= ~pageShift;
+    }
+  }
+  return buffer2;
+};
+_ImageToHexArray.ImageSamplingRowCol = (unpackedBuffer, width, height) => {
+  const buffer2 = Buffer.alloc(width * height / 8);
+  for (let i = 0; i < unpackedBuffer.length; i++) {
+    let x = Math.floor(i % width);
+    let y = Math.floor(i / width);
+    let byte = 0;
+    let page = Math.floor(x / 8);
+    let pageShift = 1 << x % 8;
+    if (_ImageToHexArray.configArray[2] != 0)
+      pageShift = 1 << 7 - x % 8;
+    byte = page * height + y;
+    if (_ImageToHexArray.configArray[0] !== 0)
+      unpackedBuffer[i] === 0 ? unpackedBuffer[i] = 1 : unpackedBuffer[i] = 0;
+    if (unpackedBuffer[i] === 0) {
+      buffer2[byte] |= pageShift;
+    } else {
+      buffer2[byte] &= ~pageShift;
+    }
+  }
+  return buffer2;
+};
+_ImageToHexArray.imageSamplingArr = [
+  _ImageToHexArray.ImageSamplingRow,
+  _ImageToHexArray.ImageSamplingCol,
+  _ImageToHexArray.ImageSamplingColRow,
+  _ImageToHexArray.ImageSamplingRowCol
+];
+_ImageToHexArray.createImageData = (imageData) => {
+  let buffer2 = Buffer.alloc(imageData.width * imageData.height * 4);
+  for (let y = 0, pos = 0; y < imageData.height; y++) {
+    for (let x = 0; x < imageData.width; x++) {
+      buffer2.writeUInt32BE(_ImageToHexArray.getPixel(imageData, x, y), pos);
+      pos += 4;
+    }
+  }
+  imageData.data = buffer2;
+  return imageData;
+};
+_ImageToHexArray.getPixel = (image, x, y) => {
+  x = x | 0;
+  y = y | 0;
+  if (x < 0 || y < 0 || x >= image.width || y >= image.height)
+    return 0;
+  let index = (y * image.width + x) * image.channels, r, g, b, a;
+  switch (image.channels) {
+    case 1:
+      r = g = b = image.data[index];
+      a = 255;
+      break;
+    case 2:
+      r = g = b = image.data[index];
+      a = image.data[index + 1];
+      break;
+    case 3:
+      r = image.data[index];
+      g = image.data[index + 1];
+      b = image.data[index + 2];
+      a = 255;
+      break;
+    case 4:
+      r = image.data[index];
+      g = image.data[index + 1];
+      b = image.data[index + 2];
+      a = image.data[index + 3];
+      break;
+  }
+  return (r << 24 | g << 16 | b << 8 | a) >>> 0;
+};
+_ImageToHexArray.bufferToImageData = async (buffer2) => {
+  const { data, info } = await sharp(buffer2).raw().ensureAlpha().toBuffer({ resolveWithObject: true });
+  const channels = info.channels;
+  return {
+    width: info.width,
+    height: info.height,
+    // 像素数据
+    data: new Uint8ClampedArray(data),
+    channels
+  };
+};
+_ImageToHexArray.base64ToImageData = async (base64Data) => {
+  return await _ImageToHexArray.bufferToImageData(_ImageToHexArray.base64ToBuffer(base64Data));
+};
+_ImageToHexArray.base64ToBuffer = (base64Data) => {
+  return Buffer.from(
+    base64Data.replace(/^data:image\/\w+;base64,/, ""),
+    "base64"
+  );
+};
+_ImageToHexArray.resizeImage = async (width, height, picData, colorMode) => {
+  if (width == 0 || height == 0)
+    return;
+  const bufferData = _ImageToHexArray.base64ToBuffer(picData);
+  let resultBuffer;
+  if (!colorMode) {
+    resultBuffer = await sharp(bufferData).resize({ width, height, fastShrinkOnLoad: true }).toBuffer();
+  } else {
+    resultBuffer = await sharp(bufferData).resize(width, height).greyscale().toBuffer();
+  }
+  return resultBuffer.toString("base64");
+};
+_ImageToHexArray.hex2hex = (hex) => {
+  for (var bytes = [], c = 0; c < hex.length; c += 2) {
+    bytes.push("0x" + hex.substr(c, 2));
+  }
+  return bytes;
+};
+let ImageToHexArray = _ImageToHexArray;
+const { ipcMain: ipcMain$2 } = require("electron");
+const picDataListener = () => {
+  ipcMain$2.handle(
+    "pic-data-editor",
+    async (event, width, height, picData, colorMode) => {
+      const result = await ImageToHexArray.resizeImage(width, height, picData, colorMode);
+      return result;
+    }
+  );
+  ipcMain$2.handle(
+    "pic-data-parse",
+    async (event, data, threshold, ...configArray) => {
+      const result = await ImageToHexArray.generate(
+        data,
+        threshold,
+        configArray
+      );
+      return result;
+    }
+  );
+};
+const Store = require("electron-store");
+const store = new Store();
+const setItem = (name, item) => {
+  store.set(name, item);
+};
+const getItem = (name) => {
+  return store.get(name);
+};
+const delItem = (name) => {
+  store.delete(name);
+};
+var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
+var fs$i = {};
+var universalify$1 = {};
+universalify$1.fromCallback = function(fn) {
+  return Object.defineProperty(function(...args) {
+    if (typeof args[args.length - 1] === "function")
+      fn.apply(this, args);
+    else {
+      return new Promise((resolve, reject) => {
+        args.push((err, res) => err != null ? reject(err) : resolve(res));
+        fn.apply(this, args);
+      });
+    }
+  }, "name", { value: fn.name });
+};
+universalify$1.fromPromise = function(fn) {
+  return Object.defineProperty(function(...args) {
+    const cb = args[args.length - 1];
+    if (typeof cb !== "function")
+      return fn.apply(this, args);
+    else {
+      args.pop();
+      fn.apply(this, args).then((r) => cb(null, r), cb);
+    }
+  }, "name", { value: fn.name });
+};
+var constants = require$$0;
+var origCwd = process.cwd;
+var cwd = null;
+var platform = process.env.GRACEFUL_FS_PLATFORM || process.platform;
+process.cwd = function() {
+  if (!cwd)
+    cwd = origCwd.call(process);
+  return cwd;
+};
+try {
+  process.cwd();
+} catch (er) {
+}
+if (typeof process.chdir === "function") {
+  var chdir = process.chdir;
+  process.chdir = function(d) {
+    cwd = null;
+    chdir.call(process, d);
+  };
+  if (Object.setPrototypeOf)
+    Object.setPrototypeOf(process.chdir, chdir);
+}
+var polyfills$1 = patch$1;
+function patch$1(fs2) {
+  if (constants.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
+    patchLchmod(fs2);
+  }
+  if (!fs2.lutimes) {
+    patchLutimes(fs2);
+  }
+  fs2.chown = chownFix(fs2.chown);
+  fs2.fchown = chownFix(fs2.fchown);
+  fs2.lchown = chownFix(fs2.lchown);
+  fs2.chmod = chmodFix(fs2.chmod);
+  fs2.fchmod = chmodFix(fs2.fchmod);
+  fs2.lchmod = chmodFix(fs2.lchmod);
+  fs2.chownSync = chownFixSync(fs2.chownSync);
+  fs2.fchownSync = chownFixSync(fs2.fchownSync);
+  fs2.lchownSync = chownFixSync(fs2.lchownSync);
+  fs2.chmodSync = chmodFixSync(fs2.chmodSync);
+  fs2.fchmodSync = chmodFixSync(fs2.fchmodSync);
+  fs2.lchmodSync = chmodFixSync(fs2.lchmodSync);
+  fs2.stat = statFix(fs2.stat);
+  fs2.fstat = statFix(fs2.fstat);
+  fs2.lstat = statFix(fs2.lstat);
+  fs2.statSync = statFixSync(fs2.statSync);
+  fs2.fstatSync = statFixSync(fs2.fstatSync);
+  fs2.lstatSync = statFixSync(fs2.lstatSync);
+  if (fs2.chmod && !fs2.lchmod) {
+    fs2.lchmod = function(path2, mode, cb) {
+      if (cb)
+        process.nextTick(cb);
+    };
+    fs2.lchmodSync = function() {
+    };
+  }
+  if (fs2.chown && !fs2.lchown) {
+    fs2.lchown = function(path2, uid, gid, cb) {
+      if (cb)
+        process.nextTick(cb);
+    };
+    fs2.lchownSync = function() {
+    };
+  }
+  if (platform === "win32") {
+    fs2.rename = typeof fs2.rename !== "function" ? fs2.rename : function(fs$rename) {
+      function rename2(from, to, cb) {
+        var start = Date.now();
+        var backoff = 0;
+        fs$rename(from, to, function CB(er) {
+          if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start < 6e4) {
+            setTimeout(function() {
+              fs2.stat(to, function(stater, st) {
+                if (stater && stater.code === "ENOENT")
+                  fs$rename(from, to, CB);
+                else
+                  cb(er);
+              });
+            }, backoff);
+            if (backoff < 100)
+              backoff += 10;
+            return;
+          }
+          if (cb)
+            cb(er);
+        });
+      }
+      if (Object.setPrototypeOf)
+        Object.setPrototypeOf(rename2, fs$rename);
+      return rename2;
+    }(fs2.rename);
+  }
+  fs2.read = typeof fs2.read !== "function" ? fs2.read : function(fs$read) {
+    function read(fd, buffer, offset, length, position, callback_) {
+      var callback;
+      if (callback_ && typeof callback_ === "function") {
+        var eagCounter = 0;
+        callback = function(er, _, __) {
+          if (er && er.code === "EAGAIN" && eagCounter < 10) {
+            eagCounter++;
+            return fs$read.call(fs2, fd, buffer, offset, length, position, callback);
+          }
+          callback_.apply(this, arguments);
+        };
+      }
+      return fs$read.call(fs2, fd, buffer, offset, length, position, callback);
+    }
+    if (Object.setPrototypeOf)
+      Object.setPrototypeOf(read, fs$read);
+    return read;
+  }(fs2.read);
+  fs2.readSync = typeof fs2.readSync !== "function" ? fs2.readSync : function(fs$readSync) {
+    return function(fd, buffer, offset, length, position) {
+      var eagCounter = 0;
+      while (true) {
+        try {
+          return fs$readSync.call(fs2, fd, buffer, offset, length, position);
+        } catch (er) {
+          if (er.code === "EAGAIN" && eagCounter < 10) {
+            eagCounter++;
+            continue;
+          }
+          throw er;
+        }
+      }
+    };
+  }(fs2.readSync);
+  function patchLchmod(fs3) {
+    fs3.lchmod = function(path2, mode, callback) {
+      fs3.open(
+        path2,
+        constants.O_WRONLY | constants.O_SYMLINK,
+        mode,
+        function(err, fd) {
+          if (err) {
+            if (callback)
+              callback(err);
+            return;
+          }
+          fs3.fchmod(fd, mode, function(err2) {
+            fs3.close(fd, function(err22) {
+              if (callback)
+                callback(err2 || err22);
+            });
+          });
+        }
+      );
+    };
+    fs3.lchmodSync = function(path2, mode) {
+      var fd = fs3.openSync(path2, constants.O_WRONLY | constants.O_SYMLINK, mode);
+      var threw = true;
+      var ret;
+      try {
+        ret = fs3.fchmodSync(fd, mode);
+        threw = false;
+      } finally {
+        if (threw) {
+          try {
+            fs3.closeSync(fd);
+          } catch (er) {
+          }
+        } else {
+          fs3.closeSync(fd);
+        }
+      }
+      return ret;
+    };
+  }
+  function patchLutimes(fs3) {
+    if (constants.hasOwnProperty("O_SYMLINK") && fs3.futimes) {
+      fs3.lutimes = function(path2, at, mt, cb) {
+        fs3.open(path2, constants.O_SYMLINK, function(er, fd) {
+          if (er) {
+            if (cb)
+              cb(er);
+            return;
+          }
+          fs3.futimes(fd, at, mt, function(er2) {
+            fs3.close(fd, function(er22) {
+              if (cb)
+                cb(er2 || er22);
+            });
+          });
+        });
+      };
+      fs3.lutimesSync = function(path2, at, mt) {
+        var fd = fs3.openSync(path2, constants.O_SYMLINK);
+        var ret;
+        var threw = true;
+        try {
+          ret = fs3.futimesSync(fd, at, mt);
+          threw = false;
+        } finally {
+          if (threw) {
+            try {
+              fs3.closeSync(fd);
+            } catch (er) {
+            }
+          } else {
+            fs3.closeSync(fd);
+          }
+        }
+        return ret;
+      };
+    } else if (fs3.futimes) {
+      fs3.lutimes = function(_a, _b, _c, cb) {
+        if (cb)
+          process.nextTick(cb);
+      };
+      fs3.lutimesSync = function() {
+      };
+    }
+  }
+  function chmodFix(orig) {
+    if (!orig)
+      return orig;
+    return function(target, mode, cb) {
+      return orig.call(fs2, target, mode, function(er) {
+        if (chownErOk(er))
+          er = null;
+        if (cb)
+          cb.apply(this, arguments);
+      });
+    };
+  }
+  function chmodFixSync(orig) {
+    if (!orig)
+      return orig;
+    return function(target, mode) {
+      try {
+        return orig.call(fs2, target, mode);
+      } catch (er) {
+        if (!chownErOk(er))
+          throw er;
+      }
+    };
+  }
+  function chownFix(orig) {
+    if (!orig)
+      return orig;
+    return function(target, uid, gid, cb) {
+      return orig.call(fs2, target, uid, gid, function(er) {
+        if (chownErOk(er))
+          er = null;
+        if (cb)
+          cb.apply(this, arguments);
+      });
+    };
+  }
+  function chownFixSync(orig) {
+    if (!orig)
+      return orig;
+    return function(target, uid, gid) {
+      try {
+        return orig.call(fs2, target, uid, gid);
+      } catch (er) {
+        if (!chownErOk(er))
+          throw er;
+      }
+    };
+  }
+  function statFix(orig) {
+    if (!orig)
+      return orig;
+    return function(target, options, cb) {
+      if (typeof options === "function") {
+        cb = options;
+        options = null;
+      }
+      function callback(er, stats) {
+        if (stats) {
+          if (stats.uid < 0)
+            stats.uid += 4294967296;
+          if (stats.gid < 0)
+            stats.gid += 4294967296;
+        }
+        if (cb)
+          cb.apply(this, arguments);
+      }
+      return options ? orig.call(fs2, target, options, callback) : orig.call(fs2, target, callback);
+    };
+  }
+  function statFixSync(orig) {
+    if (!orig)
+      return orig;
+    return function(target, options) {
+      var stats = options ? orig.call(fs2, target, options) : orig.call(fs2, target);
+      if (stats) {
+        if (stats.uid < 0)
+          stats.uid += 4294967296;
+        if (stats.gid < 0)
+          stats.gid += 4294967296;
+      }
+      return stats;
+    };
+  }
+  function chownErOk(er) {
+    if (!er)
+      return true;
+    if (er.code === "ENOSYS")
+      return true;
+    var nonroot = !process.getuid || process.getuid() !== 0;
+    if (nonroot) {
+      if (er.code === "EINVAL" || er.code === "EPERM")
+        return true;
+    }
+    return false;
+  }
+}
+var Stream = require$$0$1.Stream;
+var legacyStreams = legacy$1;
+function legacy$1(fs2) {
+  return {
+    ReadStream,
+    WriteStream
+  };
+  function ReadStream(path2, options) {
+    if (!(this instanceof ReadStream))
+      return new ReadStream(path2, options);
+    Stream.call(this);
+    var self2 = this;
+    this.path = path2;
+    this.fd = null;
+    this.readable = true;
+    this.paused = false;
+    this.flags = "r";
+    this.mode = 438;
+    this.bufferSize = 64 * 1024;
+    options = options || {};
+    var keys = Object.keys(options);
+    for (var index = 0, length = keys.length; index < length; index++) {
+      var key = keys[index];
+      this[key] = options[key];
+    }
+    if (this.encoding)
+      this.setEncoding(this.encoding);
+    if (this.start !== void 0) {
+      if ("number" !== typeof this.start) {
+        throw TypeError("start must be a Number");
+      }
+      if (this.end === void 0) {
+        this.end = Infinity;
+      } else if ("number" !== typeof this.end) {
+        throw TypeError("end must be a Number");
+      }
+      if (this.start > this.end) {
+        throw new Error("start must be <= end");
+      }
+      this.pos = this.start;
+    }
+    if (this.fd !== null) {
+      process.nextTick(function() {
+        self2._read();
+      });
+      return;
+    }
+    fs2.open(this.path, this.flags, this.mode, function(err, fd) {
+      if (err) {
+        self2.emit("error", err);
+        self2.readable = false;
+        return;
+      }
+      self2.fd = fd;
+      self2.emit("open", fd);
+      self2._read();
+    });
+  }
+  function WriteStream(path2, options) {
+    if (!(this instanceof WriteStream))
+      return new WriteStream(path2, options);
+    Stream.call(this);
+    this.path = path2;
+    this.fd = null;
+    this.writable = true;
+    this.flags = "w";
+    this.encoding = "binary";
+    this.mode = 438;
+    this.bytesWritten = 0;
+    options = options || {};
+    var keys = Object.keys(options);
+    for (var index = 0, length = keys.length; index < length; index++) {
+      var key = keys[index];
+      this[key] = options[key];
+    }
+    if (this.start !== void 0) {
+      if ("number" !== typeof this.start) {
+        throw TypeError("start must be a Number");
+      }
+      if (this.start < 0) {
+        throw new Error("start must be >= zero");
+      }
+      this.pos = this.start;
+    }
+    this.busy = false;
+    this._queue = [];
+    if (this.fd === null) {
+      this._open = fs2.open;
+      this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
+      this.flush();
+    }
+  }
+}
+var clone_1 = clone$1;
+var getPrototypeOf = Object.getPrototypeOf || function(obj) {
+  return obj.__proto__;
+};
+function clone$1(obj) {
+  if (obj === null || typeof obj !== "object")
+    return obj;
+  if (obj instanceof Object)
+    var copy2 = { __proto__: getPrototypeOf(obj) };
+  else
+    var copy2 = /* @__PURE__ */ Object.create(null);
+  Object.getOwnPropertyNames(obj).forEach(function(key) {
+    Object.defineProperty(copy2, key, Object.getOwnPropertyDescriptor(obj, key));
+  });
+  return copy2;
+}
+var fs$h = require$$0$2;
+var polyfills = polyfills$1;
+var legacy = legacyStreams;
+var clone = clone_1;
+var util = require$$4;
+var gracefulQueue;
+var previousSymbol;
+if (typeof Symbol === "function" && typeof Symbol.for === "function") {
+  gracefulQueue = Symbol.for("graceful-fs.queue");
+  previousSymbol = Symbol.for("graceful-fs.previous");
+} else {
+  gracefulQueue = "___graceful-fs.queue";
+  previousSymbol = "___graceful-fs.previous";
+}
+function noop() {
+}
+function publishQueue(context, queue) {
+  Object.defineProperty(context, gracefulQueue, {
+    get: function() {
+      return queue;
+    }
+  });
+}
+var debug = noop;
+if (util.debuglog)
+  debug = util.debuglog("gfs4");
+else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
+  debug = function() {
+    var m = util.format.apply(util, arguments);
+    m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
+    console.error(m);
+  };
+if (!fs$h[gracefulQueue]) {
+  var queue = commonjsGlobal[gracefulQueue] || [];
+  publishQueue(fs$h, queue);
+  fs$h.close = function(fs$close) {
+    function close(fd, cb) {
+      return fs$close.call(fs$h, fd, function(err) {
+        if (!err) {
+          resetQueue();
+        }
+        if (typeof cb === "function")
+          cb.apply(this, arguments);
+      });
+    }
+    Object.defineProperty(close, previousSymbol, {
+      value: fs$close
+    });
+    return close;
+  }(fs$h.close);
+  fs$h.closeSync = function(fs$closeSync) {
+    function closeSync(fd) {
+      fs$closeSync.apply(fs$h, arguments);
+      resetQueue();
+    }
+    Object.defineProperty(closeSync, previousSymbol, {
+      value: fs$closeSync
+    });
+    return closeSync;
+  }(fs$h.closeSync);
+  if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
+    process.on("exit", function() {
+      debug(fs$h[gracefulQueue]);
+      require$$5.equal(fs$h[gracefulQueue].length, 0);
+    });
+  }
+}
+if (!commonjsGlobal[gracefulQueue]) {
+  publishQueue(commonjsGlobal, fs$h[gracefulQueue]);
+}
+var gracefulFs = patch(clone(fs$h));
+if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs$h.__patched) {
+  gracefulFs = patch(fs$h);
+  fs$h.__patched = true;
+}
+function patch(fs2) {
+  polyfills(fs2);
+  fs2.gracefulify = patch;
+  fs2.createReadStream = createReadStream;
+  fs2.createWriteStream = createWriteStream;
+  var fs$readFile = fs2.readFile;
+  fs2.readFile = readFile2;
+  function readFile2(path2, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$readFile(path2, options, cb);
+    function go$readFile(path3, options2, cb2, startTime) {
+      return fs$readFile(path3, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$readFile, [path3, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$writeFile = fs2.writeFile;
+  fs2.writeFile = writeFile2;
+  function writeFile2(path2, data, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$writeFile(path2, data, options, cb);
+    function go$writeFile(path3, data2, options2, cb2, startTime) {
+      return fs$writeFile(path3, data2, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$writeFile, [path3, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$appendFile = fs2.appendFile;
+  if (fs$appendFile)
+    fs2.appendFile = appendFile;
+  function appendFile(path2, data, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$appendFile(path2, data, options, cb);
+    function go$appendFile(path3, data2, options2, cb2, startTime) {
+      return fs$appendFile(path3, data2, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$appendFile, [path3, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$copyFile = fs2.copyFile;
+  if (fs$copyFile)
+    fs2.copyFile = copyFile2;
+  function copyFile2(src, dest, flags, cb) {
+    if (typeof flags === "function") {
+      cb = flags;
+      flags = 0;
+    }
+    return go$copyFile(src, dest, flags, cb);
+    function go$copyFile(src2, dest2, flags2, cb2, startTime) {
+      return fs$copyFile(src2, dest2, flags2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$copyFile, [src2, dest2, flags2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$readdir = fs2.readdir;
+  fs2.readdir = readdir;
+  var noReaddirOptionVersions = /^v[0-5]\./;
+  function readdir(path2, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path3, options2, cb2, startTime) {
+      return fs$readdir(path3, fs$readdirCallback(
+        path3,
+        options2,
+        cb2,
+        startTime
+      ));
+    } : function go$readdir2(path3, options2, cb2, startTime) {
+      return fs$readdir(path3, options2, fs$readdirCallback(
+        path3,
+        options2,
+        cb2,
+        startTime
+      ));
+    };
+    return go$readdir(path2, options, cb);
+    function fs$readdirCallback(path3, options2, cb2, startTime) {
+      return function(err, files) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([
+            go$readdir,
+            [path3, options2, cb2],
+            err,
+            startTime || Date.now(),
+            Date.now()
+          ]);
+        else {
+          if (files && files.sort)
+            files.sort();
+          if (typeof cb2 === "function")
+            cb2.call(this, err, files);
+        }
+      };
+    }
+  }
+  if (process.version.substr(0, 4) === "v0.8") {
+    var legStreams = legacy(fs2);
+    ReadStream = legStreams.ReadStream;
+    WriteStream = legStreams.WriteStream;
+  }
+  var fs$ReadStream = fs2.ReadStream;
+  if (fs$ReadStream) {
+    ReadStream.prototype = Object.create(fs$ReadStream.prototype);
+    ReadStream.prototype.open = ReadStream$open;
+  }
+  var fs$WriteStream = fs2.WriteStream;
+  if (fs$WriteStream) {
+    WriteStream.prototype = Object.create(fs$WriteStream.prototype);
+    WriteStream.prototype.open = WriteStream$open;
+  }
+  Object.defineProperty(fs2, "ReadStream", {
+    get: function() {
+      return ReadStream;
+    },
+    set: function(val) {
+      ReadStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  Object.defineProperty(fs2, "WriteStream", {
+    get: function() {
+      return WriteStream;
+    },
+    set: function(val) {
+      WriteStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  var FileReadStream = ReadStream;
+  Object.defineProperty(fs2, "FileReadStream", {
+    get: function() {
+      return FileReadStream;
+    },
+    set: function(val) {
+      FileReadStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  var FileWriteStream = WriteStream;
+  Object.defineProperty(fs2, "FileWriteStream", {
+    get: function() {
+      return FileWriteStream;
+    },
+    set: function(val) {
+      FileWriteStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  function ReadStream(path2, options) {
+    if (this instanceof ReadStream)
+      return fs$ReadStream.apply(this, arguments), this;
+    else
+      return ReadStream.apply(Object.create(ReadStream.prototype), arguments);
+  }
+  function ReadStream$open() {
+    var that = this;
+    open(that.path, that.flags, that.mode, function(err, fd) {
+      if (err) {
+        if (that.autoClose)
+          that.destroy();
+        that.emit("error", err);
+      } else {
+        that.fd = fd;
+        that.emit("open", fd);
+        that.read();
+      }
+    });
+  }
+  function WriteStream(path2, options) {
+    if (this instanceof WriteStream)
+      return fs$WriteStream.apply(this, arguments), this;
+    else
+      return WriteStream.apply(Object.create(WriteStream.prototype), arguments);
+  }
+  function WriteStream$open() {
+    var that = this;
+    open(that.path, that.flags, that.mode, function(err, fd) {
+      if (err) {
+        that.destroy();
+        that.emit("error", err);
+      } else {
+        that.fd = fd;
+        that.emit("open", fd);
+      }
+    });
+  }
+  function createReadStream(path2, options) {
+    return new fs2.ReadStream(path2, options);
+  }
+  function createWriteStream(path2, options) {
+    return new fs2.WriteStream(path2, options);
+  }
+  var fs$open = fs2.open;
+  fs2.open = open;
+  function open(path2, flags, mode, cb) {
+    if (typeof mode === "function")
+      cb = mode, mode = null;
+    return go$open(path2, flags, mode, cb);
+    function go$open(path3, flags2, mode2, cb2, startTime) {
+      return fs$open(path3, flags2, mode2, function(err, fd) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$open, [path3, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  return fs2;
+}
+function enqueue(elem) {
+  debug("ENQUEUE", elem[0].name, elem[1]);
+  fs$h[gracefulQueue].push(elem);
+  retry();
+}
+var retryTimer;
+function resetQueue() {
+  var now = Date.now();
+  for (var i = 0; i < fs$h[gracefulQueue].length; ++i) {
+    if (fs$h[gracefulQueue][i].length > 2) {
+      fs$h[gracefulQueue][i][3] = now;
+      fs$h[gracefulQueue][i][4] = now;
+    }
+  }
+  retry();
+}
+function retry() {
+  clearTimeout(retryTimer);
+  retryTimer = void 0;
+  if (fs$h[gracefulQueue].length === 0)
+    return;
+  var elem = fs$h[gracefulQueue].shift();
+  var fn = elem[0];
+  var args = elem[1];
+  var err = elem[2];
+  var startTime = elem[3];
+  var lastTime = elem[4];
+  if (startTime === void 0) {
+    debug("RETRY", fn.name, args);
+    fn.apply(null, args);
+  } else if (Date.now() - startTime >= 6e4) {
+    debug("TIMEOUT", fn.name, args);
+    var cb = args.pop();
+    if (typeof cb === "function")
+      cb.call(null, err);
+  } else {
+    var sinceAttempt = Date.now() - lastTime;
+    var sinceStart = Math.max(lastTime - startTime, 1);
+    var desiredDelay = Math.min(sinceStart * 1.2, 100);
+    if (sinceAttempt >= desiredDelay) {
+      debug("RETRY", fn.name, args);
+      fn.apply(null, args.concat([startTime]));
+    } else {
+      fs$h[gracefulQueue].push(elem);
+    }
+  }
+  if (retryTimer === void 0) {
+    retryTimer = setTimeout(retry, 0);
+  }
+}
+(function(exports) {
+  const u2 = universalify$1.fromCallback;
+  const fs2 = gracefulFs;
+  const api = [
+    "access",
+    "appendFile",
+    "chmod",
+    "chown",
+    "close",
+    "copyFile",
+    "fchmod",
+    "fchown",
+    "fdatasync",
+    "fstat",
+    "fsync",
+    "ftruncate",
+    "futimes",
+    "lchmod",
+    "lchown",
+    "link",
+    "lstat",
+    "mkdir",
+    "mkdtemp",
+    "open",
+    "opendir",
+    "readdir",
+    "readFile",
+    "readlink",
+    "realpath",
+    "rename",
+    "rm",
+    "rmdir",
+    "stat",
+    "symlink",
+    "truncate",
+    "unlink",
+    "utimes",
+    "writeFile"
+  ].filter((key) => {
+    return typeof fs2[key] === "function";
+  });
+  Object.assign(exports, fs2);
+  api.forEach((method) => {
+    exports[method] = u2(fs2[method]);
+  });
+  exports.exists = function(filename, callback) {
+    if (typeof callback === "function") {
+      return fs2.exists(filename, callback);
+    }
+    return new Promise((resolve) => {
+      return fs2.exists(filename, resolve);
+    });
+  };
+  exports.read = function(fd, buffer, offset, length, position, callback) {
+    if (typeof callback === "function") {
+      return fs2.read(fd, buffer, offset, length, position, callback);
+    }
+    return new Promise((resolve, reject) => {
+      fs2.read(fd, buffer, offset, length, position, (err, bytesRead, buffer2) => {
+        if (err)
+          return reject(err);
+        resolve({ bytesRead, buffer: buffer2 });
+      });
+    });
+  };
+  exports.write = function(fd, buffer, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.write(fd, buffer, ...args);
+    }
+    return new Promise((resolve, reject) => {
+      fs2.write(fd, buffer, ...args, (err, bytesWritten, buffer2) => {
+        if (err)
+          return reject(err);
+        resolve({ bytesWritten, buffer: buffer2 });
+      });
+    });
+  };
+  exports.readv = function(fd, buffers, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.readv(fd, buffers, ...args);
+    }
+    return new Promise((resolve, reject) => {
+      fs2.readv(fd, buffers, ...args, (err, bytesRead, buffers2) => {
+        if (err)
+          return reject(err);
+        resolve({ bytesRead, buffers: buffers2 });
+      });
+    });
+  };
+  exports.writev = function(fd, buffers, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.writev(fd, buffers, ...args);
+    }
+    return new Promise((resolve, reject) => {
+      fs2.writev(fd, buffers, ...args, (err, bytesWritten, buffers2) => {
+        if (err)
+          return reject(err);
+        resolve({ bytesWritten, buffers: buffers2 });
+      });
+    });
+  };
+  if (typeof fs2.realpath.native === "function") {
+    exports.realpath.native = u2(fs2.realpath.native);
+  } else {
+    process.emitWarning(
+      "fs.realpath.native is not a function. Is fs being monkey-patched?",
+      "Warning",
+      "fs-extra-WARN0003"
+    );
+  }
+})(fs$i);
+var makeDir$1 = {};
+var utils$1 = {};
+const path$c = require$$1;
+utils$1.checkPath = function checkPath(pth) {
+  if (process.platform === "win32") {
+    const pathHasInvalidWinCharacters = /[<>:"|?*]/.test(pth.replace(path$c.parse(pth).root, ""));
+    if (pathHasInvalidWinCharacters) {
+      const error = new Error(`Path contains invalid characters: ${pth}`);
+      error.code = "EINVAL";
+      throw error;
+    }
+  }
+};
+const fs$g = fs$i;
+const { checkPath: checkPath2 } = utils$1;
+const getMode = (options) => {
+  const defaults = { mode: 511 };
+  if (typeof options === "number")
+    return options;
+  return { ...defaults, ...options }.mode;
+};
+makeDir$1.makeDir = async (dir, options) => {
+  checkPath2(dir);
+  return fs$g.mkdir(dir, {
+    mode: getMode(options),
+    recursive: true
+  });
+};
+makeDir$1.makeDirSync = (dir, options) => {
+  checkPath2(dir);
+  return fs$g.mkdirSync(dir, {
+    mode: getMode(options),
+    recursive: true
+  });
+};
+const u$e = universalify$1.fromPromise;
+const { makeDir: _makeDir, makeDirSync } = makeDir$1;
+const makeDir = u$e(_makeDir);
+var mkdirs$2 = {
+  mkdirs: makeDir,
+  mkdirsSync: makeDirSync,
+  // alias
+  mkdirp: makeDir,
+  mkdirpSync: makeDirSync,
+  ensureDir: makeDir,
+  ensureDirSync: makeDirSync
+};
+const u$d = universalify$1.fromPromise;
+const fs$f = fs$i;
+function pathExists$6(path2) {
+  return fs$f.access(path2).then(() => true).catch(() => false);
+}
+var pathExists_1 = {
+  pathExists: u$d(pathExists$6),
+  pathExistsSync: fs$f.existsSync
+};
+const fs$e = fs$i;
+const u$c = universalify$1.fromPromise;
+async function utimesMillis$1(path2, atime, mtime) {
+  const fd = await fs$e.open(path2, "r+");
+  let closeErr = null;
+  try {
+    await fs$e.futimes(fd, atime, mtime);
+  } finally {
+    try {
+      await fs$e.close(fd);
+    } catch (e) {
+      closeErr = e;
+    }
+  }
+  if (closeErr) {
+    throw closeErr;
+  }
+}
+function utimesMillisSync$1(path2, atime, mtime) {
+  const fd = fs$e.openSync(path2, "r+");
+  fs$e.futimesSync(fd, atime, mtime);
+  return fs$e.closeSync(fd);
+}
+var utimes = {
+  utimesMillis: u$c(utimesMillis$1),
+  utimesMillisSync: utimesMillisSync$1
+};
+const fs$d = fs$i;
+const path$b = require$$1;
+const u$b = universalify$1.fromPromise;
+function getStats$1(src, dest, opts) {
+  const statFunc = opts.dereference ? (file2) => fs$d.stat(file2, { bigint: true }) : (file2) => fs$d.lstat(file2, { bigint: true });
+  return Promise.all([
+    statFunc(src),
+    statFunc(dest).catch((err) => {
+      if (err.code === "ENOENT")
+        return null;
+      throw err;
+    })
+  ]).then(([srcStat, destStat]) => ({ srcStat, destStat }));
+}
+function getStatsSync(src, dest, opts) {
+  let destStat;
+  const statFunc = opts.dereference ? (file2) => fs$d.statSync(file2, { bigint: true }) : (file2) => fs$d.lstatSync(file2, { bigint: true });
+  const srcStat = statFunc(src);
+  try {
+    destStat = statFunc(dest);
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return { srcStat, destStat: null };
+    throw err;
+  }
+  return { srcStat, destStat };
+}
+async function checkPaths(src, dest, funcName, opts) {
+  const { srcStat, destStat } = await getStats$1(src, dest, opts);
+  if (destStat) {
+    if (areIdentical$2(srcStat, destStat)) {
+      const srcBaseName = path$b.basename(src);
+      const destBaseName = path$b.basename(dest);
+      if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
+        return { srcStat, destStat, isChangingCase: true };
+      }
+      throw new Error("Source and destination must not be the same.");
+    }
+    if (srcStat.isDirectory() && !destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'.`);
+    }
+    if (!srcStat.isDirectory() && destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite directory '${dest}' with non-directory '${src}'.`);
+    }
+  }
+  if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return { srcStat, destStat };
+}
+function checkPathsSync(src, dest, funcName, opts) {
+  const { srcStat, destStat } = getStatsSync(src, dest, opts);
+  if (destStat) {
+    if (areIdentical$2(srcStat, destStat)) {
+      const srcBaseName = path$b.basename(src);
+      const destBaseName = path$b.basename(dest);
+      if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
+        return { srcStat, destStat, isChangingCase: true };
+      }
+      throw new Error("Source and destination must not be the same.");
+    }
+    if (srcStat.isDirectory() && !destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'.`);
+    }
+    if (!srcStat.isDirectory() && destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite directory '${dest}' with non-directory '${src}'.`);
+    }
+  }
+  if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return { srcStat, destStat };
+}
+async function checkParentPaths(src, srcStat, dest, funcName) {
+  const srcParent = path$b.resolve(path$b.dirname(src));
+  const destParent = path$b.resolve(path$b.dirname(dest));
+  if (destParent === srcParent || destParent === path$b.parse(destParent).root)
+    return;
+  let destStat;
+  try {
+    destStat = await fs$d.stat(destParent, { bigint: true });
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return;
+    throw err;
+  }
+  if (areIdentical$2(srcStat, destStat)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return checkParentPaths(src, srcStat, destParent, funcName);
+}
+function checkParentPathsSync(src, srcStat, dest, funcName) {
+  const srcParent = path$b.resolve(path$b.dirname(src));
+  const destParent = path$b.resolve(path$b.dirname(dest));
+  if (destParent === srcParent || destParent === path$b.parse(destParent).root)
+    return;
+  let destStat;
+  try {
+    destStat = fs$d.statSync(destParent, { bigint: true });
+  } catch (err) {
+    if (err.code === "ENOENT")
+      return;
+    throw err;
+  }
+  if (areIdentical$2(srcStat, destStat)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return checkParentPathsSync(src, srcStat, destParent, funcName);
+}
+function areIdentical$2(srcStat, destStat) {
+  return destStat.ino && destStat.dev && destStat.ino === srcStat.ino && destStat.dev === srcStat.dev;
+}
+function isSrcSubdir(src, dest) {
+  const srcArr = path$b.resolve(src).split(path$b.sep).filter((i) => i);
+  const destArr = path$b.resolve(dest).split(path$b.sep).filter((i) => i);
+  return srcArr.every((cur, i) => destArr[i] === cur);
+}
+function errMsg(src, dest, funcName) {
+  return `Cannot ${funcName} '${src}' to a subdirectory of itself, '${dest}'.`;
+}
+var stat$4 = {
+  // checkPaths
+  checkPaths: u$b(checkPaths),
+  checkPathsSync,
+  // checkParent
+  checkParentPaths: u$b(checkParentPaths),
+  checkParentPathsSync,
+  // Misc
+  isSrcSubdir,
+  areIdentical: areIdentical$2
+};
+const fs$c = fs$i;
+const path$a = require$$1;
+const { mkdirs: mkdirs$1 } = mkdirs$2;
+const { pathExists: pathExists$5 } = pathExists_1;
+const { utimesMillis } = utimes;
+const stat$3 = stat$4;
+async function copy$2(src, dest, opts = {}) {
+  if (typeof opts === "function") {
+    opts = { filter: opts };
+  }
+  opts.clobber = "clobber" in opts ? !!opts.clobber : true;
+  opts.overwrite = "overwrite" in opts ? !!opts.overwrite : opts.clobber;
+  if (opts.preserveTimestamps && process.arch === "ia32") {
+    process.emitWarning(
+      "Using the preserveTimestamps option in 32-bit node is not recommended;\n\n	see https://github.com/jprichardson/node-fs-extra/issues/269",
+      "Warning",
+      "fs-extra-WARN0001"
+    );
+  }
+  const { srcStat, destStat } = await stat$3.checkPaths(src, dest, "copy", opts);
+  await stat$3.checkParentPaths(src, srcStat, dest, "copy");
+  const include = await runFilter(src, dest, opts);
+  if (!include)
+    return;
+  const destParent = path$a.dirname(dest);
+  const dirExists = await pathExists$5(destParent);
+  if (!dirExists) {
+    await mkdirs$1(destParent);
+  }
+  await getStatsAndPerformCopy(destStat, src, dest, opts);
+}
+async function runFilter(src, dest, opts) {
+  if (!opts.filter)
+    return true;
+  return opts.filter(src, dest);
+}
+async function getStatsAndPerformCopy(destStat, src, dest, opts) {
+  const statFn = opts.dereference ? fs$c.stat : fs$c.lstat;
+  const srcStat = await statFn(src);
+  if (srcStat.isDirectory())
+    return onDir$1(srcStat, destStat, src, dest, opts);
+  if (srcStat.isFile() || srcStat.isCharacterDevice() || srcStat.isBlockDevice())
+    return onFile$1(srcStat, destStat, src, dest, opts);
+  if (srcStat.isSymbolicLink())
+    return onLink$1(destStat, src, dest, opts);
+  if (srcStat.isSocket())
+    throw new Error(`Cannot copy a socket file: ${src}`);
+  if (srcStat.isFIFO())
+    throw new Error(`Cannot copy a FIFO pipe: ${src}`);
+  throw new Error(`Unknown file: ${src}`);
+}
+async function onFile$1(srcStat, destStat, src, dest, opts) {
+  if (!destStat)
+    return copyFile$1(srcStat, src, dest, opts);
+  if (opts.overwrite) {
+    await fs$c.unlink(dest);
+    return copyFile$1(srcStat, src, dest, opts);
+  }
+  if (opts.errorOnExist) {
+    throw new Error(`'${dest}' already exists`);
+  }
+}
+async function copyFile$1(srcStat, src, dest, opts) {
+  await fs$c.copyFile(src, dest);
+  if (opts.preserveTimestamps) {
+    if (fileIsNotWritable$1(srcStat.mode)) {
+      await makeFileWritable$1(dest, srcStat.mode);
+    }
+    const updatedSrcStat = await fs$c.stat(src);
+    await utimesMillis(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
+  }
+  return fs$c.chmod(dest, srcStat.mode);
+}
+function fileIsNotWritable$1(srcMode) {
+  return (srcMode & 128) === 0;
+}
+function makeFileWritable$1(dest, srcMode) {
+  return fs$c.chmod(dest, srcMode | 128);
+}
+async function onDir$1(srcStat, destStat, src, dest, opts) {
+  if (!destStat) {
+    await fs$c.mkdir(dest);
+  }
+  const items = await fs$c.readdir(src);
+  await Promise.all(items.map(async (item) => {
+    const srcItem = path$a.join(src, item);
+    const destItem = path$a.join(dest, item);
+    const include = await runFilter(srcItem, destItem, opts);
+    if (!include)
+      return;
+    const { destStat: destStat2 } = await stat$3.checkPaths(srcItem, destItem, "copy", opts);
+    return getStatsAndPerformCopy(destStat2, srcItem, destItem, opts);
+  }));
+  if (!destStat) {
+    await fs$c.chmod(dest, srcStat.mode);
+  }
+}
+async function onLink$1(destStat, src, dest, opts) {
+  let resolvedSrc = await fs$c.readlink(src);
+  if (opts.dereference) {
+    resolvedSrc = path$a.resolve(process.cwd(), resolvedSrc);
+  }
+  if (!destStat) {
+    return fs$c.symlink(resolvedSrc, dest);
+  }
+  let resolvedDest = null;
+  try {
+    resolvedDest = await fs$c.readlink(dest);
+  } catch (e) {
+    if (e.code === "EINVAL" || e.code === "UNKNOWN")
+      return fs$c.symlink(resolvedSrc, dest);
+    throw e;
+  }
+  if (opts.dereference) {
+    resolvedDest = path$a.resolve(process.cwd(), resolvedDest);
+  }
+  if (stat$3.isSrcSubdir(resolvedSrc, resolvedDest)) {
+    throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
+  }
+  if (stat$3.isSrcSubdir(resolvedDest, resolvedSrc)) {
+    throw new Error(`Cannot overwrite '${resolvedDest}' with '${resolvedSrc}'.`);
+  }
+  await fs$c.unlink(dest);
+  return fs$c.symlink(resolvedSrc, dest);
+}
+var copy_1 = copy$2;
+const fs$b = gracefulFs;
+const path$9 = require$$1;
+const mkdirsSync$1 = mkdirs$2.mkdirsSync;
+const utimesMillisSync = utimes.utimesMillisSync;
+const stat$2 = stat$4;
+function copySync$1(src, dest, opts) {
+  if (typeof opts === "function") {
+    opts = { filter: opts };
+  }
+  opts = opts || {};
+  opts.clobber = "clobber" in opts ? !!opts.clobber : true;
+  opts.overwrite = "overwrite" in opts ? !!opts.overwrite : opts.clobber;
+  if (opts.preserveTimestamps && process.arch === "ia32") {
+    process.emitWarning(
+      "Using the preserveTimestamps option in 32-bit node is not recommended;\n\n	see https://github.com/jprichardson/node-fs-extra/issues/269",
+      "Warning",
+      "fs-extra-WARN0002"
+    );
+  }
+  const { srcStat, destStat } = stat$2.checkPathsSync(src, dest, "copy", opts);
+  stat$2.checkParentPathsSync(src, srcStat, dest, "copy");
+  if (opts.filter && !opts.filter(src, dest))
+    return;
+  const destParent = path$9.dirname(dest);
+  if (!fs$b.existsSync(destParent))
+    mkdirsSync$1(destParent);
+  return getStats(destStat, src, dest, opts);
+}
+function getStats(destStat, src, dest, opts) {
+  const statSync = opts.dereference ? fs$b.statSync : fs$b.lstatSync;
+  const srcStat = statSync(src);
+  if (srcStat.isDirectory())
+    return onDir(srcStat, destStat, src, dest, opts);
+  else if (srcStat.isFile() || srcStat.isCharacterDevice() || srcStat.isBlockDevice())
+    return onFile(srcStat, destStat, src, dest, opts);
+  else if (srcStat.isSymbolicLink())
+    return onLink(destStat, src, dest, opts);
+  else if (srcStat.isSocket())
+    throw new Error(`Cannot copy a socket file: ${src}`);
+  else if (srcStat.isFIFO())
+    throw new Error(`Cannot copy a FIFO pipe: ${src}`);
+  throw new Error(`Unknown file: ${src}`);
+}
+function onFile(srcStat, destStat, src, dest, opts) {
+  if (!destStat)
+    return copyFile(srcStat, src, dest, opts);
+  return mayCopyFile(srcStat, src, dest, opts);
+}
+function mayCopyFile(srcStat, src, dest, opts) {
+  if (opts.overwrite) {
+    fs$b.unlinkSync(dest);
+    return copyFile(srcStat, src, dest, opts);
+  } else if (opts.errorOnExist) {
+    throw new Error(`'${dest}' already exists`);
+  }
+}
+function copyFile(srcStat, src, dest, opts) {
+  fs$b.copyFileSync(src, dest);
+  if (opts.preserveTimestamps)
+    handleTimestamps(srcStat.mode, src, dest);
+  return setDestMode(dest, srcStat.mode);
+}
+function handleTimestamps(srcMode, src, dest) {
+  if (fileIsNotWritable(srcMode))
+    makeFileWritable(dest, srcMode);
+  return setDestTimestamps(src, dest);
+}
+function fileIsNotWritable(srcMode) {
+  return (srcMode & 128) === 0;
+}
+function makeFileWritable(dest, srcMode) {
+  return setDestMode(dest, srcMode | 128);
+}
+function setDestMode(dest, srcMode) {
+  return fs$b.chmodSync(dest, srcMode);
+}
+function setDestTimestamps(src, dest) {
+  const updatedSrcStat = fs$b.statSync(src);
+  return utimesMillisSync(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
+}
+function onDir(srcStat, destStat, src, dest, opts) {
+  if (!destStat)
+    return mkDirAndCopy(srcStat.mode, src, dest, opts);
+  return copyDir(src, dest, opts);
+}
+function mkDirAndCopy(srcMode, src, dest, opts) {
+  fs$b.mkdirSync(dest);
+  copyDir(src, dest, opts);
+  return setDestMode(dest, srcMode);
+}
+function copyDir(src, dest, opts) {
+  fs$b.readdirSync(src).forEach((item) => copyDirItem(item, src, dest, opts));
+}
+function copyDirItem(item, src, dest, opts) {
+  const srcItem = path$9.join(src, item);
+  const destItem = path$9.join(dest, item);
+  if (opts.filter && !opts.filter(srcItem, destItem))
+    return;
+  const { destStat } = stat$2.checkPathsSync(srcItem, destItem, "copy", opts);
+  return getStats(destStat, srcItem, destItem, opts);
+}
+function onLink(destStat, src, dest, opts) {
+  let resolvedSrc = fs$b.readlinkSync(src);
+  if (opts.dereference) {
+    resolvedSrc = path$9.resolve(process.cwd(), resolvedSrc);
+  }
+  if (!destStat) {
+    return fs$b.symlinkSync(resolvedSrc, dest);
+  } else {
+    let resolvedDest;
+    try {
+      resolvedDest = fs$b.readlinkSync(dest);
+    } catch (err) {
+      if (err.code === "EINVAL" || err.code === "UNKNOWN")
+        return fs$b.symlinkSync(resolvedSrc, dest);
+      throw err;
+    }
+    if (opts.dereference) {
+      resolvedDest = path$9.resolve(process.cwd(), resolvedDest);
+    }
+    if (stat$2.isSrcSubdir(resolvedSrc, resolvedDest)) {
+      throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
+    }
+    if (stat$2.isSrcSubdir(resolvedDest, resolvedSrc)) {
+      throw new Error(`Cannot overwrite '${resolvedDest}' with '${resolvedSrc}'.`);
+    }
+    return copyLink(resolvedSrc, dest);
+  }
+}
+function copyLink(resolvedSrc, dest) {
+  fs$b.unlinkSync(dest);
+  return fs$b.symlinkSync(resolvedSrc, dest);
+}
+var copySync_1 = copySync$1;
+const u$a = universalify$1.fromPromise;
+var copy$1 = {
+  copy: u$a(copy_1),
+  copySync: copySync_1
+};
+const fs$a = gracefulFs;
+const u$9 = universalify$1.fromCallback;
+function remove$2(path2, callback) {
+  fs$a.rm(path2, { recursive: true, force: true }, callback);
+}
+function removeSync$1(path2) {
+  fs$a.rmSync(path2, { recursive: true, force: true });
+}
+var remove_1 = {
+  remove: u$9(remove$2),
+  removeSync: removeSync$1
+};
+const u$8 = universalify$1.fromPromise;
+const fs$9 = fs$i;
+const path$8 = require$$1;
+const mkdir$3 = mkdirs$2;
+const remove$1 = remove_1;
+const emptyDir = u$8(async function emptyDir2(dir) {
+  let items;
+  try {
+    items = await fs$9.readdir(dir);
+  } catch {
+    return mkdir$3.mkdirs(dir);
+  }
+  return Promise.all(items.map((item) => remove$1.remove(path$8.join(dir, item))));
+});
+function emptyDirSync(dir) {
+  let items;
+  try {
+    items = fs$9.readdirSync(dir);
+  } catch {
+    return mkdir$3.mkdirsSync(dir);
+  }
+  items.forEach((item) => {
+    item = path$8.join(dir, item);
+    remove$1.removeSync(item);
+  });
+}
+var empty = {
+  emptyDirSync,
+  emptydirSync: emptyDirSync,
+  emptyDir,
+  emptydir: emptyDir
+};
+const u$7 = universalify$1.fromPromise;
+const path$7 = require$$1;
+const fs$8 = fs$i;
+const mkdir$2 = mkdirs$2;
+async function createFile$1(file2) {
+  let stats;
+  try {
+    stats = await fs$8.stat(file2);
+  } catch {
+  }
+  if (stats && stats.isFile())
+    return;
+  const dir = path$7.dirname(file2);
+  let dirStats = null;
+  try {
+    dirStats = await fs$8.stat(dir);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await mkdir$2.mkdirs(dir);
+      await fs$8.writeFile(file2, "");
+      return;
+    } else {
+      throw err;
+    }
+  }
+  if (dirStats.isDirectory()) {
+    await fs$8.writeFile(file2, "");
+  } else {
+    await fs$8.readdir(dir);
+  }
+}
+function createFileSync$1(file2) {
+  let stats;
+  try {
+    stats = fs$8.statSync(file2);
+  } catch {
+  }
+  if (stats && stats.isFile())
+    return;
+  const dir = path$7.dirname(file2);
+  try {
+    if (!fs$8.statSync(dir).isDirectory()) {
+      fs$8.readdirSync(dir);
+    }
+  } catch (err) {
+    if (err && err.code === "ENOENT")
+      mkdir$2.mkdirsSync(dir);
+    else
+      throw err;
+  }
+  fs$8.writeFileSync(file2, "");
+}
+var file = {
+  createFile: u$7(createFile$1),
+  createFileSync: createFileSync$1
+};
+const u$6 = universalify$1.fromPromise;
+const path$6 = require$$1;
+const fs$7 = fs$i;
+const mkdir$1 = mkdirs$2;
+const { pathExists: pathExists$4 } = pathExists_1;
+const { areIdentical: areIdentical$1 } = stat$4;
+async function createLink$1(srcpath, dstpath) {
+  let dstStat;
+  try {
+    dstStat = await fs$7.lstat(dstpath);
+  } catch {
+  }
+  let srcStat;
+  try {
+    srcStat = await fs$7.lstat(srcpath);
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureLink");
+    throw err;
+  }
+  if (dstStat && areIdentical$1(srcStat, dstStat))
+    return;
+  const dir = path$6.dirname(dstpath);
+  const dirExists = await pathExists$4(dir);
+  if (!dirExists) {
+    await mkdir$1.mkdirs(dir);
+  }
+  await fs$7.link(srcpath, dstpath);
+}
+function createLinkSync$1(srcpath, dstpath) {
+  let dstStat;
+  try {
+    dstStat = fs$7.lstatSync(dstpath);
+  } catch {
+  }
+  try {
+    const srcStat = fs$7.lstatSync(srcpath);
+    if (dstStat && areIdentical$1(srcStat, dstStat))
+      return;
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureLink");
+    throw err;
+  }
+  const dir = path$6.dirname(dstpath);
+  const dirExists = fs$7.existsSync(dir);
+  if (dirExists)
+    return fs$7.linkSync(srcpath, dstpath);
+  mkdir$1.mkdirsSync(dir);
+  return fs$7.linkSync(srcpath, dstpath);
+}
+var link = {
+  createLink: u$6(createLink$1),
+  createLinkSync: createLinkSync$1
+};
+const path$5 = require$$1;
+const fs$6 = fs$i;
+const { pathExists: pathExists$3 } = pathExists_1;
+const u$5 = universalify$1.fromPromise;
+async function symlinkPaths$1(srcpath, dstpath) {
+  if (path$5.isAbsolute(srcpath)) {
+    try {
+      await fs$6.lstat(srcpath);
+    } catch (err) {
+      err.message = err.message.replace("lstat", "ensureSymlink");
+      throw err;
+    }
+    return {
+      toCwd: srcpath,
+      toDst: srcpath
+    };
+  }
+  const dstdir = path$5.dirname(dstpath);
+  const relativeToDst = path$5.join(dstdir, srcpath);
+  const exists = await pathExists$3(relativeToDst);
+  if (exists) {
+    return {
+      toCwd: relativeToDst,
+      toDst: srcpath
+    };
+  }
+  try {
+    await fs$6.lstat(srcpath);
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureSymlink");
+    throw err;
+  }
+  return {
+    toCwd: srcpath,
+    toDst: path$5.relative(dstdir, srcpath)
+  };
+}
+function symlinkPathsSync$1(srcpath, dstpath) {
+  if (path$5.isAbsolute(srcpath)) {
+    const exists2 = fs$6.existsSync(srcpath);
+    if (!exists2)
+      throw new Error("absolute srcpath does not exist");
+    return {
+      toCwd: srcpath,
+      toDst: srcpath
+    };
+  }
+  const dstdir = path$5.dirname(dstpath);
+  const relativeToDst = path$5.join(dstdir, srcpath);
+  const exists = fs$6.existsSync(relativeToDst);
+  if (exists) {
+    return {
+      toCwd: relativeToDst,
+      toDst: srcpath
+    };
+  }
+  const srcExists = fs$6.existsSync(srcpath);
+  if (!srcExists)
+    throw new Error("relative srcpath does not exist");
+  return {
+    toCwd: srcpath,
+    toDst: path$5.relative(dstdir, srcpath)
+  };
+}
+var symlinkPaths_1 = {
+  symlinkPaths: u$5(symlinkPaths$1),
+  symlinkPathsSync: symlinkPathsSync$1
+};
+const fs$5 = fs$i;
+const u$4 = universalify$1.fromPromise;
+async function symlinkType$1(srcpath, type) {
+  if (type)
+    return type;
+  let stats;
+  try {
+    stats = await fs$5.lstat(srcpath);
+  } catch {
+    return "file";
+  }
+  return stats && stats.isDirectory() ? "dir" : "file";
+}
+function symlinkTypeSync$1(srcpath, type) {
+  if (type)
+    return type;
+  let stats;
+  try {
+    stats = fs$5.lstatSync(srcpath);
+  } catch {
+    return "file";
+  }
+  return stats && stats.isDirectory() ? "dir" : "file";
+}
+var symlinkType_1 = {
+  symlinkType: u$4(symlinkType$1),
+  symlinkTypeSync: symlinkTypeSync$1
+};
+const u$3 = universalify$1.fromPromise;
+const path$4 = require$$1;
+const fs$4 = fs$i;
+const { mkdirs, mkdirsSync } = mkdirs$2;
+const { symlinkPaths, symlinkPathsSync } = symlinkPaths_1;
+const { symlinkType, symlinkTypeSync } = symlinkType_1;
+const { pathExists: pathExists$2 } = pathExists_1;
+const { areIdentical } = stat$4;
+async function createSymlink$1(srcpath, dstpath, type) {
+  let stats;
+  try {
+    stats = await fs$4.lstat(dstpath);
+  } catch {
+  }
+  if (stats && stats.isSymbolicLink()) {
+    const [srcStat, dstStat] = await Promise.all([
+      fs$4.stat(srcpath),
+      fs$4.stat(dstpath)
+    ]);
+    if (areIdentical(srcStat, dstStat))
+      return;
+  }
+  const relative = await symlinkPaths(srcpath, dstpath);
+  srcpath = relative.toDst;
+  const toType = await symlinkType(relative.toCwd, type);
+  const dir = path$4.dirname(dstpath);
+  if (!await pathExists$2(dir)) {
+    await mkdirs(dir);
+  }
+  return fs$4.symlink(srcpath, dstpath, toType);
+}
+function createSymlinkSync$1(srcpath, dstpath, type) {
+  let stats;
+  try {
+    stats = fs$4.lstatSync(dstpath);
+  } catch {
+  }
+  if (stats && stats.isSymbolicLink()) {
+    const srcStat = fs$4.statSync(srcpath);
+    const dstStat = fs$4.statSync(dstpath);
+    if (areIdentical(srcStat, dstStat))
+      return;
+  }
+  const relative = symlinkPathsSync(srcpath, dstpath);
+  srcpath = relative.toDst;
+  type = symlinkTypeSync(relative.toCwd, type);
+  const dir = path$4.dirname(dstpath);
+  const exists = fs$4.existsSync(dir);
+  if (exists)
+    return fs$4.symlinkSync(srcpath, dstpath, type);
+  mkdirsSync(dir);
+  return fs$4.symlinkSync(srcpath, dstpath, type);
+}
+var symlink = {
+  createSymlink: u$3(createSymlink$1),
+  createSymlinkSync: createSymlinkSync$1
+};
+const { createFile, createFileSync } = file;
+const { createLink, createLinkSync } = link;
+const { createSymlink, createSymlinkSync } = symlink;
+var ensure = {
+  // file
+  createFile,
+  createFileSync,
+  ensureFile: createFile,
+  ensureFileSync: createFileSync,
+  // link
+  createLink,
+  createLinkSync,
+  ensureLink: createLink,
+  ensureLinkSync: createLinkSync,
+  // symlink
+  createSymlink,
+  createSymlinkSync,
+  ensureSymlink: createSymlink,
+  ensureSymlinkSync: createSymlinkSync
+};
+function stringify$3(obj, { EOL = "\n", finalEOL = true, replacer = null, spaces } = {}) {
+  const EOF = finalEOL ? EOL : "";
+  const str = JSON.stringify(obj, replacer, spaces);
+  return str.replace(/\n/g, EOL) + EOF;
+}
+function stripBom$1(content) {
+  if (Buffer.isBuffer(content))
+    content = content.toString("utf8");
+  return content.replace(/^\uFEFF/, "");
+}
+var utils = { stringify: stringify$3, stripBom: stripBom$1 };
+let _fs;
+try {
+  _fs = gracefulFs;
+} catch (_) {
+  _fs = require$$0$2;
+}
+const universalify = universalify$1;
+const { stringify: stringify$2, stripBom } = utils;
+async function _readFile(file2, options = {}) {
+  if (typeof options === "string") {
+    options = { encoding: options };
+  }
+  const fs2 = options.fs || _fs;
+  const shouldThrow = "throws" in options ? options.throws : true;
+  let data = await universalify.fromCallback(fs2.readFile)(file2, options);
+  data = stripBom(data);
+  let obj;
+  try {
+    obj = JSON.parse(data, options ? options.reviver : null);
+  } catch (err) {
+    if (shouldThrow) {
+      err.message = `${file2}: ${err.message}`;
+      throw err;
+    } else {
+      return null;
+    }
+  }
+  return obj;
+}
+const readFile = universalify.fromPromise(_readFile);
+function readFileSync(file2, options = {}) {
+  if (typeof options === "string") {
+    options = { encoding: options };
+  }
+  const fs2 = options.fs || _fs;
+  const shouldThrow = "throws" in options ? options.throws : true;
+  try {
+    let content = fs2.readFileSync(file2, options);
+    content = stripBom(content);
+    return JSON.parse(content, options.reviver);
+  } catch (err) {
+    if (shouldThrow) {
+      err.message = `${file2}: ${err.message}`;
+      throw err;
+    } else {
+      return null;
+    }
+  }
+}
+async function _writeFile(file2, obj, options = {}) {
+  const fs2 = options.fs || _fs;
+  const str = stringify$2(obj, options);
+  await universalify.fromCallback(fs2.writeFile)(file2, str, options);
+}
+const writeFile = universalify.fromPromise(_writeFile);
+function writeFileSync(file2, obj, options = {}) {
+  const fs2 = options.fs || _fs;
+  const str = stringify$2(obj, options);
+  return fs2.writeFileSync(file2, str, options);
+}
+const jsonfile$1 = {
+  readFile,
+  readFileSync,
+  writeFile,
+  writeFileSync
+};
+var jsonfile_1 = jsonfile$1;
+const jsonFile$1 = jsonfile_1;
+var jsonfile = {
+  // jsonfile exports
+  readJson: jsonFile$1.readFile,
+  readJsonSync: jsonFile$1.readFileSync,
+  writeJson: jsonFile$1.writeFile,
+  writeJsonSync: jsonFile$1.writeFileSync
+};
+const u$2 = universalify$1.fromPromise;
+const fs$3 = fs$i;
+const path$3 = require$$1;
+const mkdir = mkdirs$2;
+const pathExists$1 = pathExists_1.pathExists;
+async function outputFile$1(file2, data, encoding = "utf-8") {
+  const dir = path$3.dirname(file2);
+  if (!await pathExists$1(dir)) {
+    await mkdir.mkdirs(dir);
+  }
+  return fs$3.writeFile(file2, data, encoding);
+}
+function outputFileSync$1(file2, ...args) {
+  const dir = path$3.dirname(file2);
+  if (!fs$3.existsSync(dir)) {
+    mkdir.mkdirsSync(dir);
+  }
+  fs$3.writeFileSync(file2, ...args);
+}
+var outputFile_1 = {
+  outputFile: u$2(outputFile$1),
+  outputFileSync: outputFileSync$1
+};
+const { stringify: stringify$1 } = utils;
+const { outputFile } = outputFile_1;
+async function outputJson(file2, data, options = {}) {
+  const str = stringify$1(data, options);
+  await outputFile(file2, str, options);
+}
+var outputJson_1 = outputJson;
+const { stringify } = utils;
+const { outputFileSync } = outputFile_1;
+function outputJsonSync(file2, data, options) {
+  const str = stringify(data, options);
+  outputFileSync(file2, str, options);
+}
+var outputJsonSync_1 = outputJsonSync;
+const u$1 = universalify$1.fromPromise;
+const jsonFile = jsonfile;
+jsonFile.outputJson = u$1(outputJson_1);
+jsonFile.outputJsonSync = outputJsonSync_1;
+jsonFile.outputJSON = jsonFile.outputJson;
+jsonFile.outputJSONSync = jsonFile.outputJsonSync;
+jsonFile.writeJSON = jsonFile.writeJson;
+jsonFile.writeJSONSync = jsonFile.writeJsonSync;
+jsonFile.readJSON = jsonFile.readJson;
+jsonFile.readJSONSync = jsonFile.readJsonSync;
+var json = jsonFile;
+const fs$2 = fs$i;
+const path$2 = require$$1;
+const { copy } = copy$1;
+const { remove } = remove_1;
+const { mkdirp } = mkdirs$2;
+const { pathExists } = pathExists_1;
+const stat$1 = stat$4;
+async function move$1(src, dest, opts = {}) {
+  const overwrite = opts.overwrite || opts.clobber || false;
+  const { srcStat, isChangingCase = false } = await stat$1.checkPaths(src, dest, "move", opts);
+  await stat$1.checkParentPaths(src, srcStat, dest, "move");
+  const destParent = path$2.dirname(dest);
+  const parsedParentPath = path$2.parse(destParent);
+  if (parsedParentPath.root !== destParent) {
+    await mkdirp(destParent);
+  }
+  return doRename$1(src, dest, overwrite, isChangingCase);
+}
+async function doRename$1(src, dest, overwrite, isChangingCase) {
+  if (!isChangingCase) {
+    if (overwrite) {
+      await remove(dest);
+    } else if (await pathExists(dest)) {
+      throw new Error("dest already exists.");
+    }
+  }
+  try {
+    await fs$2.rename(src, dest);
+  } catch (err) {
+    if (err.code !== "EXDEV") {
+      throw err;
+    }
+    await moveAcrossDevice$1(src, dest, overwrite);
+  }
+}
+async function moveAcrossDevice$1(src, dest, overwrite) {
+  const opts = {
+    overwrite,
+    errorOnExist: true,
+    preserveTimestamps: true
+  };
+  await copy(src, dest, opts);
+  return remove(src);
+}
+var move_1 = move$1;
+const fs$1 = gracefulFs;
+const path$1 = require$$1;
+const copySync = copy$1.copySync;
+const removeSync = remove_1.removeSync;
+const mkdirpSync = mkdirs$2.mkdirpSync;
+const stat = stat$4;
+function moveSync(src, dest, opts) {
+  opts = opts || {};
+  const overwrite = opts.overwrite || opts.clobber || false;
+  const { srcStat, isChangingCase = false } = stat.checkPathsSync(src, dest, "move", opts);
+  stat.checkParentPathsSync(src, srcStat, dest, "move");
+  if (!isParentRoot(dest))
+    mkdirpSync(path$1.dirname(dest));
+  return doRename(src, dest, overwrite, isChangingCase);
+}
+function isParentRoot(dest) {
+  const parent = path$1.dirname(dest);
+  const parsedPath = path$1.parse(parent);
+  return parsedPath.root === parent;
+}
+function doRename(src, dest, overwrite, isChangingCase) {
+  if (isChangingCase)
+    return rename(src, dest, overwrite);
+  if (overwrite) {
+    removeSync(dest);
+    return rename(src, dest, overwrite);
+  }
+  if (fs$1.existsSync(dest))
+    throw new Error("dest already exists.");
+  return rename(src, dest, overwrite);
+}
+function rename(src, dest, overwrite) {
+  try {
+    fs$1.renameSync(src, dest);
+  } catch (err) {
+    if (err.code !== "EXDEV")
+      throw err;
+    return moveAcrossDevice(src, dest, overwrite);
+  }
+}
+function moveAcrossDevice(src, dest, overwrite) {
+  const opts = {
+    overwrite,
+    errorOnExist: true,
+    preserveTimestamps: true
+  };
+  copySync(src, dest, opts);
+  return removeSync(src);
+}
+var moveSync_1 = moveSync;
+const u = universalify$1.fromPromise;
+var move = {
+  move: u(move_1),
+  moveSync: moveSync_1
+};
+var lib = {
+  // Export promiseified graceful-fs:
+  ...fs$i,
+  // Export extra methods:
+  ...copy$1,
+  ...empty,
+  ...ensure,
+  ...json,
+  ...mkdirs$2,
+  ...move,
+  ...outputFile_1,
+  ...pathExists_1,
+  ...remove_1
+};
+const readShortcutsFile = (filePath) => {
+  return lib.readJsonSync(require$$1.join(__dirname, `../../dist/shortcuts/${filePath}`));
+};
+const fileReadListener = async () => {
+  electron.ipcMain.handle("get-shortcut", async (event, filePath) => {
+    return await readShortcutsFile(filePath);
+  });
+};
+const { ipcMain: ipcMain$1 } = require("electron");
+const fs = require("fs-extra");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffprobePath = require("@ffprobe-installer/ffprobe").path;
+const ffmpeg = require("fluent-ffmpeg");
+const path = require("path");
+ffmpeg.setFfmpegPath(ffmpegPath);
+ffmpeg.setFfprobePath(ffprobePath);
+const ffmpegScreenShot = async (videoPath, timeArr, tempPath, sizedata) => {
+  return new Promise((resolve2, reject) => {
+    ffmpeg(videoPath).on("end", () => {
+      resolve2(true);
+      console.info("screeshot ok");
+    }).on("error", (err) => {
+      console.info("error ->", err);
+      reject(err);
+    }).screenshots({
+      timestamps: timeArr,
+      filename: "temp_%i.png",
+      folder: tempPath,
+      size: `${sizedata}`
+    });
+  });
+};
+const ffmpegListener = async () => {
+  ipcMain$1.handle(
+    "get-video-frame-data",
+    async (event, videoPath, width, height, videoDur, videoFrame, threshold, ...configArray) => {
+      const tempDirPath = path.join(__dirname, "../../temp");
+      if (!fs.existsSync(tempDirPath)) {
+        fs.mkdirSync(tempDirPath);
+      }
+      const frameStrArr = genTimestampArr(videoDur, videoFrame);
+      const result = await ffmpegScreenShot(
+        videoPath,
+        frameStrArr,
+        tempDirPath,
+        `${width}x${height}`
+      );
+      if (!result) {
+        console.info("video frame error");
+        return;
+      }
+      let resultData = [];
+      const files = fs.readdirSync(tempDirPath, {
+        withFileTypes: true
+      });
+      for (let o of files) {
+        try {
+          const imageBuffer = fs.readFileSync(path.join(tempDirPath, o.name));
+          const base64Image = imageBuffer.toString("base64");
+          const arrData = await ImageToHexArray.generate(
+            base64Image,
+            threshold,
+            configArray
+          );
+          resultData.push(arrData);
+        } catch (error) {
+          console.error("Error reading image:", error);
+          return null;
+        }
+        fs.unlinkSync(path.join(tempDirPath, o.name));
+      }
+      fs.rmdir(tempDirPath);
+      return resultData;
+    }
+  );
+};
+const genTimestampArr = (videoDur, videoFrame) => {
+  let temp = 1 / videoFrame;
+  let strArr = [];
+  for (let i = 0; i < videoDur; i++) {
+    for (let j = 0; j < videoFrame; j++) {
+      strArr.push(String((i + temp * j).toFixed(2)));
+    }
+  }
+  return strArr;
+};
+const { dialog } = require("electron");
+require("path");
+const getFilePath = async () => {
+  let filePath = await dialog.showOpenDialog({
+    title: "选择一个文件",
+    buttonLabel: "确认选择",
+    properties: ["openFile"],
+    filters: [
+      {
+        name: "视频资源",
+        extensions: [
+          "mp4",
+          "avi",
+          "mkv",
+          "mov",
+          "flv",
+          "wmv",
+          "webm",
+          "mpeg",
+          "mpg",
+          "ogv",
+          "3gp",
+          "m4v",
+          "asf",
+          "rm",
+          "rmvb",
+          "ts"
+        ]
+      }
+    ]
+  });
+  return filePath;
+};
+const {
+  app,
+  protocol,
+  BrowserWindow,
+  ipcMain,
+  shell
+} = require("electron");
+require("path");
+windowControlListener();
+picDataListener();
+fileReadListener();
+ffmpegListener();
+ipcMain.on("set-item", (event, name, item) => {
+  setItem(name, item);
+});
+ipcMain.on("del-item", (event, name) => {
+  delItem(name);
+});
+ipcMain.handle("get-item", async (event, name) => {
+  return await getItem(name);
+});
+ipcMain.on("latest-download", (event, link2) => {
+  shell.openExternal(link2);
+});
+ipcMain.on("window-create", (event, optionObj, configObj) => {
+  let cw = new CreateWindow();
+  cw.createWindow(optionObj, configObj);
+});
+ipcMain.handle("select-video-file", async () => {
+  return await getFilePath();
+});
+ipcMain.on("store-set", (event, objData) => {
+  for (const cur of BrowserWindow.getAllWindows()) {
+    if (cur != BrowserWindow.fromWebContents(event.sender)) {
+      cur.webContents.send("store-get", objData);
+    }
+  }
+});
+const createMainWindow = async () => {
+  let mainW = new CreateWindow();
+  mainW.createWindow(
+    {
+      route: "/home",
+      isMainWin: true
+    },
+    {
+      width: 999,
+      height: 773,
+      minWidth: 688,
+      minHeight: 560
+    }
+  );
+};
+app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
+protocol.registerSchemesAsPrivileged([
+  { scheme: "app", privileges: { secure: true, standard: true } }
+]);
+app.whenReady().then(async () => {
+  createMainWindow();
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0)
+      createMainWindow();
+  });
+});
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin")
+    app.quit();
+});
