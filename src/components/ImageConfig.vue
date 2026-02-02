@@ -3,7 +3,7 @@ import { reactive, ref, watch, onMounted } from 'vue'
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import FuncBox from '../components/FuncBox.vue'
-import { XBox } from '@/utils/xBox/xBox.js'
+import { XBox } from 'ilx1-x-box'
 
 // const { ipcRenderer } = require('electron')
 const win = window as any

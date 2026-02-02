@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { RouterLink, RouterView } from 'vue-router'
-import "./utils/xBox/style/xBox.css"
+import 'ilx1-x-box/style/xBox.css'
 </script>
 
 <template>
@@ -26,7 +26,7 @@ import "./utils/xBox/style/xBox.css"
   --data-config-func-box-color: rgba(230, 237, 241, 0.61);
   --data-config-move-box-color: rgba(255, 255, 255, 1);
   --config-botton-color: rgb(236, 243, 242);
-  
+
   --commit-box-color: rgb(160, 160, 168);
 
   --pop-box-color: rgba(255, 255, 255, 0.95);
@@ -35,7 +35,7 @@ import "./utils/xBox/style/xBox.css"
   --span-text-color: rgb(143, 206, 202);
 }
 
-[main-theme="color"] {
+[main-theme='color'] {
   --content-box-color: rgb(254, 255, 255);
   --editor-box-color: rgb(226, 232, 238);
   --head-box-color: rgb(240, 245, 244);
@@ -48,7 +48,7 @@ import "./utils/xBox/style/xBox.css"
   --data-config-func-box-color: rgba(232, 241, 241, 0.61);
   --data-config-move-box-color: rgba(255, 255, 255, 1);
   --config-botton-color: rgb(236, 243, 242);
-  
+
   --commit-box-color: rgb(253, 237, 229);
 
   --pop-box-color: rgba(255, 255, 255, 0.95);
@@ -56,7 +56,7 @@ import "./utils/xBox/style/xBox.css"
   --text-color-2: rgba(51, 51, 51, 0.5);
   --span-text-color: rgb(143, 206, 202);
 }
- 
+
 *::-webkit-scrollbar {
   display: none; /* Chrome Safari */
 }
@@ -64,17 +64,19 @@ import "./utils/xBox/style/xBox.css"
   margin: 0;
   padding: 0;
   scrollbar-width: none; /* firefox */
--ms-overflow-style: none; /* IE 10+ */
+  -ms-overflow-style: none; /* IE 10+ */
 }
 html,
 body,
-html, body, #app {
+html,
+body,
+#app {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: "ceyy";
+  font-family: 'ceyy';
 }
 li {
-  list-style : none;
+  list-style: none;
 }
 </style>

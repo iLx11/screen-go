@@ -10,7 +10,6 @@ const path = require('path')
 
 import { windowControlListener } from '../controller/windowControl'
 import CreateWindow from '../controller/createWindow'
-import { picDataListener } from '../controller/picDataEditor'
 import { setItem, getItem, delItem } from '../controller/storage'
 import { fileReadListener } from '../controller/fileRead'
 import { ffmpegListener } from '../controller/ffmpegHandle'
@@ -22,8 +21,6 @@ import ImageToHexArray from '../controller/ImageToHexArray'
 
 // 窗口监听
 windowControlListener()
-// 图片处理监听
-picDataListener()
 // 文件读取
 fileReadListener()
 // 视频处理监听

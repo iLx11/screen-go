@@ -2,7 +2,7 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive, ref, watch } from 'vue'
-import {XBox} from '@/utils/xBox/xBox.js'
+import { XBox } from 'ilx1-x-box'
 
 // import { createCanvas } from 'canvas'
 // const { ipcRenderer } = require('electron')

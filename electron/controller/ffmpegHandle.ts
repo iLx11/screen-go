@@ -1,6 +1,5 @@
 import { resolve } from 'path'
-import ImageToHexArray from './ImageToHexArray'
-import { imgEditorHandle } from './picDataEditor'
+import { resizeImageWithKonva, generate } from 'ilx1-x-tool'
 
 const { ipcMain } = require('electron')
 const fs = require('fs-extra')
@@ -15,16 +14,16 @@ ffmpeg.setFfprobePath(ffprobePath)
 
 const ffmpegScreenShot = async (videoPath, timeArr, tempPath, sizedata) => {
   //   ffmpeg.setFfmpegPath(pathToFfmpeg)
-  // Ã¿¼ä¸ô2Ãë½ØÈ¡ËõÂÔÍ¼kj,mnbnnnn
+  // Ã¿ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½Í¼kj,mnbnnnn
   // const videoFilePath = path.join(__dirname, '../../dist/video/test.mp4')
   return new Promise((resolve, reject) => {
-    // Ê¹ÓÃfluent-ffmpeg»ñÈ¡½ØÍ¼
+    // Ê¹ï¿½ï¿½fluent-ffmpegï¿½ï¿½È¡ï¿½ï¿½Í¼
     ffmpeg(videoPath)
       .on('end', () => {
         resolve(true)
         console.info('screeshot ok')
       })
-      .on('error', (err) => {
+      .on('error', err => {
         console.info('error ->', err)
         reject(err)
       })
@@ -38,7 +37,7 @@ const ffmpegScreenShot = async (videoPath, timeArr, tempPath, sizedata) => {
 }
 
 export const ffmpegListener = async () => {
-  // ½ØÈ¡Í¼Æ¬²¢Éú³ÉÊý¾Ý
+  // ï¿½ï¿½È¡Í¼Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
   ipcMain.handle(
     'get-video-frame-data',
     async (
@@ -51,12 +50,12 @@ export const ffmpegListener = async () => {
       threshold,
       ...configArray
     ) => {
-      // ´´½¨ temp Ä¿Â¼
+      // ï¿½ï¿½ï¿½ï¿½ temp Ä¿Â¼
       const tempDirPath = path.join(__dirname, '../../temp')
       if (!fs.existsSync(tempDirPath)) {
         fs.mkdirSync(tempDirPath)
       }
-      // ½ØÈ¡ÊÓÆµÍ¼Æ¬
+      // ï¿½ï¿½È¡ï¿½ï¿½ÆµÍ¼Æ¬
       const frameStrArr = genTimestampArr(videoDur, videoFrame)
       const result = await ffmpegScreenShot(
         videoPath,
@@ -69,41 +68,37 @@ export const ffmpegListener = async () => {
         return
       }
       let resultData = []
-      // Éú³ÉÍ¼Æ¬È¡Ä£Êý¾Ý
+      // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬È¡Ä£ï¿½ï¿½ï¿½ï¿½
       const files = fs.readdirSync(tempDirPath, {
         withFileTypes: true,
       })
 
       for (let o of files) {
         try {
-          // ¶ÁÈ¡Í¼Æ¬ÎÄ¼þ
+          // ï¿½ï¿½È¡Í¼Æ¬ï¿½Ä¼ï¿½
           const imageBuffer = fs.readFileSync(path.join(tempDirPath, o.name))
-          // ½«Í¼Æ¬ÄÚÈÝ×ª»»Îª Base64
+          // ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½×ªï¿½ï¿½Îª Base64
           const base64Image = imageBuffer.toString('base64')
-          // ´¦ÀíÍ¼Æ¬Êý¾Ý
-          const arrData = await ImageToHexArray.generate(
-            base64Image,
-            threshold,
-            configArray
-          )
+          // ï¿½ï¿½ï¿½ï¿½Í¼Æ¬ï¿½ï¿½ï¿½ï¿½
+          const arrData = await generate(base64Image, threshold, configArray)
           // console.info('------------- do')
           resultData.push(arrData)
         } catch (error) {
           console.error('Error reading image:', error)
           return null
         }
-        // É¾³ýÎÄ¼þ
+        // É¾ï¿½ï¿½ï¿½Ä¼ï¿½
         fs.unlinkSync(path.join(tempDirPath, o.name))
       }
       // console.info('------------------- ok ')
-      // É¾³ý temp Ä¿Â¼
+      // É¾ï¿½ï¿½ temp Ä¿Â¼
       fs.rmdir(tempDirPath)
       return resultData
     }
   )
 }
 
-// Éú³ÉÊ±¼äÖá×Ö·û´®Êý×é
+// ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½Ö·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 const genTimestampArr = (videoDur, videoFrame) => {
   let temp = 1 / videoFrame
   let strArr = []

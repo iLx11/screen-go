@@ -12,7 +12,7 @@ import { useScreenStore } from '../stores/store'
 import HeadMessageVue from '../components/HeadMessage.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
-import { XBox } from '@/utils/xBox/xBox.js'
+import { XBox } from 'ilx1-x-box'
 
 const screenStore = useScreenStore()
 
@@ -132,7 +132,7 @@ watch(
 )
 
 const configShow = ref<boolean>(false)
-const setConfigShow = (state) => {
+const setConfigShow = state => {
   configShow.value = state
   screenStore.curMode = state
 }

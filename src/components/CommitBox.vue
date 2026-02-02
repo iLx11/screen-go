@@ -2,7 +2,8 @@
 import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive } from 'vue'
-import { XBox } from '@/utils/xBox/xBox.js'
+import { XBox } from 'ilx1-x-box'
+import { resizeImageWithKonva, generate } from 'ilx1-x-tool'
 
 // const { ipcRenderer } = require('electron')
 const win = window as any
@@ -24,7 +25,7 @@ const imgHandle = async () => {
   // + data:image/png;base64,
   // console.info(screenStore.editorPicData)
   // 缩放图片
-  const data = await win.myApi.resizeImage(
+  const data = await resizeImageWithKonva(
     screenStore.resizeWidth,
     screenStore.resizeHeight,
     screenStore.editorPicData,
@@ -36,14 +37,10 @@ const imgHandle = async () => {
   // console.info(data)
   // ----------------------------- 图片取模 ------------------------------------
   // 获取图片取模模式
-  const arrData = await win.myApi.generateResultArray(
+  const arrData = await generate(
     data,
     screenStore.thresholdData,
-    screenStore.configArray[0],
-    screenStore.configArray[1],
-    screenStore.configArray[2],
-    screenStore.configArray[3],
-    screenStore.configArray[4]
+    ...screenStore.configArray
   )
 
   screenStore.setDataLength(arrData.length)
@@ -77,11 +74,7 @@ const videoHandle = async () => {
     screenStore.videoDur,
     screenStore.videoFrame,
     screenStore.thresholdData,
-    screenStore.configArray[0],
-    screenStore.configArray[1],
-    screenStore.configArray[2],
-    screenStore.configArray[3],
-    screenStore.configArray[4]
+    ...screenStore.configArray
   )
   // console.info(data)
   let result = ''
