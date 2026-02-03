@@ -7,7 +7,7 @@ import ImageEditor from 'tui-image-editor/dist/tui-image-editor.js'
 import 'tui-image-editor/dist/tui-image-editor.css'
 import 'tui-color-picker/dist/tui-color-picker.css'
 import { editorConfig } from '../../utils/tools/theme'
-import { resizeImageWithKonva, generate } from 'ilx1-x-tool'
+import { resizeImage, generate } from 'ilx1-x-tool'
 
 const win = window as any
 const emits = defineEmits(['editorCancle', 'editorCommit', 'showScreenFunc'])
@@ -18,7 +18,7 @@ onMounted(() => {
   nextTick(() => {
     imageEditorInstance.value = new ImageEditor(
       document.querySelector('#editor'),
-      editorConfig,
+      editorConfig
     )
     // imageEditorInstance.value.zoom({ x: 0, y: 0, zoomLevel: 1 })
     // 缩放画布
@@ -30,11 +30,11 @@ onMounted(() => {
         curZoom > 1
           ? (curZoom = 1)
           : curZoom < 0
-            ? (curZoom = 1)
-            : (curZoom += delta)
+          ? (curZoom = 1)
+          : (curZoom += delta)
         imageEditorInstance.value.zoom({ x: 0, y: 0, zoomLevel: curZoom })
       },
-      { passive: false },
+      { passive: false }
     )
   })
 })
@@ -96,26 +96,32 @@ const editorCommit = async () => {
   const picBase64Str = (imageEditorInstance as any).value.toDataURL()
   let data, arrData
   configStore.showPop('处理数据中...')
-  console.info(picBase64Str)
-  coverShow.value = true
+  // coverShow.value = true
+
   // 判断是屏幕类型
-  if (configStore.curScreen < 1) {
-    // 设置编辑状态
-    let tempObj: object = {
-      set: 'configStore.isEdit',
-      value: 0,
-    }
-    win.api.setConfigStore(tempObj)
-    // 缩放图片（1 为单色屏幕）
-    data = await resizeImageWithKonva(320, 172, picBase64Str, 0)
-    // 获取取模数据
-    arrData = await generate(data, 120, 1, 2, 0, 0, 0)
-  } else {
-    // 缩放图片（1 为单色屏幕）
-    data = await resizeImageWithKonva(72, 40, picBase64Str, 1)
-    // 获取取模数据
-    arrData = await generate(data, 120, 1, 2, 0, 0, 1)
-  }
+  // if (configStore.curScreen < 1) {
+  //   // 设置编辑状态
+  //   let tempObj: object = {
+  //     set: 'configStore.isEdit',
+  //     value: 0,
+  //   }
+  //   win.api.setConfigStore(tempObj)
+  //   // 缩放图片（1 为单色屏幕）
+  //   data = await resizeImageWithKonva(320, 172, picBase64Str, 0)
+  //   // 获取取模数据
+  //   arrData = await generate(data, 120, 1, 2, 0, 0, 0)
+  // } else {
+  //   // 缩放图片（1 为单色屏幕）
+  //   data = await resizeImageWithKonva(72, 40, picBase64Str, 1)
+  //   // 获取取模数据
+  //   arrData = await generate(data, 120, 1, 2, 0, 0, 1)
+  // }
+
+  // 缩放图片（1 为单色屏幕）
+  data = await resizeImage(72, 40, picBase64Str, 1)
+  // 获取取模数据
+  arrData = await generate(data, 120, 1, 2, 0, 0, 1)
+
   // // console.info(arrData)
   let tempObj: object = {
     set: 'configStore.screenData',
@@ -124,6 +130,8 @@ const editorCommit = async () => {
       buffData: arrData,
     }),
   }
+
+  console.info(data)
   win.api.setConfigStore(tempObj)
   coverShow.value = false
   // win.api.closeWindow()

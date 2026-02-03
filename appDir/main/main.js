@@ -235,7 +235,7 @@ function detectBrowser() {
   return typeof window !== "undefined" && ({}.toString.call(window) === "[object Window]" || {}.toString.call(window) === "[object global]");
 }
 const glob = typeof global !== "undefined" ? global : typeof window !== "undefined" ? window : typeof WorkerGlobalScope !== "undefined" ? self : {};
-const Konva$2 = {
+const Konva$1 = {
   _global: glob,
   version: "10.2.0",
   isBrowser: detectBrowser(),
@@ -243,7 +243,7 @@ const Konva$2 = {
   }).toString()),
   dblClickWindow: 400,
   getAngle(angle) {
-    return Konva$2.angleDeg ? angle * PI_OVER_180 : angle;
+    return Konva$1.angleDeg ? angle * PI_OVER_180 : angle;
   },
   enableTrace: false,
   pointerEventsEnabled: true,
@@ -267,14 +267,14 @@ const Konva$2 = {
   showWarnings: true,
   dragButtons: [0, 1],
   isDragging() {
-    return Konva$2["DD"].isDragging;
+    return Konva$1["DD"].isDragging;
   },
   isTransforming() {
     var _a, _b;
-    return (_b = (_a = Konva$2["Transformer"]) === null || _a === void 0 ? void 0 : _a.isTransforming()) !== null && _b !== void 0 ? _b : false;
+    return (_b = (_a = Konva$1["Transformer"]) === null || _a === void 0 ? void 0 : _a.isTransforming()) !== null && _b !== void 0 ? _b : false;
   },
   isDragReady() {
-    return !!Konva$2["DD"].node;
+    return !!Konva$1["DD"].node;
   },
   releaseCanvasOnDestroy: true,
   document: glob.document,
@@ -286,9 +286,9 @@ const Konva$2 = {
   }
 };
 const _registerNode = (NodeClass) => {
-  Konva$2[NodeClass.prototype.getClassName()] = NodeClass;
+  Konva$1[NodeClass.prototype.getClassName()] = NodeClass;
 };
-Konva$2._injectGlobal(Konva$2);
+Konva$1._injectGlobal(Konva$1);
 const NODE_ERROR = `Konva.js unsupported environment.
 
 Looks like you are trying to use Konva.js in Node.js environment. because "document" object is undefined.
@@ -397,13 +397,13 @@ class Transform {
     return this;
   }
   invert() {
-    const d2 = 1 / (this.m[0] * this.m[3] - this.m[1] * this.m[2]);
-    const m0 = this.m[3] * d2;
-    const m1 = -this.m[1] * d2;
-    const m2 = -this.m[2] * d2;
-    const m3 = this.m[0] * d2;
-    const m4 = d2 * (this.m[2] * this.m[5] - this.m[3] * this.m[4]);
-    const m5 = d2 * (this.m[1] * this.m[4] - this.m[0] * this.m[5]);
+    const d = 1 / (this.m[0] * this.m[3] - this.m[1] * this.m[2]);
+    const m0 = this.m[3] * d;
+    const m1 = -this.m[1] * d;
+    const m2 = -this.m[2] * d;
+    const m3 = this.m[0] * d;
+    const m4 = d * (this.m[2] * this.m[5] - this.m[3] * this.m[4]);
+    const m5 = d * (this.m[1] * this.m[4] - this.m[0] * this.m[5]);
     this.m[0] = m0;
     this.m[1] = m1;
     this.m[2] = m2;
@@ -419,10 +419,10 @@ class Transform {
     const a = this.m[0];
     const b = this.m[1];
     const c = this.m[2];
-    const d2 = this.m[3];
+    const d = this.m[3];
     const e = this.m[4];
     const f = this.m[5];
-    const delta = a * d2 - b * c;
+    const delta = a * d - b * c;
     const result = {
       x: e,
       y: f,
@@ -437,15 +437,15 @@ class Transform {
       result.rotation = b > 0 ? Math.acos(a / r) : -Math.acos(a / r);
       result.scaleX = r;
       result.scaleY = delta / r;
-      result.skewX = (a * c + b * d2) / delta;
+      result.skewX = (a * c + b * d) / delta;
       result.skewY = 0;
-    } else if (c != 0 || d2 != 0) {
-      const s = Math.sqrt(c * c + d2 * d2);
-      result.rotation = Math.PI / 2 - (d2 > 0 ? Math.acos(-c / s) : -Math.acos(c / s));
+    } else if (c != 0 || d != 0) {
+      const s = Math.sqrt(c * c + d * d);
+      result.rotation = Math.PI / 2 - (d > 0 ? Math.acos(-c / s) : -Math.acos(c / s));
       result.scaleX = delta / s;
       result.scaleY = s;
       result.skewX = 0;
-      result.skewY = (a * c + b * d2) / delta;
+      result.skewY = (a * c + b * d) / delta;
     } else ;
     result.rotation = Util._getRotation(result.rotation);
     return result;
@@ -725,10 +725,10 @@ const Util = {
     ctx.clearRect(0, 0, 10, 10);
     ctx.fillStyle = "#282828";
     ctx.fillRect(0, 0, 10, 10);
-    const d2 = ctx.getImageData(0, 0, 10, 10).data;
+    const d = ctx.getImageData(0, 0, 10, 10).data;
     let isFarbling = false;
     for (let i = 0; i < 100; i++) {
-      if (d2[i * 4] !== 40 || d2[i * 4 + 1] !== 40 || d2[i * 4 + 2] !== 40 || d2[i * 4 + 3] !== 255) {
+      if (d[i * 4] !== 40 || d[i * 4 + 1] !== 40 || d[i * 4 + 2] !== 40 || d[i * 4 + 3] !== 255) {
         isFarbling = true;
         break;
       }
@@ -950,7 +950,7 @@ const Util = {
     return Util.radToDeg(rad);
   },
   _getRotation(radians) {
-    return Konva$2.angleDeg ? Util.radToDeg(radians) : radians;
+    return Konva$1.angleDeg ? Util.radToDeg(radians) : radians;
   },
   _capitalize(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
@@ -962,7 +962,7 @@ const Util = {
     console.error(KONVA_ERROR + str);
   },
   warn(str) {
-    if (!Konva$2.showWarnings) {
+    if (!Konva$1.showWarnings) {
       return;
     }
     console.warn(KONVA_WARNING + str);
@@ -1084,7 +1084,7 @@ const Util = {
     }
   },
   releaseCanvas(...canvases) {
-    if (!Konva$2.releaseCanvasOnDestroy)
+    if (!Konva$1.releaseCanvasOnDestroy)
       return;
     canvases.forEach((c) => {
       c.width = 0;
@@ -1246,7 +1246,7 @@ function isCSSFiltersSupported() {
 class Context {
   constructor(canvas) {
     this.canvas = canvas;
-    if (Konva$2.enableTrace) {
+    if (Konva$1.enableTrace) {
       this.traceArr = [];
       this._enableTrace();
     }
@@ -1478,8 +1478,8 @@ class Context {
   getLineDash() {
     return this._context.getLineDash();
   }
-  setTransform(a, b, c, d2, e, f) {
-    this._context.setTransform(a, b, c, d2, e, f);
+  setTransform(a, b, c, d, e, f) {
+    this._context.setTransform(a, b, c, d, e, f);
   }
   stroke(path2d) {
     if (path2d) {
@@ -1491,8 +1491,8 @@ class Context {
   strokeText(text, x, y, maxWidth) {
     this._context.strokeText(text, x, y, maxWidth);
   }
-  transform(a, b, c, d2, e, f) {
-    this._context.transform(a, b, c, d2, e, f);
+  transform(a, b, c, d, e, f) {
+    this._context.transform(a, b, c, d, e, f);
   }
   translate(x, y) {
     this._context.translate(x, y);
@@ -1702,7 +1702,7 @@ function getDevicePixelRatio() {
   const canvas = Util.createCanvasElement();
   const context = canvas.getContext("2d");
   _pixelRatio = function() {
-    const devicePixelRatio = Konva$2._global.devicePixelRatio || 1, backingStoreRatio = context.webkitBackingStorePixelRatio || context.mozBackingStorePixelRatio || context.msBackingStorePixelRatio || context.oBackingStorePixelRatio || context.backingStorePixelRatio || 1;
+    const devicePixelRatio = Konva$1._global.devicePixelRatio || 1, backingStoreRatio = context.webkitBackingStorePixelRatio || context.mozBackingStorePixelRatio || context.msBackingStorePixelRatio || context.oBackingStorePixelRatio || context.backingStorePixelRatio || 1;
     return devicePixelRatio / backingStoreRatio;
   }();
   Util.releaseCanvas(canvas);
@@ -1715,7 +1715,7 @@ class Canvas {
     this.height = 0;
     this.isCache = false;
     const conf = config || {};
-    const pixelRatio = conf.pixelRatio || Konva$2.pixelRatio || getDevicePixelRatio();
+    const pixelRatio = conf.pixelRatio || Konva$1.pixelRatio || getDevicePixelRatio();
     this.pixelRatio = pixelRatio;
     this._canvas = Util.createCanvasElement();
     this._canvas.style.padding = "0";
@@ -1857,12 +1857,12 @@ const DD = {
       }
       if (elem.dragStatus === "dragging" || elem.dragStatus === "stopped") {
         DD.justDragged = true;
-        Konva$2._mouseListenClick = false;
-        Konva$2._touchListenClick = false;
-        Konva$2._pointerListenClick = false;
+        Konva$1._mouseListenClick = false;
+        Konva$1._touchListenClick = false;
+        Konva$1._pointerListenClick = false;
         elem.dragStatus = "stopped";
       }
-      const drawNode = elem.node.getLayer() || elem.node instanceof Konva$2["Stage"] && elem.node;
+      const drawNode = elem.node.getLayer() || elem.node instanceof Konva$1["Stage"] && elem.node;
       if (drawNode && drawNodes.indexOf(drawNode) === -1) {
         drawNodes.push(drawNode);
       }
@@ -1886,7 +1886,7 @@ const DD = {
     });
   }
 };
-if (Konva$2.isBrowser) {
+if (Konva$1.isBrowser) {
   window.addEventListener("mouseup", DD._endDragBefore, true);
   window.addEventListener("touchend", DD._endDragBefore, true);
   window.addEventListener("touchcancel", DD._endDragBefore, true);
@@ -1917,7 +1917,7 @@ function RGBComponent(val) {
   return Math.round(val);
 }
 function getNumberValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       if (!Util._isNumber(val)) {
         Util.warn(_formatValue(val) + ' is a not valid value for "' + attr + '" attribute. The value should be a number.');
@@ -1927,7 +1927,7 @@ function getNumberValidator() {
   }
 }
 function getNumberOrArrayOfNumbersValidator(noOfElements) {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       let isNumber = Util._isNumber(val);
       let isValidArray = Util._isArray(val) && val.length == noOfElements;
@@ -1939,7 +1939,7 @@ function getNumberOrArrayOfNumbersValidator(noOfElements) {
   }
 }
 function getNumberOrAutoValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       const isNumber = Util._isNumber(val);
       const isAuto = val === "auto";
@@ -1951,7 +1951,7 @@ function getNumberOrAutoValidator() {
   }
 }
 function getStringValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       if (!Util._isString(val)) {
         Util.warn(_formatValue(val) + ' is a not valid value for "' + attr + '" attribute. The value should be a string.');
@@ -1961,7 +1961,7 @@ function getStringValidator() {
   }
 }
 function getStringOrGradientValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       const isString = Util._isString(val);
       const isGradient = Object.prototype.toString.call(val) === "[object CanvasGradient]" || val && val["addColorStop"];
@@ -1973,7 +1973,7 @@ function getStringOrGradientValidator() {
   }
 }
 function getNumberArrayValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       const TypedArray = Int8Array ? Object.getPrototypeOf(Int8Array) : null;
       if (TypedArray && val instanceof TypedArray) {
@@ -1993,7 +1993,7 @@ function getNumberArrayValidator() {
   }
 }
 function getBooleanValidator() {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       const isBool = val === true || val === false;
       if (!isBool) {
@@ -2004,7 +2004,7 @@ function getBooleanValidator() {
   }
 }
 function getComponentValidator(components) {
-  if (Konva$2.isUnminified) {
+  if (Konva$1.isUnminified) {
     return function(val, attr) {
       if (val === void 0 || val === null) {
         return val;
@@ -2140,7 +2140,7 @@ function parseCSSFilters(cssFilter) {
         const blurRadius = parseFloat(filterValue.replace("px", ""));
         return function(imageData) {
           this.blurRadius(blurRadius * 0.5);
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Blur) {
             KonvaFilters.Blur.call(this, imageData);
           }
@@ -2150,7 +2150,7 @@ function parseCSSFilters(cssFilter) {
         const brightness = filterValue.includes("%") ? parseFloat(filterValue) / 100 : parseFloat(filterValue);
         return function(imageData) {
           this.brightness(brightness);
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Brightness) {
             KonvaFilters.Brightness.call(this, imageData);
           }
@@ -2161,7 +2161,7 @@ function parseCSSFilters(cssFilter) {
         return function(imageData) {
           const konvaContrast = 100 * (Math.sqrt(contrast) - 1);
           this.contrast(konvaContrast);
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Contrast) {
             KonvaFilters.Contrast.call(this, imageData);
           }
@@ -2169,7 +2169,7 @@ function parseCSSFilters(cssFilter) {
       }
       case "grayscale": {
         return function(imageData) {
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Grayscale) {
             KonvaFilters.Grayscale.call(this, imageData);
           }
@@ -2177,7 +2177,7 @@ function parseCSSFilters(cssFilter) {
       }
       case "sepia": {
         return function(imageData) {
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Sepia) {
             KonvaFilters.Sepia.call(this, imageData);
           }
@@ -2185,7 +2185,7 @@ function parseCSSFilters(cssFilter) {
       }
       case "invert": {
         return function(imageData) {
-          const KonvaFilters = Konva$2.Filters;
+          const KonvaFilters = Konva$1.Filters;
           if (KonvaFilters && KonvaFilters.Invert) {
             KonvaFilters.Invert.call(this, imageData);
           }
@@ -2652,7 +2652,7 @@ class Node {
         layerUnderDrag = true;
       }
     });
-    const dragSkip = !skipDragCheck && !Konva$2.hitOnDragEnabled && (layerUnderDrag || Konva$2.isTransforming());
+    const dragSkip = !skipDragCheck && !Konva$1.hitOnDragEnabled && (layerUnderDrag || Konva$1.isTransforming());
     return this.isListening() && this.isVisible() && !dragSkip;
   }
   show() {
@@ -3088,7 +3088,7 @@ class Node {
     var _a, _b;
     const m = this._cache.get(TRANSFORM) || new Transform();
     m.reset();
-    const x = this.x(), y = this.y(), rotation = Konva$2.getAngle(this.rotation()), scaleX = (_a = this.attrs.scaleX) !== null && _a !== void 0 ? _a : 1, scaleY = (_b = this.attrs.scaleY) !== null && _b !== void 0 ? _b : 1, skewX = this.attrs.skewX || 0, skewY = this.attrs.skewY || 0, offsetX = this.attrs.offsetX || 0, offsetY = this.attrs.offsetY || 0;
+    const x = this.x(), y = this.y(), rotation = Konva$1.getAngle(this.rotation()), scaleX = (_a = this.attrs.scaleX) !== null && _a !== void 0 ? _a : 1, scaleY = (_b = this.attrs.scaleY) !== null && _b !== void 0 ? _b : 1, skewX = this.attrs.skewX || 0, skewY = this.attrs.skewY || 0, offsetX = this.attrs.offsetX || 0, offsetY = this.attrs.offsetY || 0;
     if (x !== 0 || y !== 0) {
       m.translate(x, y);
     }
@@ -3217,7 +3217,7 @@ class Node {
     } else if (this.parent) {
       return this.parent.getDragDistance();
     } else {
-      return Konva$2.dragDistance;
+      return Konva$1.dragDistance;
     }
   }
   _off(type2, name, callback) {
@@ -3279,7 +3279,7 @@ class Node {
     return this;
   }
   _requestDraw() {
-    if (Konva$2.autoDrawEnabled) {
+    if (Konva$1.autoDrawEnabled) {
       const drawNode = this.getLayer() || this.getStage();
       drawNode === null || drawNode === void 0 ? void 0 : drawNode.batchDraw();
     }
@@ -3450,7 +3450,7 @@ class Node {
     this._dragCleanup();
     this.on("mousedown.konva touchstart.konva", function(evt) {
       const shouldCheckButton = evt.evt["button"] !== void 0;
-      const canDrag = !shouldCheckButton || Konva$2.dragButtons.indexOf(evt.evt["button"]) >= 0;
+      const canDrag = !shouldCheckButton || Konva$1.dragButtons.indexOf(evt.evt["button"]) >= 0;
       if (!canDrag) {
         return;
       }
@@ -3515,11 +3515,11 @@ class Node {
     if (container) {
       obj.attrs.container = container;
     }
-    if (!Konva$2[className]) {
+    if (!Konva$1[className]) {
       Util.warn('Can not find a node with class name "' + className + '". Fallback to "Shape".');
       className = "Shape";
     }
-    const Class = Konva$2[className];
+    const Class = Konva$1[className];
     no = new Class(obj.attrs);
     if (children) {
       len = children.length;
@@ -3896,7 +3896,7 @@ Factory.addGetterSetter(Container, "clipWidth", void 0, getNumberValidator());
 Factory.addGetterSetter(Container, "clipHeight", void 0, getNumberValidator());
 Factory.addGetterSetter(Container, "clipFunc");
 const Captures = /* @__PURE__ */ new Map();
-const SUPPORT_POINTER_EVENTS = Konva$2._global["PointerEvent"] !== void 0;
+const SUPPORT_POINTER_EVENTS = Konva$1._global["PointerEvent"] !== void 0;
 function getCapturedShape(pointerId) {
   return Captures.get(pointerId);
 }
@@ -4000,7 +4000,7 @@ const getEventType = (type2) => {
 const getEventsMap = (eventType) => {
   const type2 = getEventType(eventType);
   if (type2 === "pointer") {
-    return Konva$2.pointerEventsEnabled && EVENTS_MAP.pointer;
+    return Konva$1.pointerEventsEnabled && EVENTS_MAP.pointer;
   }
   if (type2 === "touch") {
     return EVENTS_MAP.touch;
@@ -4193,7 +4193,7 @@ class Stage extends Container {
     }
     layer.setSize({ width: this.width(), height: this.height() });
     layer.draw();
-    if (Konva$2.isBrowser) {
+    if (Konva$1.isBrowser) {
       this.content.appendChild(layer.canvas._canvas);
     }
     return this;
@@ -4217,7 +4217,7 @@ class Stage extends Container {
     return this.children;
   }
   _bindContentEvents() {
-    if (!Konva$2.isBrowser) {
+    if (!Konva$1.isBrowser) {
       return;
     }
     EVENTS.forEach(([event, methodName]) => {
@@ -4263,7 +4263,7 @@ class Stage extends Container {
     }
     this.setPointersPositions(evt);
     const targetShape = this._getTargetShape(eventType);
-    const eventsEnabled = !(Konva$2.isDragging() || Konva$2.isTransforming()) || Konva$2.hitOnDragEnabled;
+    const eventsEnabled = !(Konva$1.isDragging() || Konva$1.isTransforming()) || Konva$1.hitOnDragEnabled;
     if (targetShape && eventsEnabled) {
       targetShape._fireAndBubble(events.pointerout, { evt });
       targetShape._fireAndBubble(events.pointerleave, { evt });
@@ -4299,12 +4299,12 @@ class Stage extends Container {
     this._changedPointerPositions.forEach((pos) => {
       const shape = this.getIntersection(pos);
       DD.justDragged = false;
-      Konva$2["_" + eventType + "ListenClick"] = true;
+      Konva$1["_" + eventType + "ListenClick"] = true;
       if (!shape || !shape.isListening()) {
         this[eventType + "ClickStartShape"] = void 0;
         return;
       }
-      if (Konva$2.capturePointerEventsEnabled) {
+      if (Konva$1.capturePointerEventsEnabled) {
         shape.setPointerCapture(pos.id);
       }
       this[eventType + "ClickStartShape"] = shape;
@@ -4334,11 +4334,11 @@ class Stage extends Container {
       return;
     }
     const isTouchPointer = evt.type.indexOf("touch") >= 0 || evt.pointerType === "touch";
-    if (Konva$2.isDragging() && DD.node.preventDefault() && evt.cancelable && isTouchPointer) {
+    if (Konva$1.isDragging() && DD.node.preventDefault() && evt.cancelable && isTouchPointer) {
       evt.preventDefault();
     }
     this.setPointersPositions(evt);
-    const eventsEnabled = !(Konva$2.isDragging() || Konva$2.isTransforming()) || Konva$2.hitOnDragEnabled;
+    const eventsEnabled = !(Konva$1.isDragging() || Konva$1.isTransforming()) || Konva$1.hitOnDragEnabled;
     if (!eventsEnabled) {
       return;
     }
@@ -4412,21 +4412,21 @@ class Stage extends Container {
       const pointerId = pos.id;
       const event = { evt, pointerId };
       let fireDblClick = false;
-      if (Konva$2["_" + eventType + "InDblClickWindow"]) {
+      if (Konva$1["_" + eventType + "InDblClickWindow"]) {
         fireDblClick = true;
         clearTimeout(this[eventType + "DblTimeout"]);
       } else if (!DD.justDragged) {
-        Konva$2["_" + eventType + "InDblClickWindow"] = true;
+        Konva$1["_" + eventType + "InDblClickWindow"] = true;
         clearTimeout(this[eventType + "DblTimeout"]);
       }
       this[eventType + "DblTimeout"] = setTimeout(function() {
-        Konva$2["_" + eventType + "InDblClickWindow"] = false;
-      }, Konva$2.dblClickWindow);
+        Konva$1["_" + eventType + "InDblClickWindow"] = false;
+      }, Konva$1.dblClickWindow);
       if (shape && shape.isListening()) {
         skipPointerUpTrigger = true;
         this[eventType + "ClickEndShape"] = shape;
         shape._fireAndBubble(events.pointerup, { ...event });
-        if (Konva$2["_" + eventType + "ListenClick"] && clickStartShape && clickStartShape === shape) {
+        if (Konva$1["_" + eventType + "ListenClick"] && clickStartShape && clickStartShape === shape) {
           shape._fireAndBubble(events.pointerclick, { ...event });
           if (fireDblClick && clickEndShape && clickEndShape === shape) {
             shape._fireAndBubble(events.pointerdblclick, { ...event });
@@ -4443,7 +4443,7 @@ class Stage extends Container {
           });
           skipPointerUpTrigger = true;
         }
-        if (Konva$2["_" + eventType + "ListenClick"]) {
+        if (Konva$1["_" + eventType + "ListenClick"]) {
           this._fire(events.pointerclick, {
             evt,
             target: this,
@@ -4469,7 +4469,7 @@ class Stage extends Container {
         pointerId: this._changedPointerPositions[0].id
       });
     }
-    Konva$2["_" + eventType + "ListenClick"] = false;
+    Konva$1["_" + eventType + "ListenClick"] = false;
     if (evt.cancelable && eventType !== "touch" && eventType !== "pointer") {
       evt.preventDefault();
     }
@@ -4576,7 +4576,7 @@ class Stage extends Container {
       width: this.width(),
       height: this.height()
     });
-    if (!Konva$2.isBrowser) {
+    if (!Konva$1.isBrowser) {
       return;
     }
     const container = this.container();
@@ -4609,7 +4609,7 @@ class Stage extends Container {
 Stage.prototype.nodeType = STAGE;
 _registerNode(Stage);
 Factory.addGetterSetter(Stage, "container");
-if (Konva$2.isBrowser) {
+if (Konva$1.isBrowser) {
   document.addEventListener("visibilitychange", () => {
     stages.forEach((stage) => {
       stage.batchDraw();
@@ -4717,7 +4717,7 @@ class Shape extends Node {
       if (pattern2 && pattern2.setTransform) {
         const tr = new Transform();
         tr.translate(this.fillPatternX(), this.fillPatternY());
-        tr.rotate(Konva$2.getAngle(this.fillPatternRotation()));
+        tr.rotate(Konva$1.getAngle(this.fillPatternRotation()));
         tr.scale(this.fillPatternScaleX(), this.fillPatternScaleY());
         tr.translate(-1 * this.fillPatternOffsetX(), -1 * this.fillPatternOffsetY());
         const m = tr.getMatrix();
@@ -5715,7 +5715,7 @@ class Tween {
     }
     this.node = node;
     this._id = idCounter++;
-    const layers = node.getLayer() || (node instanceof Konva$2["Stage"] ? node.getLayers() : null);
+    const layers = node.getLayer() || (node instanceof Konva$1["Stage"] ? node.getLayers() : null);
     if (!layers) {
       Util.error("Tween constructor have `node` that is not in a layer. Please add node into layer first.");
     }
@@ -5934,31 +5934,31 @@ Node.prototype.to = function(params) {
   tween.play();
 };
 const Easings = {
-  BackEaseIn(t2, b, c, d2) {
+  BackEaseIn(t2, b, c, d) {
     const s = 1.70158;
-    return c * (t2 /= d2) * t2 * ((s + 1) * t2 - s) + b;
+    return c * (t2 /= d) * t2 * ((s + 1) * t2 - s) + b;
   },
-  BackEaseOut(t2, b, c, d2) {
+  BackEaseOut(t2, b, c, d) {
     const s = 1.70158;
-    return c * ((t2 = t2 / d2 - 1) * t2 * ((s + 1) * t2 + s) + 1) + b;
+    return c * ((t2 = t2 / d - 1) * t2 * ((s + 1) * t2 + s) + 1) + b;
   },
-  BackEaseInOut(t2, b, c, d2) {
+  BackEaseInOut(t2, b, c, d) {
     let s = 1.70158;
-    if ((t2 /= d2 / 2) < 1) {
+    if ((t2 /= d / 2) < 1) {
       return c / 2 * (t2 * t2 * (((s *= 1.525) + 1) * t2 - s)) + b;
     }
     return c / 2 * ((t2 -= 2) * t2 * (((s *= 1.525) + 1) * t2 + s) + 2) + b;
   },
-  ElasticEaseIn(t2, b, c, d2, a, p) {
+  ElasticEaseIn(t2, b, c, d, a, p) {
     let s = 0;
     if (t2 === 0) {
       return b;
     }
-    if ((t2 /= d2) === 1) {
+    if ((t2 /= d) === 1) {
       return b + c;
     }
     if (!p) {
-      p = d2 * 0.3;
+      p = d * 0.3;
     }
     if (!a || a < Math.abs(c)) {
       a = c;
@@ -5966,18 +5966,18 @@ const Easings = {
     } else {
       s = p / (2 * Math.PI) * Math.asin(c / a);
     }
-    return -(a * Math.pow(2, 10 * (t2 -= 1)) * Math.sin((t2 * d2 - s) * (2 * Math.PI) / p)) + b;
+    return -(a * Math.pow(2, 10 * (t2 -= 1)) * Math.sin((t2 * d - s) * (2 * Math.PI) / p)) + b;
   },
-  ElasticEaseOut(t2, b, c, d2, a, p) {
+  ElasticEaseOut(t2, b, c, d, a, p) {
     let s = 0;
     if (t2 === 0) {
       return b;
     }
-    if ((t2 /= d2) === 1) {
+    if ((t2 /= d) === 1) {
       return b + c;
     }
     if (!p) {
-      p = d2 * 0.3;
+      p = d * 0.3;
     }
     if (!a || a < Math.abs(c)) {
       a = c;
@@ -5985,18 +5985,18 @@ const Easings = {
     } else {
       s = p / (2 * Math.PI) * Math.asin(c / a);
     }
-    return a * Math.pow(2, -10 * t2) * Math.sin((t2 * d2 - s) * (2 * Math.PI) / p) + c + b;
+    return a * Math.pow(2, -10 * t2) * Math.sin((t2 * d - s) * (2 * Math.PI) / p) + c + b;
   },
-  ElasticEaseInOut(t2, b, c, d2, a, p) {
+  ElasticEaseInOut(t2, b, c, d, a, p) {
     let s = 0;
     if (t2 === 0) {
       return b;
     }
-    if ((t2 /= d2 / 2) === 2) {
+    if ((t2 /= d / 2) === 2) {
       return b + c;
     }
     if (!p) {
-      p = d2 * (0.3 * 1.5);
+      p = d * (0.3 * 1.5);
     }
     if (!a || a < Math.abs(c)) {
       a = c;
@@ -6005,12 +6005,12 @@ const Easings = {
       s = p / (2 * Math.PI) * Math.asin(c / a);
     }
     if (t2 < 1) {
-      return -0.5 * (a * Math.pow(2, 10 * (t2 -= 1)) * Math.sin((t2 * d2 - s) * (2 * Math.PI) / p)) + b;
+      return -0.5 * (a * Math.pow(2, 10 * (t2 -= 1)) * Math.sin((t2 * d - s) * (2 * Math.PI) / p)) + b;
     }
-    return a * Math.pow(2, -10 * (t2 -= 1)) * Math.sin((t2 * d2 - s) * (2 * Math.PI) / p) * 0.5 + c + b;
+    return a * Math.pow(2, -10 * (t2 -= 1)) * Math.sin((t2 * d - s) * (2 * Math.PI) / p) * 0.5 + c + b;
   },
-  BounceEaseOut(t2, b, c, d2) {
-    if ((t2 /= d2) < 1 / 2.75) {
+  BounceEaseOut(t2, b, c, d) {
+    if ((t2 /= d) < 1 / 2.75) {
       return c * (7.5625 * t2 * t2) + b;
     } else if (t2 < 2 / 2.75) {
       return c * (7.5625 * (t2 -= 1.5 / 2.75) * t2 + 0.75) + b;
@@ -6020,45 +6020,45 @@ const Easings = {
       return c * (7.5625 * (t2 -= 2.625 / 2.75) * t2 + 0.984375) + b;
     }
   },
-  BounceEaseIn(t2, b, c, d2) {
-    return c - Easings.BounceEaseOut(d2 - t2, 0, c, d2) + b;
+  BounceEaseIn(t2, b, c, d) {
+    return c - Easings.BounceEaseOut(d - t2, 0, c, d) + b;
   },
-  BounceEaseInOut(t2, b, c, d2) {
-    if (t2 < d2 / 2) {
-      return Easings.BounceEaseIn(t2 * 2, 0, c, d2) * 0.5 + b;
+  BounceEaseInOut(t2, b, c, d) {
+    if (t2 < d / 2) {
+      return Easings.BounceEaseIn(t2 * 2, 0, c, d) * 0.5 + b;
     } else {
-      return Easings.BounceEaseOut(t2 * 2 - d2, 0, c, d2) * 0.5 + c * 0.5 + b;
+      return Easings.BounceEaseOut(t2 * 2 - d, 0, c, d) * 0.5 + c * 0.5 + b;
     }
   },
-  EaseIn(t2, b, c, d2) {
-    return c * (t2 /= d2) * t2 + b;
+  EaseIn(t2, b, c, d) {
+    return c * (t2 /= d) * t2 + b;
   },
-  EaseOut(t2, b, c, d2) {
-    return -c * (t2 /= d2) * (t2 - 2) + b;
+  EaseOut(t2, b, c, d) {
+    return -c * (t2 /= d) * (t2 - 2) + b;
   },
-  EaseInOut(t2, b, c, d2) {
-    if ((t2 /= d2 / 2) < 1) {
+  EaseInOut(t2, b, c, d) {
+    if ((t2 /= d / 2) < 1) {
       return c / 2 * t2 * t2 + b;
     }
     return -c / 2 * (--t2 * (t2 - 2) - 1) + b;
   },
-  StrongEaseIn(t2, b, c, d2) {
-    return c * (t2 /= d2) * t2 * t2 * t2 * t2 + b;
+  StrongEaseIn(t2, b, c, d) {
+    return c * (t2 /= d) * t2 * t2 * t2 * t2 + b;
   },
-  StrongEaseOut(t2, b, c, d2) {
-    return c * ((t2 = t2 / d2 - 1) * t2 * t2 * t2 * t2 + 1) + b;
+  StrongEaseOut(t2, b, c, d) {
+    return c * ((t2 = t2 / d - 1) * t2 * t2 * t2 * t2 + 1) + b;
   },
-  StrongEaseInOut(t2, b, c, d2) {
-    if ((t2 /= d2 / 2) < 1) {
+  StrongEaseInOut(t2, b, c, d) {
+    if ((t2 /= d / 2) < 1) {
       return c / 2 * t2 * t2 * t2 * t2 * t2 + b;
     }
     return c / 2 * ((t2 -= 2) * t2 * t2 * t2 * t2 + 2) + b;
   },
-  Linear(t2, b, c, d2) {
-    return c * t2 / d2 + b;
+  Linear(t2, b, c, d) {
+    return c * t2 / d + b;
   }
 };
-const Konva$1 = Util._assign(Konva$2, {
+const Konva = Util._assign(Konva$1, {
   Util,
   Transform,
   Node,
@@ -6079,7 +6079,7 @@ const Konva$1 = Util._assign(Konva$2, {
 });
 class Arc extends Shape {
   _sceneFunc(context) {
-    const angle = Konva$2.getAngle(this.angle()), clockwise = this.clockwise();
+    const angle = Konva$1.getAngle(this.angle()), clockwise = this.clockwise();
     context.beginPath();
     context.arc(0, 0, this.outerRadius(), 0, angle, clockwise);
     context.arc(0, 0, this.innerRadius(), angle, 0, !clockwise);
@@ -6102,7 +6102,7 @@ class Arc extends Shape {
     const innerRadius = this.innerRadius();
     const outerRadius = this.outerRadius();
     const clockwise = this.clockwise();
-    const angle = Konva$2.getAngle(clockwise ? 360 - this.angle() : this.angle());
+    const angle = Konva$1.getAngle(clockwise ? 360 - this.angle() : this.angle());
     const boundLeftRatio = Math.cos(Math.min(angle, Math.PI));
     const boundRightRatio = 1;
     const boundTopRatio = Math.sin(Math.min(Math.max(Math.PI, angle), 3 * Math.PI / 2));
@@ -6165,9 +6165,9 @@ function getBezierExtremaPoints(points) {
       const c = -3 * axis[0] + 3 * axis[1];
       const discriminant = b * b - 4 * a * c;
       if (discriminant >= 0) {
-        const d2 = Math.sqrt(discriminant);
-        extremaTs.push((-b + d2) / (2 * a));
-        extremaTs.push((-b - d2) / (2 * a));
+        const d = Math.sqrt(discriminant);
+        extremaTs.push((-b + d) / (2 * a));
+        extremaTs.push((-b - d) / (2 * a));
       }
     }
   }
@@ -7026,13 +7026,13 @@ const getQuadraticArcLength = (xs, ys, t2) => {
   const bx = 2 * xs[1] - 2 * xs[0];
   const by = 2 * ys[1] - 2 * ys[0];
   const A2 = 4 * (ax * ax + ay * ay);
-  const B = 4 * (ax * bx + ay * by);
-  const C = bx * bx + by * by;
+  const B2 = 4 * (ax * bx + ay * by);
+  const C2 = bx * bx + by * by;
   if (A2 === 0) {
     return t2 * Math.sqrt(Math.pow(xs[2] - xs[0], 2) + Math.pow(ys[2] - ys[0], 2));
   }
-  const b = B / (2 * A2);
-  const c = C / A2;
+  const b = B2 / (2 * A2);
+  const c = C2 / A2;
   const u = t2 + b;
   const k = c - b * b;
   const uuk = u * u + k > 0 ? Math.sqrt(u * u + k) : 0;
@@ -8520,7 +8520,7 @@ class Text extends Shape {
     direction = direction === INHERIT ? context.direction : direction;
     let translateY = lineHeightPx / 2;
     let baseline = MIDDLE;
-    if (!Konva$2.legacyTextRendering) {
+    if (!Konva$1.legacyTextRendering) {
       const metrics = this.measureSize("M");
       baseline = "alphabetic";
       const ascent = (_a = metrics.fontBoundingBoxAscent) !== null && _a !== void 0 ? _a : metrics.actualBoundingBoxAscent;
@@ -8552,7 +8552,7 @@ class Text extends Shape {
       if (shouldUnderline) {
         context.save();
         context.beginPath();
-        const yOffset = underlineOffset !== null && underlineOffset !== void 0 ? underlineOffset : !Konva$2.legacyTextRendering ? Math.round(fontSize / 4) : Math.round(fontSize / 2);
+        const yOffset = underlineOffset !== null && underlineOffset !== void 0 ? underlineOffset : !Konva$1.legacyTextRendering ? Math.round(fontSize / 4) : Math.round(fontSize / 2);
         const x = lineTranslateX;
         const y = translateY + lineTranslateY + yOffset;
         context.moveTo(x, y);
@@ -8611,7 +8611,7 @@ class Text extends Shape {
       if (shouldLineThrough) {
         context.save();
         context.beginPath();
-        const yOffset = !Konva$2.legacyTextRendering ? -Math.round(fontSize / 4) : 0;
+        const yOffset = !Konva$1.legacyTextRendering ? -Math.round(fontSize / 4) : 0;
         const x = lineThroughStartX;
         context.moveTo(x, translateY + lineTranslateY + yOffset);
         const lineWidth = align === JUSTIFY && !lastLine ? totalWidth - padding * 2 : width;
@@ -9149,7 +9149,7 @@ const ANGLES = {
   "bottom-center": 180,
   "bottom-right": 135
 };
-const TOUCH_DEVICE = "ontouchstart" in Konva$2._global;
+const TOUCH_DEVICE = "ontouchstart" in Konva$1._global;
 function getCursor(anchorName, rad, rotateCursor) {
   if (anchorName === "rotater") {
     return rotateCursor;
@@ -9210,7 +9210,7 @@ function rotateAroundCenter(shape, deltaRad) {
 function getSnap(snaps, newRotationRad, tol) {
   let snapped = newRotationRad;
   for (let i = 0; i < snaps.length; i++) {
-    const angle = Konva$2.getAngle(snaps[i]);
+    const angle = Konva$1.getAngle(snaps[i]);
     const absDiff = Math.abs(angle - newRotationRad) % (Math.PI * 2);
     const dif = Math.min(absDiff, Math.PI * 2 - absDiff);
     if (dif < tol) {
@@ -9355,7 +9355,7 @@ class Transformer extends Group {
     const absPos = node.getAbsolutePosition(relative);
     const dx = rect.x * absScale.x - node.offsetX() * absScale.x;
     const dy = rect.y * absScale.y - node.offsetY() * absScale.y;
-    const rotation = (Konva$2.getAngle(node.getAbsoluteRotation()) + Math.PI * 2) % (Math.PI * 2);
+    const rotation = (Konva$1.getAngle(node.getAbsoluteRotation()) + Math.PI * 2) % (Math.PI * 2);
     const box = {
       x: absPos.x + dx * Math.cos(rotation) + dy * Math.sin(-rotation),
       y: absPos.y + dy * Math.cos(rotation) + dx * Math.sin(rotation),
@@ -9363,7 +9363,7 @@ class Transformer extends Group {
       height: rect.height * absScale.y,
       rotation
     };
-    return rotateAroundPoint(box, -Konva$2.getAngle(rot), {
+    return rotateAroundPoint(box, -Konva$1.getAngle(rot), {
       x: 0,
       y: 0
     });
@@ -9399,7 +9399,7 @@ class Transformer extends Group {
       });
     });
     const tr = new Transform();
-    tr.rotate(-Konva$2.getAngle(this.rotation()));
+    tr.rotate(-Konva$1.getAngle(this.rotation()));
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     totalPoints.forEach(function(point) {
       const transformed = tr.point(point);
@@ -9419,7 +9419,7 @@ class Transformer extends Group {
       y: p.y,
       width: maxX - minX,
       height: maxY - minY,
-      rotation: Konva$2.getAngle(this.rotation())
+      rotation: Konva$1.getAngle(this.rotation())
     };
   }
   getX() {
@@ -9463,7 +9463,7 @@ class Transformer extends Group {
       e.cancelBubble = true;
     });
     anchor.on("mouseenter", () => {
-      const rad = Konva$2.getAngle(this.rotation());
+      const rad = Konva$1.getAngle(this.rotation());
       const rotateCursor = this.rotateAnchorCursor();
       const cursor = getCursor(name, rad, rotateCursor);
       anchor.getStage().content && (anchor.getStage().content.style.cursor = cursor);
@@ -9594,14 +9594,14 @@ class Transformer extends Group {
       const attrs = this._getNodeRect();
       x = anchorNode.x() - attrs.width / 2;
       y = -anchorNode.y() + attrs.height / 2;
-      const rotateAnchorAngleRad = Konva$2.getAngle(this.rotateAnchorAngle());
+      const rotateAnchorAngleRad = Konva$1.getAngle(this.rotateAnchorAngle());
       let delta = Math.atan2(-y, x) + Math.PI / 2 - rotateAnchorAngleRad;
       if (attrs.height < 0) {
         delta -= Math.PI;
       }
-      const oldRotation = Konva$2.getAngle(this.rotation());
+      const oldRotation = Konva$1.getAngle(this.rotation());
       const newRotation = oldRotation + delta;
-      const tol = Konva$2.getAngle(this.rotationSnapTolerance());
+      const tol = Konva$1.getAngle(this.rotationSnapTolerance());
       const snappedRot = getSnap(this.rotationSnaps(), newRotation, tol);
       const diff2 = snappedRot - attrs.rotation;
       const shape = rotateAroundCenter(attrs, diff2);
@@ -9730,7 +9730,7 @@ class Transformer extends Group {
       y,
       width,
       height,
-      rotation: Konva$2.getAngle(this.rotation())
+      rotation: Konva$1.getAngle(this.rotation())
     }, e);
   }
   _handleMouseUp(e) {
@@ -9775,7 +9775,7 @@ class Transformer extends Group {
       return;
     }
     const t2 = new Transform();
-    t2.rotate(Konva$2.getAngle(this.rotation()));
+    t2.rotate(Konva$1.getAngle(this.rotation()));
     if (this._movingAnchorName && newAttrs.width < 0 && this._movingAnchorName.indexOf("left") >= 0) {
       const offset = t2.point({
         x: -this.padding() * 2,
@@ -10089,7 +10089,7 @@ Factory.backCompat(Transformer, {
 class Wedge extends Shape {
   _sceneFunc(context) {
     context.beginPath();
-    context.arc(0, 0, this.radius(), 0, Konva$2.getAngle(this.angle()), this.clockwise());
+    context.arc(0, 0, this.radius(), 0, Konva$1.getAngle(this.angle()), this.clockwise());
     context.lineTo(0, 0);
     context.closePath();
     context.fillStrokeShape(this);
@@ -11219,9 +11219,9 @@ Factory.addGetterSetter(Node, "kaleidoscopePower", 2, getNumberValidator(), Fact
 Factory.addGetterSetter(Node, "kaleidoscopeAngle", 0, getNumberValidator(), Factory.afterSetFilter);
 function pixelAt(idata, x, y) {
   let idx = (y * idata.width + x) * 4;
-  const d2 = [];
-  d2.push(idata.data[idx++], idata.data[idx++], idata.data[idx++], idata.data[idx++]);
-  return d2;
+  const d = [];
+  d.push(idata.data[idx++], idata.data[idx++], idata.data[idx++], idata.data[idx++]);
+  return d;
 }
 function rgbDistance(p1, p2) {
   return Math.sqrt(Math.pow(p1[0] - p2[0], 2) + Math.pow(p1[1] - p2[1], 2) + Math.pow(p1[2] - p2[2], 2));
@@ -11248,12 +11248,12 @@ function backgroundMask(idata, threshold) {
     const mean = rgbMean([rgbv_ne, rgbv_no, rgbv_se, rgbv_so]);
     const mask = [];
     for (let i = 0; i < idata.width * idata.height; i++) {
-      const d2 = rgbDistance(mean, [
+      const d = rgbDistance(mean, [
         idata.data[i * 4],
         idata.data[i * 4 + 1],
         idata.data[i * 4 + 2]
       ]);
-      mask[i] = d2 < thres ? 0 : 255;
+      mask[i] = d < thres ? 0 : 255;
     }
     return mask;
   }
@@ -11516,14 +11516,14 @@ const Sepia = function(imageData) {
 };
 const Solarize = function(imageData) {
   const threshold = 128;
-  const d2 = imageData.data;
-  for (let i = 0; i < d2.length; i += 4) {
-    const r = d2[i], g = d2[i + 1], b = d2[i + 2];
-    const L2 = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-    if (L2 >= threshold) {
-      d2[i] = 255 - r;
-      d2[i + 1] = 255 - g;
-      d2[i + 2] = 255 - b;
+  const d = imageData.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const r = d[i], g = d[i + 1], b = d[i + 2];
+    const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    if (L >= threshold) {
+      d[i] = 255 - r;
+      d[i + 1] = 255 - g;
+      d[i + 2] = 255 - b;
     }
   }
   return imageData;
@@ -11535,7 +11535,7 @@ const Threshold = function(imageData) {
   }
 };
 Factory.addGetterSetter(Node, "threshold", 0.5, getNumberValidator(), Factory.afterSetFilter);
-const Konva = Konva$1.Util._assign(Konva$1, {
+Konva.Util._assign(Konva, {
   Arc,
   Arrow,
   Circle,
@@ -11577,198 +11577,124 @@ const Konva = Konva$1.Util._assign(Konva$1, {
     Threshold
   }
 });
-var L = typeof window < "u", A = () => {
+var B = typeof window < "u", W = () => {
   var _a, _b;
-  return typeof process < "u" && ((_a = process.env) == null ? void 0 : _a.NODE_ENV) ? process.env.NODE_ENV === "development" : L && ((_b = window.__ENV__) == null ? void 0 : _b.MODE) ? window.__ENV__.MODE === "development" : true;
+  return typeof process < "u" && ((_a = process.env) == null ? void 0 : _a.NODE_ENV) ? process.env.NODE_ENV === "development" : B && ((_b = window.__ENV__) == null ? void 0 : _b.MODE) ? window.__ENV__.MODE === "development" : true;
 };
-({ enable: A() });
-var d = { generate: async function(e, t2, n) {
+({ enable: W() });
+async function V(e, r, n) {
   try {
-    let r = await this.base64ToImageData(e), a = this.imageDataToHexArray(r, t2, n);
-    return n[3] === 0 ? this.hex2hex(this.arrayToHex(a)) : a;
-  } catch (r) {
-    throw console.error("生成十六进制数组时出错:", r), r;
+    let t2 = await M(e), o = A(t2, r, n);
+    return n[3] === 0 ? H(U(o)) : o;
+  } catch (t2) {
+    throw console.error("生成十六进制数组时出错:", t2), t2;
   }
-}, imageDataToHexArray: function(e, t2, n) {
-  let r = e.data, a = e.height, o = e.width, s = r.length;
+}
+function A(e, r, n) {
+  let t2 = e.data, o = e.height, a = e.width, s = t2.length;
   if (n[4] == 1) {
-    let u = [];
-    for (let c = 0; c < s; c += 4) {
-      let h = r[c] * 0.299 + r[c + 1] * 0.587 + r[c + 2] * 0.114 > t2 ? 1 : 0;
-      u[c / 4] = h;
+    let l = [];
+    for (let u = 0; u < s; u += 4) {
+      let h = t2[u] * 0.299 + t2[u + 1] * 0.587 + t2[u + 2] * 0.114 > r ? 1 : 0;
+      l[u / 4] = h;
     }
-    let i = n[1], l;
+    let i = n[1], c;
     switch (i) {
       case 0:
-        l = this.ImageSamplingRow;
+        c = E;
         break;
       case 1:
-        l = this.ImageSamplingCol;
+        c = S;
         break;
       case 2:
-        l = this.ImageSamplingColRow;
+        c = C;
         break;
       case 3:
-        l = this.ImageSamplingRowCol;
+        c = P;
         break;
       default:
-        l = this.ImageSamplingRow;
+        c = E;
     }
-    if (typeof l != "function") throw new Error(`取模函数未定义，samplingMode: ${i}`);
-    return l.call(this, u, o, a, n);
-  } else return this.colorImageSampling(r, o, a, n);
-}, colorImageSampling: function(e, t2, n, r) {
-  let a = new Uint8Array(t2 * n * 2), o = 0, s = 0;
-  for (; o < a.length && s < e.length; ) {
-    let u = e[s], g = e[s + 1], i = e[s + 2], l = u >> 3 & 31, c = g >> 2 & 63, f = i >> 3 & 31, h = l << 11 | c << 5 | f;
-    a[o] = h >> 8 & 255, a[o + 1] = h & 255, (r[0] == 0 || r[2] == 1) && (a[o] = ~a[o] & 255, a[o + 1] = ~a[o + 1] & 255), o += 2, s += 4;
+    if (typeof c != "function") throw new Error(`取模函数未定义，samplingMode: ${i}`);
+    return c.call(this, l, a, o, n);
+  } else return I(t2, a, o, n);
+}
+function I(e, r, n, t2) {
+  let o = new Uint8Array(r * n * 2), a = 0, s = 0;
+  for (; a < o.length && s < e.length; ) {
+    let l = e[s], d = e[s + 1], i = e[s + 2], c = l >> 3 & 31, u = d >> 2 & 63, f = i >> 3 & 31, h = c << 11 | u << 5 | f;
+    o[a] = h >> 8 & 255, o[a + 1] = h & 255, (t2[0] == 0 || t2[2] == 1) && (o[a] = ~o[a] & 255, o[a + 1] = ~o[a + 1] & 255), a += 2, s += 4;
+  }
+  return o;
+}
+function E(e, r, n, t2) {
+  let o = Math.ceil(r / 8), a = new Uint8Array(o * n);
+  for (let s = 0; s < e.length; s++) {
+    let l = s % r, i = Math.floor(s / r), c = l % 8, u = 1 << c;
+    t2[2] != 0 && (u = 1 << 7 - c);
+    let f = i * o + Math.floor(l / 8), h = e[s];
+    t2[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? a[f] |= u : a[f] &= ~u;
   }
   return a;
-}, ImageSamplingRow: function(e, t2, n, r) {
-  let a = Math.ceil(t2 / 8), o = new Uint8Array(a * n);
+}
+function S(e, r, n, t2) {
+  let o = Math.ceil(n / 8), a = new Uint8Array(o * r);
   for (let s = 0; s < e.length; s++) {
-    let u = s % t2, i = Math.floor(s / t2), l = u % 8, c = 1 << l;
-    r[2] != 0 && (c = 1 << 7 - l);
-    let f = i * a + Math.floor(u / 8), h = e[s];
-    r[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? o[f] |= c : o[f] &= ~c;
+    let l = s % r, d = Math.floor(s / r), i = l, c = d % 8, u = 1 << c;
+    t2[2] != 0 && (u = 1 << 7 - c);
+    let f = i * o + Math.floor(d / 8), h = e[s];
+    t2[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? a[f] |= u : a[f] &= ~u;
   }
-  return o;
-}, ImageSamplingCol: function(e, t2, n, r) {
-  let a = Math.ceil(n / 8), o = new Uint8Array(a * t2);
+  return a;
+}
+function C(e, r, n, t2) {
+  let o = Math.ceil(n / 8), a = new Uint8Array(o * r);
   for (let s = 0; s < e.length; s++) {
-    let u = s % t2, g = Math.floor(s / t2), i = u, l = g % 8, c = 1 << l;
-    r[2] != 0 && (c = 1 << 7 - l);
-    let f = i * a + Math.floor(g / 8), h = e[s];
-    r[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? o[f] |= c : o[f] &= ~c;
+    let l = s % r, d = Math.floor(s / r), i = Math.floor(d / 8), c = d % 8, u = 1 << c;
+    t2[2] != 0 && (u = 1 << 7 - c);
+    let f = l + i * r, h = e[s];
+    t2[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? a[f] |= u : a[f] &= ~u;
   }
-  return o;
-}, ImageSamplingColRow: function(e, t2, n, r) {
-  let a = Math.ceil(n / 8), o = new Uint8Array(a * t2);
+  return a;
+}
+function P(e, r, n, t2) {
+  let o = Math.ceil(r / 8), a = new Uint8Array(o * n);
   for (let s = 0; s < e.length; s++) {
-    let u = s % t2, g = Math.floor(s / t2), i = Math.floor(g / 8), l = g % 8, c = 1 << l;
-    r[2] != 0 && (c = 1 << 7 - l);
-    let f = u + i * t2, h = e[s];
-    r[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? o[f] |= c : o[f] &= ~c;
+    let l = s % r, d = Math.floor(s / r), i = Math.floor(l / 8), c = l % 8, u = 1 << c;
+    t2[2] != 0 && (u = 1 << 7 - c);
+    let f = i * n + d, h = e[s];
+    t2[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? a[f] |= u : a[f] &= ~u;
   }
-  return o;
-}, ImageSamplingRowCol: function(e, t2, n, r) {
-  let a = Math.ceil(t2 / 8), o = new Uint8Array(a * n);
-  for (let s = 0; s < e.length; s++) {
-    let u = s % t2, g = Math.floor(s / t2), i = Math.floor(u / 8), l = u % 8, c = 1 << l;
-    r[2] != 0 && (c = 1 << 7 - l);
-    let f = i * n + g, h = e[s];
-    r[0] !== 0 && (h = h === 0 ? 1 : 0), h === 0 ? o[f] |= c : o[f] &= ~c;
-  }
-  return o;
-}, base64ToImageData: function(e) {
-  return new Promise((t2, n) => {
-    let r = new Image();
-    r.crossOrigin = "anonymous", r.src = e, r.onload = () => {
+  return a;
+}
+function M(e) {
+  return new Promise((r, n) => {
+    let t2 = new Image();
+    t2.crossOrigin = "anonymous", t2.src = e, t2.onload = () => {
       try {
-        let a = document.createElement("canvas");
-        a.width = r.width, a.height = r.height;
-        let o = a.getContext("2d");
-        o.drawImage(r, 0, 0);
-        let s = o.getImageData(0, 0, a.width, a.height);
-        t2(s);
-      } catch (a) {
-        n(new Error(`转换图像数据失败: ${a.message}`));
+        let o = document.createElement("canvas");
+        o.width = t2.width, o.height = t2.height;
+        let a = o.getContext("2d");
+        a.drawImage(t2, 0, 0);
+        let s = a.getImageData(0, 0, o.width, o.height);
+        r(s);
+      } catch (o) {
+        n(new Error(`转换图像数据失败: ${o.message}`));
       }
-    }, r.onerror = () => {
+    }, t2.onerror = () => {
       n(new Error("加载图像失败"));
-    }, r.src = e;
+    }, t2.src = e;
   });
-}, resizeImageWithKonva: async function(e, t2, n, r) {
-  if (e === 0 || t2 === 0) throw new Error("宽度和高度不能为0");
-  if (!n) throw new Error("图像对象不能为空");
-  return new Promise((a) => {
-    if (typeof Konva > "u") {
-      this.resizeImageWithCanvas(e, t2, n, r).then(a).catch(() => {
-        let i = document.createElement("canvas");
-        i.width = n.width, i.height = n.height, i.getContext("2d").drawImage(n, 0, 0), a(i.toDataURL("image/png"));
-      });
-      return;
-    }
-    let o = new Konva.Stage({ container: document.createElement("div"), width: e, height: t2 }), s = new Konva.Layer();
-    o.add(s);
-    let u = new Konva.Image({ image: n, width: e, height: t2 });
-    r && u.filters([Konva.Filters.Grayscale]), s.add(u), s.batchDraw();
-    let g = o.toDataURL({ mimeType: "image/png", quality: 1, pixelRatio: 1 });
-    o.destroy(), a(g);
-  });
-}, resizeImageWithCanvas: async function(e, t2, n, r) {
-  return new Promise((a) => {
-    let o = document.createElement("canvas");
-    o.width = e, o.height = t2;
-    let s = o.getContext("2d");
-    if (s.imageSmoothingEnabled = true, s.imageSmoothingQuality = "high", s.drawImage(n, 0, 0, e, t2), r) {
-      let g = s.getImageData(0, 0, e, t2), i = g.data;
-      for (let l = 0; l < i.length; l += 4) {
-        let c = i[l] * 0.299 + i[l + 1] * 0.587 + i[l + 2] * 0.114;
-        i[l] = i[l + 1] = i[l + 2] = c;
-      }
-      s.putImageData(g, 0, 0);
-    }
-    let u = o.toDataURL("image/png");
-    a(u);
-  });
-}, arrayToHex: function(e) {
-  return !e || e.length === 0 ? "" : Array.from(e).map((t2) => Number(t2).toString(16).padStart(2, "0")).join("");
-}, hex2hex: function(e) {
+}
+function U(e) {
+  return !e || e.length === 0 ? "" : Array.from(e).map((r) => Number(r).toString(16).padStart(2, "0")).join("");
+}
+function H(e) {
   if (!e || e.length === 0) return [];
-  let t2 = [];
-  for (let n = 0; n < e.length; n += 2) t2.push("0x" + e.substring(n, n + 2));
-  return t2;
-}, generatePreview: function(e, t2) {
-  if (!e || e.length === 0) return "";
-  let n = "";
-  for (let r = 0; r < e.length; r++) n += e[r] === 0 ? "0" : "1", (r + 1) % t2 === 0 && (n += `
-`);
-  return n;
-}, createImageData: function(e, t2, n = null) {
-  let r = document.createElement("canvas");
-  r.width = e, r.height = t2;
-  let a = r.getContext("2d");
-  if (n) {
-    let o = a.createImageData(e, t2);
-    return o.data.set(n), o;
-  } else return a.createImageData(e, t2);
-}, formatHexOutput: function(e, t2 = 0, n = 16) {
-  if (!e || e.length === 0) return "无数据";
-  let r = "";
-  if (t2 === 0 && Array.isArray(e)) for (let a = 0; a < e.length; a++) r += e[a] + ", ", (a + 1) % n === 0 && (r += `
-`);
-  else if (e instanceof Uint8Array) for (let a = 0; a < e.length; a++) r += e[a].toString(16).padStart(2, "0") + " ", (a + 1) % n === 0 && (r += `
-`);
-  else r = e.toString();
+  let r = [];
+  for (let n = 0; n < e.length; n += 2) r.push("0x" + e.substring(n, n + 2));
   return r;
-}, calculateOutputSize: function(e) {
-  let t2 = 0;
-  (Array.isArray(e) || e instanceof Uint8Array) && (t2 = e.length);
-  let n = t2 / 1024;
-  return { bytes: t2, kilobytes: n, formatted: `${t2} 字节 (${n.toFixed(2)} KB)` };
-}, getSamplingModeDescription: function(e) {
-  return { 0: "逐行式 (从左到右，从上到下)", 1: "逐列式 (从上到下，从左到右)", 2: "列行式 (先列后行)", 3: "行列式 (先行后列)" }[e] || "未知取模方式";
-}, getDefaultConfig: function() {
-  return [0, 0, 0, 0, 1];
-} }, fe = d.generate.bind(d);
-d.imageDataToHexArray.bind(d);
-d.colorImageSampling.bind(d);
-d.ImageSamplingRow.bind(d);
-d.ImageSamplingCol.bind(d);
-d.ImageSamplingColRow.bind(d);
-d.ImageSamplingRowCol.bind(d);
-d.base64ToImageData.bind(d);
-d.resizeImageWithKonva.bind(d);
-d.resizeImageWithCanvas.bind(d);
-d.arrayToHex.bind(d);
-d.hex2hex.bind(d);
-d.generatePreview.bind(d);
-d.createImageData.bind(d);
-d.formatHexOutput.bind(d);
-d.calculateOutputSize.bind(d);
-d.getSamplingModeDescription.bind(d);
-d.getDefaultConfig.bind(d);
+}
 const { ipcMain: ipcMain$1 } = require("electron");
 const fs$3 = require("fs-extra");
 const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
@@ -11820,7 +11746,7 @@ const ffmpegListener = async () => {
         try {
           const imageBuffer = fs$3.readFileSync(path$6.join(tempDirPath, o.name));
           const base64Image = imageBuffer.toString("base64");
-          const arrData = await fe(base64Image, threshold, configArray);
+          const arrData = await V(base64Image, threshold, configArray);
           resultData.push(arrData);
         } catch (error2) {
           console.error("Error reading image:", error2);
@@ -13938,7 +13864,7 @@ names$1.default = names;
       gen.return(false);
     }
   }
-  const E = {
+  const E2 = {
     keyword: new codegen_12.Name("keyword"),
     schemaPath: new codegen_12.Name("schemaPath"),
     // also used in JTD errors
@@ -13972,20 +13898,20 @@ names$1.default = names;
     if (schemaPath) {
       schPath = (0, codegen_12.str)`${schPath}${(0, util_12.getErrorPath)(schemaPath, util_12.Type.Str)}`;
     }
-    return [E.schemaPath, schPath];
+    return [E2.schemaPath, schPath];
   }
   function extraErrorProps(cxt, { params, message }, keyValues) {
     const { keyword: keyword2, data, schemaValue, it } = cxt;
     const { opts, propertyName, topSchemaRef, schemaPath } = it;
-    keyValues.push([E.keyword, keyword2], [E.params, typeof params == "function" ? params(cxt) : params || (0, codegen_12._)`{}`]);
+    keyValues.push([E2.keyword, keyword2], [E2.params, typeof params == "function" ? params(cxt) : params || (0, codegen_12._)`{}`]);
     if (opts.messages) {
-      keyValues.push([E.message, typeof message == "function" ? message(cxt) : message]);
+      keyValues.push([E2.message, typeof message == "function" ? message(cxt) : message]);
     }
     if (opts.verbose) {
-      keyValues.push([E.schema, schemaValue], [E.parentSchema, (0, codegen_12._)`${topSchemaRef}${schemaPath}`], [names_12.default.data, data]);
+      keyValues.push([E2.schema, schemaValue], [E2.parentSchema, (0, codegen_12._)`${topSchemaRef}${schemaPath}`], [names_12.default.data, data]);
     }
     if (propertyName)
-      keyValues.push([E.propertyName, propertyName]);
+      keyValues.push([E2.propertyName, propertyName]);
   }
 })(errors);
 Object.defineProperty(boolSchema, "__esModule", { value: true });
@@ -19936,20 +19862,20 @@ function requireRange() {
   };
   const replaceTilde = (comp, options) => {
     const r = options.loose ? re2[t2.TILDELOOSE] : re2[t2.TILDE];
-    return comp.replace(r, (_, M, m, p, pr) => {
-      debug2("tilde", comp, _, M, m, p, pr);
+    return comp.replace(r, (_, M2, m, p, pr) => {
+      debug2("tilde", comp, _, M2, m, p, pr);
       let ret;
-      if (isX(M)) {
+      if (isX(M2)) {
         ret = "";
       } else if (isX(m)) {
-        ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+        ret = `>=${M2}.0.0 <${+M2 + 1}.0.0-0`;
       } else if (isX(p)) {
-        ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+        ret = `>=${M2}.${m}.0 <${M2}.${+m + 1}.0-0`;
       } else if (pr) {
         debug2("replaceTilde pr", pr);
-        ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+        ret = `>=${M2}.${m}.${p}-${pr} <${M2}.${+m + 1}.0-0`;
       } else {
-        ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
+        ret = `>=${M2}.${m}.${p} <${M2}.${+m + 1}.0-0`;
       }
       debug2("tilde return", ret);
       return ret;
@@ -19962,40 +19888,40 @@ function requireRange() {
     debug2("caret", comp, options);
     const r = options.loose ? re2[t2.CARETLOOSE] : re2[t2.CARET];
     const z = options.includePrerelease ? "-0" : "";
-    return comp.replace(r, (_, M, m, p, pr) => {
-      debug2("caret", comp, _, M, m, p, pr);
+    return comp.replace(r, (_, M2, m, p, pr) => {
+      debug2("caret", comp, _, M2, m, p, pr);
       let ret;
-      if (isX(M)) {
+      if (isX(M2)) {
         ret = "";
       } else if (isX(m)) {
-        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+        ret = `>=${M2}.0.0${z} <${+M2 + 1}.0.0-0`;
       } else if (isX(p)) {
-        if (M === "0") {
-          ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+        if (M2 === "0") {
+          ret = `>=${M2}.${m}.0${z} <${M2}.${+m + 1}.0-0`;
         } else {
-          ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+          ret = `>=${M2}.${m}.0${z} <${+M2 + 1}.0.0-0`;
         }
       } else if (pr) {
         debug2("replaceCaret pr", pr);
-        if (M === "0") {
+        if (M2 === "0") {
           if (m === "0") {
-            ret = `>=${M}.${m}.${p}-${pr} <${M}.${m}.${+p + 1}-0`;
+            ret = `>=${M2}.${m}.${p}-${pr} <${M2}.${m}.${+p + 1}-0`;
           } else {
-            ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+            ret = `>=${M2}.${m}.${p}-${pr} <${M2}.${+m + 1}.0-0`;
           }
         } else {
-          ret = `>=${M}.${m}.${p}-${pr} <${+M + 1}.0.0-0`;
+          ret = `>=${M2}.${m}.${p}-${pr} <${+M2 + 1}.0.0-0`;
         }
       } else {
         debug2("no pr");
-        if (M === "0") {
+        if (M2 === "0") {
           if (m === "0") {
-            ret = `>=${M}.${m}.${p}${z} <${M}.${m}.${+p + 1}-0`;
+            ret = `>=${M2}.${m}.${p}${z} <${M2}.${m}.${+p + 1}-0`;
           } else {
-            ret = `>=${M}.${m}.${p}${z} <${M}.${+m + 1}.0-0`;
+            ret = `>=${M2}.${m}.${p}${z} <${M2}.${+m + 1}.0-0`;
           }
         } else {
-          ret = `>=${M}.${m}.${p} <${+M + 1}.0.0-0`;
+          ret = `>=${M2}.${m}.${p} <${+M2 + 1}.0.0-0`;
         }
       }
       debug2("caret return", ret);
@@ -20009,9 +19935,9 @@ function requireRange() {
   const replaceXRange = (comp, options) => {
     comp = comp.trim();
     const r = options.loose ? re2[t2.XRANGELOOSE] : re2[t2.XRANGE];
-    return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
-      debug2("xRange", comp, ret, gtlt, M, m, p, pr);
-      const xM = isX(M);
+    return comp.replace(r, (ret, gtlt, M2, m, p, pr) => {
+      debug2("xRange", comp, ret, gtlt, M2, m, p, pr);
+      const xM = isX(M2);
       const xm = xM || isX(m);
       const xp = xm || isX(p);
       const anyX = xp;
@@ -20033,7 +19959,7 @@ function requireRange() {
         if (gtlt === ">") {
           gtlt = ">=";
           if (xm) {
-            M = +M + 1;
+            M2 = +M2 + 1;
             m = 0;
             p = 0;
           } else {
@@ -20043,7 +19969,7 @@ function requireRange() {
         } else if (gtlt === "<=") {
           gtlt = "<";
           if (xm) {
-            M = +M + 1;
+            M2 = +M2 + 1;
           } else {
             m = +m + 1;
           }
@@ -20051,11 +19977,11 @@ function requireRange() {
         if (gtlt === "<") {
           pr = "-0";
         }
-        ret = `${gtlt + M}.${m}.${p}${pr}`;
+        ret = `${gtlt + M2}.${m}.${p}${pr}`;
       } else if (xm) {
-        ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+        ret = `>=${M2}.0.0${pr} <${+M2 + 1}.0.0-0`;
       } else if (xp) {
-        ret = `>=${M}.${m}.0${pr} <${M}.${+m + 1}.0-0`;
+        ret = `>=${M2}.${m}.0${pr} <${M2}.${+m + 1}.0-0`;
       }
       debug2("xRange return", ret);
       return ret;
