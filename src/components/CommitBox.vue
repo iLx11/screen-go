@@ -67,7 +67,7 @@ const videoHandle = async () => {
     return
   }
   screenStore.setWaitExecute(true)
-  const data = await win.myApi.getVideoFrameData(
+  const data = await win.api.getVideoFrameData(
     screenStore.videoPath,
     screenStore.resizeWidth,
     screenStore.resizeHeight,

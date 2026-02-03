@@ -6,13 +6,17 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/home'
-    }, 
+      redirect: '/home',
+    },
     {
       path: '/home',
-      component: () => import('../window/HomePage.vue')
-    }
-  ]
+      component: () => import('../window/HomePage.vue'),
+    },
+    {
+      path: '/screen',
+      component: () => import('../window/ScreenEditorPage.vue'),
+    },
+  ],
 })
 
 export default router

@@ -1,4 +1,4 @@
-const { dialog } = require('electron')
+import { dialog, ipcMain } from 'electron'
 import { writeJsonSync, readJsonSync } from 'fs-extra'
 const path = require('path')
 
@@ -72,4 +72,11 @@ const saveConfigFile = async () => {
     return savePath.filePath
   }
   return ''
+}
+
+export const fileListener = () => {
+  ipcMain.handle('select-video-file', async (event, arg) => {
+    let filePath = await getFilePath()
+    return filePath
+  })
 }

@@ -19,7 +19,7 @@ onMounted(() => {
 const videoFilePath = ref<string>('')
 const videoRef = ref<HTMLElement>(null)
 const selectVideoFile = async () => {
-  const videoPath = await win.myApi.selectVideoFile()
+  const videoPath = await win.api.selectVideoFile()
   if (videoPath && videoPath.filePaths.length != 0) {
     videoFilePath.value = videoPath.filePaths[0]
     videoRef.value.src = videoPath.filePaths[0]

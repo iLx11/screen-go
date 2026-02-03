@@ -104,7 +104,7 @@ const resizePic = async () => {
         return
       }
       screenStore.setWaitExecute(true)
-      const data = await win.myApi.resizeImage(
+      const data = await win.api.resizeImage(
         parseInt(picSizeData.width),
         parseInt(picSizeData.height),
         screenStore.editorPicData,

@@ -7,7 +7,7 @@ import 'ilx1-x-box/style/xBox.css'
   <RouterView />
 </template>
 
-<style>
+<style lang="scss">
 @font-face {
   font-family: 'ceyy';
   src: url('./assets/font/ceyy.ttf');
@@ -57,26 +57,9 @@ import 'ilx1-x-box/style/xBox.css'
   --span-text-color: rgb(143, 206, 202);
 }
 
-*::-webkit-scrollbar {
-  display: none; /* Chrome Safari */
-}
-* {
-  margin: 0;
-  padding: 0;
-  scrollbar-width: none; /* firefox */
-  -ms-overflow-style: none; /* IE 10+ */
-}
-html,
-body,
-html,
-body,
+@include global.app_common;
+
 #app {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  font-family: 'ceyy';
-}
-li {
-  list-style: none;
+  // overflow: hidden;
 }
 </style>

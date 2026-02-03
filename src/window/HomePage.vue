@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import WindowTools from '../components/tools/WindowTools.vue'
+import WindowTitle from '../components/tools/WindowTitle.vue'
 import { onMounted, nextTick, ref, watch } from 'vue'
 import ImageEditor from '../components/ImageEditor.vue'
 import ImageConfig from '../components/ImageConfig.vue'
@@ -13,6 +13,7 @@ import HeadMessageVue from '../components/HeadMessage.vue'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
 import { XBox } from 'ilx1-x-box'
+import { openScreenPage } from '@/utils/tools/windowHandle'
 
 const screenStore = useScreenStore()
 
@@ -22,6 +23,10 @@ const thresholdShow = ref<boolean>(false)
 const cropShow = ref<boolean>(false)
 
 const screenImg = ref<HTMLElement | null>(null)
+
+onMounted(() => {
+  // openScreenPage(0)
+})
 
 const closeEditor = () => {
   if (!screenStore.waitExecute) {
@@ -65,7 +70,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
@@ -82,16 +87,15 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value[
-        'src'
-      ] = `data:image/png;base64,${screenStore.resizePicData}`
+      screenImg.value['src'] =
+        `data:image/png;base64,${screenStore.resizePicData}`
     } else if (
       screenStore.isResized == false &&
       screenStore.editorPicData != ''
@@ -102,7 +106,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
@@ -116,7 +120,7 @@ watch(
   {
     deep: true,
     immediate: true,
-  }
+  },
 )
 
 watch(
@@ -128,7 +132,7 @@ watch(
     } else {
       coverShow.value = false
     }
-  }
+  },
 )
 
 const configShow = ref<boolean>(false)
@@ -139,66 +143,64 @@ const setConfigShow = state => {
 </script>
 
 <template>
-  <CropConfig v-if="cropShow" />
-  <thresholdConfig v-if="thresholdShow" />
-  <div
-    id="cover"
-    v-if="coverShow"
-    @click="closeEditor"
-  ></div>
-  <div
-    id="image-editor-box"
-    v-if="editorShow"
-  >
-    <ImageEditor
-      @editorCancle="editorCancle"
-      @editorCommit="editorCommit"
-    />
-  </div>
-  <div class="container">
-    <div id="head-tool-box"></div>
-    <div
-      id="screen-box"
-      @click="showEditor"
-      v-if="!configShow"
-    >
-      <div>
-        <img
-          id="screen-box-img"
-          ref="screenImg"
-          src=""
-          alt=""
-        />
+  <div class="home-page-container">
+    <WindowTitle>
+      <template #title>
+        <div class="win-title">ScreenGo</div>
+      </template>
+    </WindowTitle>
+    <div class="screen-config-content">
+      <!-- <CodeTemplateComp /> -->
+      <CropConfig v-if="cropShow" />
+      <thresholdConfig v-if="thresholdShow" />
+      <div
+        id="cover"
+        v-if="coverShow"
+        @click="closeEditor"
+      ></div>
+      <!-- <div id="head-tool-box"></div> -->
+      <div
+        id="screen-box"
+        @click="openScreenPage"
+        v-if="!configShow"
+      >
+        <div>
+          <img
+            id="screen-box-img"
+            ref="screenImg"
+            src=""
+            alt=""
+          />
+        </div>
+      </div>
+      <div id="result-data-box">
+        <ResultData />
+      </div>
+      <div
+        id="config-tool-box"
+        v-if="!configShow"
+      >
+        <ImageConfig />
+      </div>
+      <div
+        id="video-config-box"
+        v-if="configShow"
+      >
+        <VideoConfig />
+      </div>
+      <div id="func-switch">
+        <div @click="setConfigShow(false)">图片取模</div>
+        <div @click="setConfigShow(true)">视频取模</div>
+      </div>
+      <div id="commit-box">
+        <CommitBox />
+      </div>
+      <div id="data-setting-box">
+        <ResultDataConfig />
       </div>
     </div>
-    <div id="result-data-box">
-      <ResultData />
-    </div>
-    <div
-      id="config-tool-box"
-      v-if="!configShow"
-    >
-      <ImageConfig />
-    </div>
-    <div
-      id="video-config-box"
-      v-if="configShow"
-    >
-      <VideoConfig />
-    </div>
-    <div id="func-switch">
-      <div @click="setConfigShow(false)">图片取模</div>
-      <div @click="setConfigShow(true)">视频取模</div>
-    </div>
-    <div id="commit-box">
-      <CommitBox />
-    </div>
-    <div id="data-setting-box">
-      <ResultDataConfig />
-    </div>
+    <!-- <HeadMessage /> -->
   </div>
-  <WindowTools />
-  <HeadMessage />
 </template>
 
 <style lang="scss">
@@ -214,11 +216,42 @@ const setConfigShow = state => {
   z-index: 998;
 }
 
+.home-page-container {
+  @include global.wh(100%, 100%);
+  // @include global.ab_center;
+  background: var(--content-box-color);
+  border: 0.1px solid rgba(173, 171, 171, 0.4);
+  border-radius: 25px;
+  overflow: hidden;
+  color: var(--text-color-1);
+  display: flex;
+  flex-direction: column;
+  .win-title {
+    color: var(--text-color-1);
+  }
+  .screen-config-content {
+    @include global.full-wh;
+    overflow: hidden;
+    @include global.grid-config(repeat(2, 1fr), repeat(11, 1fr), 10px);
+    padding: 12px 15px;
+
+    div {
+      border-radius: 16px;
+      border: 0.2px solid rgba(51, 51, 51, 0.1);
+      z-index: 999;
+      box-sizing: border-box;
+      flex-grow: 0 !important;
+      overflow: hidden;
+    }
+  }
+}
+
 #image-editor-box {
   width: 87%;
   height: 87%;
   background: rgb(255, 255, 255);
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
@@ -232,68 +265,10 @@ const setConfigShow = state => {
   overflow: scroll;
 }
 
-.container {
-  width: 100%;
-  height: 100%;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  border: 0.1px solid rgba(173, 171, 171, 0.4);
-  border-radius: 30px;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  grid-template-rows: repeat(12, 1fr);
-  column-gap: 10px;
-  row-gap: 10px;
-  box-sizing: border-box;
-  padding: 15px;
-  z-index: 99;
-  // box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: var(--content-box-color);
-  color: var(--text-color-1);
-  padding-bottom: 12px;
-
-  div {
-    border-radius: 16px;
-    border: 0.2px solid rgba(51, 51, 51, 0.1);
-    z-index: 999;
-    box-sizing: border-box;
-    flex-grow: 0 !important;
-    overflow: hidden;
-  }
-}
-
-#head-tool-box {
-  max-height: 54px;
-  grid-area: 1 / 1 / 2 / 3;
-  background: rgba(51, 51, 51, 0.05);
-  border: none;
-  // position: relative;
-  -webkit-app-region: drag;
-  padding: 0.6em;
-  font-family: 'ceyy';
-  display: flex;
-  flex-flow: column nowrap;
-  justify-content: space-around;
-  align-items: flex-start;
-}
-
-#window-tool {
-  width: 90px;
-  height: 12px;
-  border-radius: 6px;
-  background: rgba(226, 230, 236, 1);
-  position: absolute;
-  top: 3px;
-  right: 0px;
-  padding: 0.3em;
-}
-
 #screen-box {
-  grid-area: 2 / 1 / 6 / 2;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  grid-area: 1 / 1 / 5 / 2;
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
@@ -310,7 +285,8 @@ const setConfigShow = state => {
     background: white;
     overflow: hidden;
     border-radius: 16px;
-    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    box-shadow:
+      1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
       7px 0px 81px -34px rgba(0, 0, 0, 0.12);
     display: flex;
     justify-content: center;
@@ -328,8 +304,9 @@ const setConfigShow = state => {
 }
 
 #result-data-box {
-  grid-area: 2 / 2 / 9 / 3;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  grid-area: 1 / 2 / 8 / 3;
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;
@@ -337,14 +314,14 @@ const setConfigShow = state => {
 }
 
 #config-tool-box {
-  grid-area: 6 / 1 / 11 / 2;
+  grid-area: 5 / 1 / 10 / 2;
 }
 #video-config-box {
-  grid-area: 2 / 1 / 11 / 2;
+  grid-area: 1 / 1 / 10 / 2;
 }
 
 #func-switch {
-  grid-area: 11 / 1 / 12 / 2;
+  grid-area: 10 / 1 / 11 / 2;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -363,12 +340,12 @@ const setConfigShow = state => {
 }
 
 #commit-box {
-  grid-area: 12 / 1 / 13 / 2;
+  grid-area: 11 / 1 / 12 / 2;
   border: none;
   color: rgb(255, 255, 255) !important;
 }
 
 #data-setting-box {
-  grid-area: 9 / 2 / 13 / 2;
+  grid-area: 8 / 2 / 12 / 2;
 }
 </style>

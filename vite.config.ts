@@ -1,11 +1,13 @@
 import { fileURLToPath, URL } from 'node:url'
-import * as path from 'path'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import electron from 'vite-plugin-electron'
-import electronRenderer from 'vite-plugin-electron/renderer'
-import polyfillExports from 'vite-plugin-electron/polyfill-exports'
+// import VueDevTools from 'vite-plugin-vue-devtools'
+// import electronRenderer from 'vite-plugin-electron/renderer'
+// import polyfillExports from 'vite-plugin-electron/polyfill-exports'
 // import optimizer from 'vite-plugin-optimizer'
+// import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
+import path from 'path'
 
 let getReplacer = () => {
   let externalModels = [
@@ -35,32 +37,37 @@ let getReplacer = () => {
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
+  define: {
+    // 过滤 React defaultProps 警告
+    __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: false,
+  },
   plugins: [
     // optimizer(getReplacer()),
+    // VueDevTools(),
     vue(),
-    electron({
-      main: {
-        // 入口文件的路径
+
+    electron([
+      {
         entry: 'electron/main/main.ts',
         vite: {
           build: {
-            // 将入口文件转为 js 后输出到指定目录
             outDir: 'appDir/main',
           },
         },
       },
-      preload: {
-        // 预加载文件的绝对路径
-        input: path.join(__dirname, './electron/main/preload.ts'), // 预加载文件
+      {
+        entry: 'electron/main/preload.ts',
         vite: {
           build: {
-            // 将预加载文件转为 js 后输出到指定目录
             outDir: 'appDir/preload',
           },
         },
       },
-    }),
+    ]),
   ],
+  server: {
+    port: 5173,
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -70,7 +77,7 @@ export default defineConfig({
     preprocessorOptions: {
       scss: {
         additionalData: '@use "ilx1-x-style/base/global.scss" as global;',
-        api: 'modern', // 使用新的JS API
+        api: 'modern', // 添加这一行以使用新的JS API
         silenceDeprecations: ['legacy-js-api'], // 可选：静默此特定警告
       },
     },

@@ -1,85 +1,28 @@
-const {
-  app,
-  protocol,
-  BrowserWindow,
-  ipcMain,
-  shell,
-} = require('electron')
-// 需在当前文件内开头引入 Node.js 的 'path' 模块
-const path = require('path')
-
-import { windowControlListener } from '../controller/windowControl'
-import CreateWindow from '../controller/createWindow'
-import { setItem, getItem, delItem } from '../controller/storage'
-import { fileReadListener } from '../controller/fileRead'
-import { ffmpegListener } from '../controller/ffmpegHandle'
-import { getFilePath } from '../controller/selectDialog'
-
-import ImageToHexArray from '../controller/ImageToHexArray'
-
-
+import { app, protocol, BrowserWindow, ipcMain, shell } from 'electron'
+import { windowControlListener } from '../controller/window/windowControl'
+import CreateWindow from '../controller/window/createWindow'
+// import { fileReadListener } from '../controller/fileRead'
+import { ffmpegListener } from '../controller/media/ffmpegHandle'
+import { fileListener } from '../controller/file/selectDialog'
+import { storeListener } from '../controller/store/storage'
 
 // 窗口监听
 windowControlListener()
 // 文件读取
-fileReadListener()
+fileListener()
 // 视频处理监听
 ffmpegListener()
-
-ipcMain.on('set-item', (event, name: string, item: string) => {
-  setItem(name, item)
-})
-
-ipcMain.on('del-item', (event, name: string) => {
-  delItem(name)
-})
-
-ipcMain.handle('get-item', async (event, name: string) => {
-  return await getItem(name)
-})
-
-// 跳转到下载页面
-ipcMain.on('latest-download', (event, link: string) => {
-  shell.openExternal(link)
-})
-
-// 创建其他窗口
-ipcMain.on('window-create', (event, optionObj: object, configObj: object) => {
-  let cw = new CreateWindow()
-  cw.createWindow(optionObj, configObj)
-})
-
-// 选取文件
-ipcMain.handle('select-video-file', async () => {
-  return await getFilePath()
-})
+// 存储
+storeListener()
 
 // pinia
 ipcMain.on('store-set', (event, objData) => {
   // 遍历窗口发送
-  for (const cur of BrowserWindow.getAllWindows()) {
-    if (cur != BrowserWindow.fromWebContents(event.sender)) {
-      cur.webContents.send('store-get', objData)
-    }
-  }
-})
-
-// 创建主窗口
-const createMainWindow = async () => {
-  let mainW = new CreateWindow()
-  mainW.createWindow(
-    {
-      route: '/home',
-      isMainWin: true,
-    },
-    {
-      width: 999,
-      height: 773,
-      minWidth: 688,
-      minHeight: 560,
-    }
+  CreateWindow.travWindowSend(
+    objData,
+    BrowserWindow.fromWebContents(event.sender),
   )
-}
+})
 
 app.commandLine.appendSwitch('--ignore-certificate-errors', 'true')
 // Scheme must be registered before the app is ready
@@ -87,22 +30,34 @@ protocol.registerSchemesAsPrivileged([
   { scheme: 'app', privileges: { secure: true, standard: true } },
 ])
 
-
-let resizeData = ``
-
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
   // 创建窗口
   createMainWindow()
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
   })
-  // const arrData = await ImageToHexArray.generate(
-  //   resizeData,
-  //   120,
-  //   [ 1, 2, 0, 0, 1 ]
-  // )
-  // console.info(arrData)
 })
+
+const WINDOW_WIDTH = 1000
+const WINDOW_HEIGHT = 830
+
+// 创建主窗口
+const createMainWindow = async () => {
+  let mainW = new CreateWindow()
+  console.info('createMainWindow')
+  mainW.createWindow({
+    route: '/',
+    isMainWin: true,
+    maxWidth: WINDOW_WIDTH,
+    maxHeight: WINDOW_HEIGHT,
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
+    minWidth: WINDOW_WIDTH,
+    minHeight: WINDOW_HEIGHT,
+    resizable: true,
+    windowName: 'main',
+  })
+}
 
 // 关闭所有窗口
 app.on('window-all-closed', () => {
