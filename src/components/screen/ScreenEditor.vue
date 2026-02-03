@@ -7,6 +7,7 @@ import ImageEditor from 'tui-image-editor/dist/tui-image-editor.js'
 import 'tui-image-editor/dist/tui-image-editor.css'
 import 'tui-color-picker/dist/tui-color-picker.css'
 import { editorConfig } from '../../utils/tools/theme'
+import { resizeImageWithKonva, generate } from 'ilx1-x-tool'
 
 const win = window as any
 const emits = defineEmits(['editorCancle', 'editorCommit', 'showScreenFunc'])
@@ -41,15 +42,7 @@ onMounted(() => {
 // 编辑组件
 let imageEditorInstance = ref(null)
 
-const imgArr: Array<string> = [
-  './img/black.png',
-  './img/blank.png',
-  // './img/1.jpg',
-  './img/2.png',
-  './img/3.png',
-  './img/4.png',
-  './img/5.png',
-]
+const imgArr: Array<string> = ['./img/black.png', './img/blank.png']
 
 const curImg = ref<number>(0)
 /********************************************************************************
@@ -103,6 +96,7 @@ const editorCommit = async () => {
   const picBase64Str = (imageEditorInstance as any).value.toDataURL()
   let data, arrData
   configStore.showPop('处理数据中...')
+  console.info(picBase64Str)
   coverShow.value = true
   // 判断是屏幕类型
   if (configStore.curScreen < 1) {
@@ -113,14 +107,14 @@ const editorCommit = async () => {
     }
     win.api.setConfigStore(tempObj)
     // 缩放图片（1 为单色屏幕）
-    data = await win.api.resizeImage(320, 172, picBase64Str, 0)
+    data = await resizeImageWithKonva(320, 172, picBase64Str, 0)
     // 获取取模数据
-    arrData = await win.api.generateResultArray(data, 120, 1, 2, 0, 0, 0)
+    arrData = await generate(data, 120, 1, 2, 0, 0, 0)
   } else {
     // 缩放图片（1 为单色屏幕）
-    data = await win.api.resizeImage(72, 40, picBase64Str, 1)
+    data = await resizeImageWithKonva(72, 40, picBase64Str, 1)
     // 获取取模数据
-    arrData = await win.api.generateResultArray(data, 120, 1, 2, 0, 0, 1)
+    arrData = await generate(data, 120, 1, 2, 0, 0, 1)
   }
   // // console.info(arrData)
   let tempObj: object = {
@@ -132,7 +126,7 @@ const editorCommit = async () => {
   }
   win.api.setConfigStore(tempObj)
   coverShow.value = false
-  win.api.closeWindow()
+  // win.api.closeWindow()
 }
 
 /********************************************************************************
