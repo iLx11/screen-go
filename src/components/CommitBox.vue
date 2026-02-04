@@ -4,7 +4,9 @@ import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive } from 'vue'
 import { XBox } from 'ilx1-x-box'
 import { resizeImageWithKonva, generate } from 'ilx1-x-tool'
+import { useConfigStore } from '@/stores/configStore'
 
+const configStore = useConfigStore()
 // const { ipcRenderer } = require('electron')
 const win = window as any
 const screenStore = useScreenStore()
@@ -12,11 +14,14 @@ const presetArray: object[] = reactive([{}, {}, {}])
 let presetCount: number = 0
 
 const imgHandle = async () => {
-  if (screenStore.editorPicData == '') {
+  if (configStore.screenData.baseData == '') {
     XBox.popMes('请先编辑一个图片！')
     return
   }
-  if (screenStore.resizeWidth == 0 || screenStore.resizeHeight == 0) {
+  if (
+    configStore.screenConfig.resizeWidth == 0 ||
+    configStore.screenConfig.resizeHeight == 0
+  ) {
     XBox.popMes('请设置图片的大小！')
     return
   }
@@ -26,26 +31,28 @@ const imgHandle = async () => {
   // console.info(screenStore.editorPicData)
   // 缩放图片
   const data = await resizeImageWithKonva(
-    screenStore.resizeWidth,
-    screenStore.resizeHeight,
-    screenStore.editorPicData,
-    screenStore.configArray[4]
+    configStore.screenConfig.resizeWidth,
+    configStore.screenConfig.resizeHeight,
+    configStore.screenData.baseData,
+    configStore.screenConfig.configArray[4]
   )
   // console.log('pic-data-editor', data)
-  screenStore.setResizePicData(data)
+  // screenStore.setResizePicData(data)
+  configStore.screenData.resizeData = data
   screenStore.setResized(true)
   // console.info(data)
   // ----------------------------- 图片取模 ------------------------------------
   // 获取图片取模模式
   const arrData = await generate(
     data,
-    screenStore.thresholdData,
-    ...screenStore.configArray
+    configStore.screenConfig.thresholdData,
+    ...configStore.screenConfig.configArray
   )
 
   screenStore.setDataLength(arrData.length)
   screenStore.setResultString(arrData.join(','))
-  XBox.popMes('生成成功！')
+  configStore.showPop('生成成功！')
+  
   screenStore.setCountModify(true)
   screenStore.setPreCount(presetCount)
   screenStore.setWaitExecute(false)

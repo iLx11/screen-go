@@ -12,8 +12,13 @@ import ThresholdConfig from '../components/ThresholdConfig.vue'
 import CropConfig from '../components/CropConfig.vue'
 import { XBox } from 'ilx1-x-box'
 import { openScreenPage } from '@/utils/tools/windowHandle'
+import { storeSetter, storeGetter } from '@/utils/tools/storeTools'
+import { useConfigStore } from '@/stores/configStore'
+
+const win = window as any
 
 const screenStore = useScreenStore()
+const configStore = useConfigStore()
 
 const coverShow = ref<boolean>(false)
 const editorShow = ref<boolean>(false)
@@ -24,7 +29,55 @@ const screenImg = ref<HTMLElement | null>(null)
 
 onMounted(() => {
   // openScreenPage(0)
+  mainWindowListener()
 })
+
+/********************************************************************************
+ * @brief: 主窗口监听
+ * @return {*}
+ ********************************************************************************/
+const mainWindowListener = () => {
+  try {
+    // 主页面监听
+    win.api.storeChangeListener(async objData => {
+      // console.info('homePage listening', objData)
+      if (objData.keyboardData) {
+        // configStore.keyboardData = JSON.parse(objData.keyboardData)
+        console.info('keyboardData', JSON.parse(objData.keyboardData))
+        return
+      }
+
+      // set 属性处理
+      storeSetter(objData, (path: string, value: any) => {
+        // 设置对应 store 的值
+        if (path == 'configStore.screenData') {
+          // console.info(configStore.screenData)
+        }
+      })
+
+      // get 属性处理逻辑
+      storeGetter(objData, path => {
+        console.info(path)
+      })
+    })
+  } catch (error) {
+    console.error(error)
+    configStore.showPop('数据配置错误')
+  }
+}
+
+watch(
+  () => configStore.screenData.baseData,
+  (newVal, oldVal) => {
+    if (newVal != oldVal) {
+      screenImg.value['src'] = newVal
+    }
+  },
+  {
+    deep: true,
+    immediate: false,
+  }
+)
 
 const closeEditor = () => {
   if (!screenStore.waitExecute) {
@@ -68,7 +121,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
@@ -85,15 +138,16 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value['src'] =
-        `data:image/png;base64,${screenStore.resizePicData}`
+      screenImg.value[
+        'src'
+      ] = `data:image/png;base64,${screenStore.resizePicData}`
     } else if (
       screenStore.isResized == false &&
       screenStore.editorPicData != ''
@@ -104,7 +158,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
@@ -118,7 +172,7 @@ watch(
   {
     deep: true,
     immediate: true,
-  },
+  }
 )
 
 watch(
@@ -130,7 +184,7 @@ watch(
     } else {
       coverShow.value = false
     }
-  },
+  }
 )
 
 const configShow = ref<boolean>(false)
@@ -248,8 +302,7 @@ const setConfigShow = state => {
   width: 87%;
   height: 87%;
   background: rgb(255, 255, 255);
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
@@ -265,8 +318,7 @@ const setConfigShow = state => {
 
 #screen-box {
   grid-area: 1 / 1 / 5 / 2;
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
@@ -283,8 +335,7 @@ const setConfigShow = state => {
     background: white;
     overflow: hidden;
     border-radius: 16px;
-    box-shadow:
-      1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
       7px 0px 81px -34px rgba(0, 0, 0, 0.12);
     display: flex;
     justify-content: center;
@@ -303,8 +354,7 @@ const setConfigShow = state => {
 
 #result-data-box {
   grid-area: 1 / 2 / 8 / 3;
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;

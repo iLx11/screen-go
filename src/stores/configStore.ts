@@ -13,10 +13,23 @@ export const useConfigStore = defineStore('config', () => {
         callback: null,
         style: [0, 1],
       },
-      config,
+      config
     )
     XBox.popMes(mes, popConfig)
   }
 
-  return { showPop }
+  const screenData = ref({
+    baseData: '',
+    resizeData: '',
+    buffData: [],
+  })
+
+  const screenConfig = ref({
+    resizeWidth: 0,
+    resizeHeight: 0,
+    thresholdData: 0,
+    configArray: [],
+  })
+
+  return { showPop, screenData, screenConfig }
 })

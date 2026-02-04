@@ -117,24 +117,21 @@ const editorCommit = async () => {
   //   arrData = await generate(data, 120, 1, 2, 0, 0, 1)
   // }
 
-  // 缩放图片（1 为单色屏幕）
-  data = await resizeImage(72, 40, picBase64Str, 1)
-  // 获取取模数据
-  arrData = await generate(data, 120, 1, 2, 0, 0, 1)
+  // // 缩放图片（1 为单色屏幕）
+  // data = await resizeImage(72, 40, picBase64Str, 1)
+  // // 获取取模数据
+  // arrData = await generate(data, 120, 1, 2, 0, 0, 1)
 
   // // console.info(arrData)
   let tempObj: object = {
-    set: 'configStore.screenData',
-    value: JSON.stringify({
-      baseData: data,
-      buffData: arrData,
-    }),
+    set: 'configStore.screenData.baseData',
+    value: picBase64Str,
   }
 
-  console.info(data)
+  // console.info(data)
   win.api.setConfigStore(tempObj)
   coverShow.value = false
-  // win.api.closeWindow()
+  win.api.closeWindow()
 }
 
 /********************************************************************************
