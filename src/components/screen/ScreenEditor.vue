@@ -7,7 +7,6 @@ import ImageEditor from 'tui-image-editor/dist/tui-image-editor.js'
 import 'tui-image-editor/dist/tui-image-editor.css'
 import 'tui-color-picker/dist/tui-color-picker.css'
 import { editorConfig } from '../../utils/tools/theme'
-import { resizeImage, generate } from 'ilx1-x-tool'
 
 const win = window as any
 const emits = defineEmits(['editorCancle', 'editorCommit', 'showScreenFunc'])

@@ -48,12 +48,12 @@ const createMainWindow = async () => {
   mainW.createWindow({
     route: '/',
     isMainWin: true,
-    maxWidth: WINDOW_WIDTH,
-    maxHeight: WINDOW_HEIGHT,
+    // maxWidth: WINDOW_WIDTH,
+    // maxHeight: WINDOW_HEIGHT,
     width: WINDOW_WIDTH,
     height: WINDOW_HEIGHT,
-    minWidth: WINDOW_WIDTH,
-    minHeight: WINDOW_HEIGHT,
+    minWidth: 800,
+    minHeight: 680,
     resizable: true,
     windowName: 'main',
   })

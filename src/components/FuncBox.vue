@@ -3,9 +3,11 @@ import { useScreenStore } from '../stores/store'
 import { getItem, setItem } from '../utils/storage'
 import { onMounted, reactive, ref } from 'vue'
 import { XBox } from 'ilx1-x-box'
+import { useConfigStore } from '@/stores/configStore'
 
-// const { ipcRenderer } = require('electron')
 const win = window as any
+
+const configStore = useConfigStore()
 const screenStore = useScreenStore()
 const modeStyle = ref<boolean>(true)
 
@@ -36,7 +38,7 @@ const thresholdShow = () => {
 
 // 图片裁剪
 const cropShow = () => {
-  if(screenStore.editorPicData == '') {
+  if(configStore.screenData.baseData == '') {
     XBox.popMes('请先编辑一张图片')
     return 
   }

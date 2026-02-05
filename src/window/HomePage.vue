@@ -40,13 +40,6 @@ const mainWindowListener = () => {
   try {
     // 主页面监听
     win.api.storeChangeListener(async objData => {
-      // console.info('homePage listening', objData)
-      if (objData.keyboardData) {
-        // configStore.keyboardData = JSON.parse(objData.keyboardData)
-        console.info('keyboardData', JSON.parse(objData.keyboardData))
-        return
-      }
-
       // set 属性处理
       storeSetter(objData, (path: string, value: any) => {
         // 设置对应 store 的值
