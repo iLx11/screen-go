@@ -43,7 +43,8 @@ const previewSetting = () => {
   let imageData = Object.assign([], originImageData.data)
   imageDataString = JSON.stringify(imageData)
   for (let i = 0; i < imageData.length; i += 4) {
-    let avg = 0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]
+    let avg =
+      0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]
     if (avg > screenStore.thresholdData) {
       avg = 254
     } else {
@@ -54,7 +55,15 @@ const previewSetting = () => {
   imageCanvas.value.width = imageCanvas.value.width
   imageCanvas.value.height = imageCanvas.value.height
   originImageData.data.set(imageData)
-  ctx.putImageData(originImageData, offsetX, offsetY, 0, 0, img.width, img.height)
+  ctx.putImageData(
+    originImageData,
+    offsetX,
+    offsetY,
+    0,
+    0,
+    img.width,
+    img.height,
+  )
 }
 
 // 确认并退出
@@ -70,7 +79,7 @@ const delayTime = (callback: Function, delay: number) => {
     timer = setTimeout(() => {
       callback()
       timer = null
-      clearTimeout(timer)            
+      clearTimeout(timer)
     }, delay)
   }
 }
@@ -85,20 +94,29 @@ watch(
       let tempImageData = Object.assign([], JSON.parse(imageDataString))
       // console.log(tempImageData)
       for (let i = 0; i < tempImageData.length; i += 4) {
-        if (tempImageData[i] > thresholdValue.value) tempImageData[i] = tempImageData[i + 1] = tempImageData[i + 2] = 255
+        if (tempImageData[i] > thresholdValue.value)
+          tempImageData[i] = tempImageData[i + 1] = tempImageData[i + 2] = 255
         else tempImageData[i] = tempImageData[i + 1] = tempImageData[i + 2] = 0
       }
       if (imageCanvas.value.width && imageCanvas.value.width) {
         imageCanvas.value.width = imageCanvas.value.width
         imageCanvas.value.height = imageCanvas.value.height
         originImageData.data.set(tempImageData)
-        ctx.putImageData(originImageData, offsetX, offsetY, 0, 0, img.width, img.height)
+        ctx.putImageData(
+          originImageData,
+          offsetX,
+          offsetY,
+          0,
+          0,
+          img.width,
+          img.height,
+        )
       }
     }, 320)
   },
   {
-    immediate: false
-  }
+    immediate: false,
+  },
 )
 </script>
 
@@ -108,8 +126,20 @@ watch(
     <div id="threshold-tools">
       <div id="move-box">{{ thresholdValue }}</div>
       <!-- <input type="text" v-model="thresholdValue" /> -->
-      <input type="range" class="win10-thumb" min="0" max="255" v-model="thresholdValue" step="2" />
-      <div id="confirm-button" @click="confirmThreshold">确认并退出</div>
+      <input
+        type="range"
+        class="win10-thumb"
+        min="0"
+        max="255"
+        v-model="thresholdValue"
+        step="2"
+      />
+      <div
+        id="confirm-button"
+        @click="confirmThreshold"
+      >
+        确认并退出
+      </div>
     </div>
   </div>
 </template>
@@ -122,14 +152,17 @@ watch(
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: rgba(255, 255, 255, 1);
   border-radius: 25px;
   border: 0.2px solid rgba(51, 51, 51, 0.1);
   // box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
   padding: 2.5em;
   overflow: scroll;
-  z-index: 999;
+  z-index: var(--z-index-2);
+
   display: flex;
   flex-flow: column nowrap;
   justify-content: space-between;
@@ -159,7 +192,9 @@ watch(
       transform: translate(-50%, -50%);
       border-radius: 20px;
       border: 0.1px solid rgba(173, 171, 171, 0.4);
-      box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+      box-shadow:
+        1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+        7px 0px 81px -34px rgba(0, 0, 0, 0.12);
       background: rgba(255, 255, 255, 1);
       display: flex;
       justify-content: center;
@@ -246,16 +281,27 @@ input[type='range']::-webkit-slider-thumb {
   --clip-top: calc((var(--thumb-height) - var(--track-height)) * 0.5 - 0.5px);
   --clip-bottom: calc(var(--thumb-height) - var(--clip-top));
   --clip-further: calc(100% + 1px);
-  --box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0 100vmax currentColor;
+  --box-fill: calc(-100vmax - var(--thumb-width, var(--thumb-height))) 0 0
+    100vmax currentColor;
 
   width: var(--thumb-width, var(--thumb-height));
-  background: linear-gradient(currentColor 0 0) scroll no-repeat left center / 50% calc(var(--track-height) + 1px);
+  background: linear-gradient(currentColor 0 0) scroll no-repeat left center /
+    50% calc(var(--track-height) + 1px);
   background-color: currentColor;
   box-shadow: var(--box-fill);
   border-radius: var(--thumb-width, var(--thumb-height));
 
   filter: brightness(100%);
-  clip-path: polygon(100% -1px, var(--clip-edges) -1px, 0 var(--clip-top), -100vmax var(--clip-top), -100vmax var(--clip-bottom), 0 var(--clip-bottom), var(--clip-edges) 100%, var(--clip-further) var(--clip-further));
+  clip-path: polygon(
+    100% -1px,
+    var(--clip-edges) -1px,
+    0 var(--clip-top),
+    -100vmax var(--clip-top),
+    -100vmax var(--clip-bottom),
+    0 var(--clip-bottom),
+    var(--clip-edges) 100%,
+    var(--clip-further) var(--clip-further)
+  );
 }
 
 input[type='range']:hover::-webkit-slider-thumb {
@@ -269,7 +315,8 @@ input[type='range']:active::-webkit-slider-thumb {
 }
 
 input[type='range']::-webkit-slider-runnable-track {
-  background: linear-gradient(var(--track-color) 0 0) scroll no-repeat center / 100% calc(var(--track-height) + 1px);
+  background: linear-gradient(var(--track-color) 0 0) scroll no-repeat center /
+    100% calc(var(--track-height) + 1px);
 }
 
 input[type='range']:disabled::-webkit-slider-thumb {

@@ -12,7 +12,10 @@ const showMessgeBox = () => {
 const hideMessageBox = () => {
   messageBoxShow.value = false
 }
-const copyText = ['https://github.com/yhf98', 'https://github.com/iLx11/screen-go']
+const copyText = [
+  'https://github.com/yhf98',
+  'https://github.com/iLx11/screen-go',
+]
 // 自定义复制指令
 const vCopy = {
   mounted: (el: any, { value }: any) => {
@@ -28,7 +31,7 @@ const vCopy = {
           .then(() => {
             XBox.popMes('复制成功!')
           })
-          .catch((error) => {
+          .catch(error => {
             console.error('复制失败:', error)
             XBox.popMes('复制失败!')
           })
@@ -56,14 +59,27 @@ const vCopy = {
   //指令与元素解绑的时候
   unMounted(el) {
     el.removeEventListener('click', el.handler)
-  }
+  },
 }
 </script>
 
 <template>
-  <div id="head-message" @click="showMessgeBox">
+  <div
+    id="head-message"
+    @click="showMessgeBox"
+  >
     <div>
-      <svg t="1696501327826" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="13346" width="32" height="32" data-spm-anchor-id="a313x.search_index.0.i10.77e73a81rcqrwa">
+      <svg
+        t="1696501327826"
+        class="icon"
+        viewBox="0 0 1024 1024"
+        version="1.1"
+        xmlns="http://www.w3.org/2000/svg"
+        p-id="13346"
+        width="32"
+        height="32"
+        data-spm-anchor-id="a313x.search_index.0.i10.77e73a81rcqrwa"
+      >
         <path
           d="M896 512a384 384 0 1 0-384 384 384 384 0 0 0 384-384z m64 0A448 448 0 1 1 512 64a448 448 0 0 1 448 448z"
           fill="#e6e6e6"
@@ -92,11 +108,34 @@ const vCopy = {
       <h1>ScreenGo-iLx1</h1>
     </div>
   </div>
-  <div id="message-show-box" v-if="messageBoxShow" @click.stop="hideMessageBox"></div>
-  <div id="message-show" v-if="messageBoxShow">
-    &nbsp;&nbsp;此项目基于大佬<span href="" v-copy="copyText[0]"> yhf </span> 的项目思路所开发，并遵循 MIT 开源协议<br /><br />
-    &nbsp;&nbsp;此项目为图片取模软件<br>&nbsp;&nbsp;🍚 可以直接模拟对硬件屏幕的布局和显示进行编辑和调整<br>&nbsp;&nbsp;🍫  可以导入任何类型的图片<br>&nbsp;&nbsp;🍜 编辑文字与图形<br>&nbsp;&nbsp;🥘 添加与调整不同滤镜<br>&nbsp;&nbsp;🥠 任意缩放与裁剪图片<br>&nbsp;&nbsp;🍵 支持单色和彩色图片取模，并直接生成可修改可一键复制的图片取模数组（支持正则替换修改）。<br /><br />
-    &nbsp;&nbsp;项目 <span href="" v-copy="copyText[1]"> 开源地址 </span><br><br>
+  <div
+    id="message-show-box"
+    v-if="messageBoxShow"
+    @click.stop="hideMessageBox"
+  ></div>
+  <div
+    id="message-show"
+    v-if="messageBoxShow"
+  >
+    &nbsp;&nbsp;此项目基于大佬<span
+      href=""
+      v-copy="copyText[0]"
+    >
+      yhf
+    </span>
+    的项目思路所开发，并遵循 MIT 开源协议<br /><br />
+    &nbsp;&nbsp;此项目为图片取模软件<br />&nbsp;&nbsp;🍚
+    可以直接模拟对硬件屏幕的布局和显示进行编辑和调整<br />&nbsp;&nbsp;🍫
+    可以导入任何类型的图片<br />&nbsp;&nbsp;🍜 编辑文字与图形<br />&nbsp;&nbsp;🥘
+    添加与调整不同滤镜<br />&nbsp;&nbsp;🥠 任意缩放与裁剪图片<br />&nbsp;&nbsp;🍵
+    支持单色和彩色图片取模，并直接生成可修改可一键复制的图片取模数组（支持正则替换修改）。<br /><br />
+    &nbsp;&nbsp;项目
+    <span
+      href=""
+      v-copy="copyText[1]"
+    >
+      开源地址 </span
+    ><br /><br />
     &nbsp;&nbsp;之后应该会不断优化此软件或开发更多有意思的软件，感谢您的支持！！！
   </div>
 </template>
@@ -108,7 +147,7 @@ const vCopy = {
   position: absolute;
   top: 28px;
   left: 30px;
-  z-index: 99;
+  z-index: var(--z-index-1);
   -webkit-app-region: no-drag;
   cursor: pointer;
   div {
@@ -135,7 +174,7 @@ const vCopy = {
   top: 0;
   left: 0;
   background: rgba(51, 51, 51, 0.2);
-  z-index: 99;
+  z-index: var(--z-index-1);
 }
 #message-show {
   width: 75%;
@@ -149,7 +188,8 @@ const vCopy = {
   padding: 2em;
   font-size: 20px;
   color: var(--text-color-1);
-  z-index: 999;
+  z-index: var(--z-index-2);
+
   overflow-y: scroll;
   line-height: 32px;
   span {

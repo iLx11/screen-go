@@ -523,7 +523,6 @@ const handleClose = () => {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  z-index: 99999;
 }
 
 .editor-section {

@@ -33,6 +33,13 @@ import 'ilx1-x-box/style/xBox.css'
   --text-color-1: rgba(51, 51, 51, 1);
   --text-color-2: rgba(51, 51, 51, 0.8);
   --span-text-color: rgb(143, 206, 202);
+
+  // 层
+  --z-index-1: 100;
+  --z-index-2: 101;
+  --z-index-3: 102;
+  --z-index-4: 103;
+  --z-index-5: 104;
 }
 
 [main-theme='color'] {

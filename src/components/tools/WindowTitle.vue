@@ -23,14 +23,14 @@ const win = window as any
 .top-tool {
   @include global.wh(100%, 50px);
   @include global.font_config(20px, rgba(255, 255, 255, 0.9));
+  @include global.flex_config(0, center);
   border-radius: 12px;
   -webkit-app-region: drag;
+  padding: 10px;
+
   .top-tool-ab {
     @include global.wh(100%, 30px, 100%, 30px);
     @include global.flex_config(0, space-between);
-    @include global.pos_ab(0, 50%);
-    transform: translate(-50%, 15px);
-    padding: 0 18px;
     z-index: var(--z-index-5);
     .tool-title-box {
       width: 50%;

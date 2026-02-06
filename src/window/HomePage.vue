@@ -9,11 +9,12 @@ import CommitBox from '../components/CommitBox.vue'
 import ResultData from '../components/ResultData.vue'
 import { useScreenStore } from '../stores/store'
 import ThresholdConfig from '../components/ThresholdConfig.vue'
-import CropConfig from '../components/CropConfig.vue'
+// import CropConfig from '../components/CropConfig.vue'
 import { XBox } from 'ilx1-x-box'
 import { openScreenPage } from '@/utils/tools/windowHandle'
 import { storeSetter, storeGetter } from '@/utils/tools/storeTools'
 import { useConfigStore } from '@/stores/configStore'
+import KonvaImageCrop from '../components/screen/KonvaImageCrop.vue'
 
 const win = window as any
 
@@ -69,7 +70,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 const closeEditor = () => {
@@ -114,7 +115,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
@@ -131,16 +132,15 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value[
-        'src'
-      ] = `data:image/png;base64,${screenStore.resizePicData}`
+      screenImg.value['src'] =
+        `data:image/png;base64,${screenStore.resizePicData}`
     } else if (
       screenStore.isResized == false &&
       screenStore.editorPicData != ''
@@ -151,7 +151,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  }
+  },
 )
 
 watch(
@@ -165,7 +165,7 @@ watch(
   {
     deep: true,
     immediate: true,
-  }
+  },
 )
 
 watch(
@@ -177,7 +177,7 @@ watch(
     } else {
       coverShow.value = false
     }
-  }
+  },
 )
 
 const configShow = ref<boolean>(false)
@@ -196,7 +196,11 @@ const setConfigShow = state => {
     </WindowTitle>
     <div class="screen-config-content">
       <!-- <CodeTemplateComp /> -->
-      <CropConfig v-if="cropShow" />
+      <!-- <CropConfig v-if="cropShow" /> -->
+      <KonvaImageCrop
+        v-if="cropShow"
+        v-model="configStore.screenData.baseData"
+      />
       <thresholdConfig v-if="thresholdShow" />
       <div
         id="cover"
@@ -258,7 +262,7 @@ const setConfigShow = state => {
   transform: translate(-50%, -50%);
   background: rgba(51, 51, 51, 0.2);
   border-radius: 25px;
-  z-index: 998;
+  z-index: var(--z-index-1);
 }
 
 .home-page-container {
@@ -279,11 +283,10 @@ const setConfigShow = state => {
     overflow: hidden;
     @include global.grid-config(repeat(2, 1fr), repeat(11, 1fr), 10px);
     padding: 12px 15px;
-
-    div {
+    position: relative;
+    > div {
       border-radius: 16px;
       border: 0.2px solid rgba(51, 51, 51, 0.1);
-      z-index: 999;
       box-sizing: border-box;
       flex-grow: 0 !important;
       overflow: hidden;
@@ -295,13 +298,15 @@ const setConfigShow = state => {
   width: 87%;
   height: 87%;
   background: rgb(255, 255, 255);
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  z-index: 999;
+  z-index: var(--z-index-2);
+
   border-radius: 25px;
   border: 0.2px solid rgba(51, 51, 51, 0.1);
   // box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4);
@@ -311,7 +316,8 @@ const setConfigShow = state => {
 
 #screen-box {
   grid-area: 1 / 1 / 5 / 2;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
@@ -328,7 +334,8 @@ const setConfigShow = state => {
     background: white;
     overflow: hidden;
     border-radius: 16px;
-    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    box-shadow:
+      1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
       7px 0px 81px -34px rgba(0, 0, 0, 0.12);
     display: flex;
     justify-content: center;
@@ -347,7 +354,8 @@ const setConfigShow = state => {
 
 #result-data-box {
   grid-area: 1 / 2 / 8 / 3;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;

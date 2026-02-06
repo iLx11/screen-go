@@ -21,7 +21,7 @@ onMounted(() => {
         // 装载图片
         loadImage: {
           path: './img/black.png', //加载的图片链接
-          name: 'image' //图片名称（不重要）
+          name: 'image', //图片名称（不重要）
         },
         //操作菜单栏
         menu: [
@@ -33,7 +33,7 @@ onMounted(() => {
           'icon', // 添加图标
           'text', // 添加文本
           'mask', // 添加覆盖
-          "filter", // 添加滤镜
+          'filter', // 添加滤镜
         ],
         menuBarPosition: 'bottom', //操作栏位置
         locale: {
@@ -52,10 +52,10 @@ onMounted(() => {
           Text: '文字',
           Mask: '图片遮罩',
           Filter: '滤镜',
-          History: "历史",
-          Hand: "手型",
-          ZoomIn: "放大",
-          ZoomOut: "缩小",
+          History: '历史',
+          Hand: '手型',
+          ZoomIn: '放大',
+          ZoomOut: '缩小',
           Bold: '加粗',
           Italic: '斜体',
           Underline: '下划线',
@@ -108,10 +108,10 @@ onMounted(() => {
           Blend: '混合',
           Double: '双倍的',
           // Download: '324',
-          BGColor: '背景颜色'
-        }, 
+          BGColor: '背景颜色',
+        },
         theme: customImgEditorTheme, //主题样式
-      }
+      },
     })
   })
 })
@@ -123,17 +123,17 @@ const switchBack = () => {
   isBlank.value = !isBlank.value
   let img = isBlank.value ? './img/blank.png' : './img/black.png'
   let color = isBlank.value ? '#000000' : '#ffffff'
-  ;(instance as any).value.loadImageFromURL(img, 'blank').then((result) => {
+  ;(instance as any).value.loadImageFromURL(img, 'blank').then(result => {
     ;(instance as any).value.addText('', {
       position: {},
-      styles: { 
+      styles: {
         fill: color,
         fontSize: 85,
         fontFamily: '',
         fontStyle: '',
         fontWeight: '',
-        underline: ''
-      }
+        underline: '',
+      },
     })
   })
 }
@@ -183,11 +183,13 @@ const editorCommit = () => {
   transform: translateY(-50%);
   background: rgba(255, 255, 255, 1);
   border-radius: 12px;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059), 7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(51, 51, 51, 0.2);
   padding: 0;
   margin: 0;
-  z-index: 9999;
+  z-index: var(--z-index-2);
 
   ul {
     width: 100%;
