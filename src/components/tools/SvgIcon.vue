@@ -2,12 +2,11 @@
   <svg
     aria-hidden="true"
     class="svg-icon"
-    :style="'width:' + size + ';height:' + size"
-    :color="color"
+    :style="{ width: size, height: size, color: color }"
   >
     <use
       :xlink:href="symbolId"
-      :color="color"
+      :style="{ width: size, height: size, color: color }"
     />
   </svg>
 </template>
@@ -26,7 +25,7 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: '',
+    default: '', // 留空则继承父元素color，传值则覆盖
   },
   size: {
     type: String,
@@ -37,7 +36,7 @@ const props = defineProps({
 const symbolId = computed(() => `#${props.prefix}-${props.iconClass}`)
 </script>
 
-<style>
+<style scoped>
 .svg-icon {
   display: inline-block;
   width: 2em;
@@ -46,9 +45,16 @@ const symbolId = computed(() => `#${props.prefix}-${props.iconClass}`)
   vertical-align: -0.15em;
   outline: none;
   fill: currentColor;
+  color: inherit;
 }
 
-path {
-  fill: currentColor;
+:deep(svg *),
+:deep(path),
+:deep(g),
+:deep(circle),
+:deep(rect) {
+  fill: currentColor !important;
+  /* 可选：如果SVG有描边，也让stroke继承颜色，按需开启 */
+  /* stroke: currentColor !important; */
 }
 </style>

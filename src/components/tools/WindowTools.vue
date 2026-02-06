@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted } from 'vue'
 import { useConfigStore } from '@/stores/configStore'
-// import SvgIcon from './SvgIcon.vue'
+import SvgIcon from './SvgIcon.vue'
 
 const configStore = useConfigStore()
 const win = window as any

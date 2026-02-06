@@ -6,7 +6,7 @@ import electron from 'vite-plugin-electron'
 // import electronRenderer from 'vite-plugin-electron/renderer'
 // import polyfillExports from 'vite-plugin-electron/polyfill-exports'
 // import optimizer from 'vite-plugin-optimizer'
-// import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import path from 'path'
 
 let getReplacer = () => {
@@ -45,7 +45,22 @@ export default defineConfig({
     // optimizer(getReplacer()),
     // VueDevTools(),
     vue(),
-
+    createSvgIconsPlugin({
+      iconDirs: [path.resolve(path.resolve(__dirname, 'src'), 'assets/icons')],
+      symbolId: 'icon-[dir]-[name]',
+      // 用svgo自动移除fill/stroke属性，从根源清除固定颜色
+      svgoOptions: {
+        plugins: [
+          {
+            name: 'removeAttrs',
+            params: {
+              // 移除所有fill和stroke属性
+              attrs: ['fill', 'stroke'],
+            },
+          },
+        ],
+      },
+    }),
     electron([
       {
         entry: 'electron/main/main.ts',

@@ -50,6 +50,7 @@
     "@vue/tsconfig": "^0.4.0",
     "electron": "35.2.0",
     "electron-builder": "^26.0.12",
+    "fast-glob": "^3.3.3",
     "ilx1-x-style": "^1.1.2",
     "naive-ui": "^2.43.2",
     "npm-run-all2": "^6.0.6",
