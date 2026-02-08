@@ -70,7 +70,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 const closeEditor = () => {
@@ -115,7 +115,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
@@ -132,15 +132,16 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value['src'] =
-        `data:image/png;base64,${screenStore.resizePicData}`
+      screenImg.value[
+        'src'
+      ] = `data:image/png;base64,${screenStore.resizePicData}`
     } else if (
       screenStore.isResized == false &&
       screenStore.editorPicData != ''
@@ -151,7 +152,7 @@ watch(
   {
     deep: true,
     immediate: false,
-  },
+  }
 )
 
 watch(
@@ -165,7 +166,7 @@ watch(
   {
     deep: true,
     immediate: true,
-  },
+  }
 )
 
 watch(
@@ -177,7 +178,7 @@ watch(
     } else {
       coverShow.value = false
     }
-  },
+  }
 )
 
 const configShow = ref<boolean>(false)
@@ -197,10 +198,7 @@ const setConfigShow = state => {
     <div class="screen-config-content">
       <!-- <CodeTemplateComp /> -->
       <!-- <CropConfig v-if="cropShow" /> -->
-      <KonvaImageCrop
-        v-if="cropShow"
-        v-model="configStore.screenData.baseData"
-      />
+      <KonvaImageCrop v-if="cropShow" />
       <thresholdConfig v-if="thresholdShow" />
       <div
         id="cover"
@@ -298,8 +296,7 @@ const setConfigShow = state => {
   width: 87%;
   height: 87%;
   background: rgb(255, 255, 255);
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   position: absolute;
   top: 50%;
@@ -316,8 +313,7 @@ const setConfigShow = state => {
 
 #screen-box {
   grid-area: 1 / 1 / 5 / 2;
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--editor-box-color);
   border: none;
@@ -334,8 +330,7 @@ const setConfigShow = state => {
     background: white;
     overflow: hidden;
     border-radius: 16px;
-    box-shadow:
-      1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+    box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
       7px 0px 81px -34px rgba(0, 0, 0, 0.12);
     display: flex;
     justify-content: center;
@@ -354,8 +349,7 @@ const setConfigShow = state => {
 
 #result-data-box {
   grid-area: 1 / 2 / 8 / 3;
-  box-shadow:
-    1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
     7px 0px 81px -34px rgba(0, 0, 0, 0.12);
   background: var(--result-data-box-color);
   border: none;

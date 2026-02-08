@@ -519,7 +519,7 @@ const handleClose = () => {
 }
 
 .crop-container {
-  height: 100%;
+  @include global.wh(80%, 80%);
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -534,8 +534,7 @@ const handleClose = () => {
 }
 
 .image-editor-box {
-  width: 100%;
-  height: 100%;
+  @include global.full-wh;
   border-radius: 8px;
   border: 2px solid #f0f0f0;
   display: flex;
