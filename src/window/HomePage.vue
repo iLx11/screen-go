@@ -155,6 +155,22 @@ watch(
   }
 )
 
+// 缩放数据
+watch(
+  () => configStore.screenData.resizeData,
+  (newVal, oldVal) => {
+    if (newVal != oldVal) {
+      screenImg.value['src'] = newVal
+      cropShow.value = false
+      coverShow.value = false
+    }
+  },
+  {
+    deep: true,
+    immediate: false,
+  }
+)
+
 watch(
   () => screenStore.isCroped,
   () => {
@@ -258,7 +274,7 @@ const setConfigShow = state => {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background: rgba(51, 51, 51, 0.2);
+  background: rgba(133, 133, 133, 0.2);
   border-radius: 25px;
   z-index: var(--z-index-1);
 }

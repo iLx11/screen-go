@@ -7,13 +7,47 @@ import { Stage } from 'konva/lib/Stage'
 import { Layer } from 'konva/lib/Layer'
 import { Shape } from 'konva/lib/Shape'
 import { Context } from 'konva/lib/Context'
+import {
+  NInputNumber,
+  NSelect,
+  NButton,
+  NGrid,
+  NGridItem,
+  NSpace,
+  NDivider,
+  NModal,
+  NForm,
+  NFormItem,
+  NInput,
+} from 'naive-ui'
+
+import { debounce } from 'es-toolkit'
 
 const configStore = useConfigStore()
 
 onMounted(() => {
   // 初始化Konva裁剪组件
   initKonvaCrop()
+  window.addEventListener('resize', debounceResize)
 })
+
+onUnmounted(() => {
+  // 组件卸载时，销毁Konva裁剪组件
+  if (konvaObj.value.stage) {
+    konvaObj.value.stage.destroy()
+  }
+  window.removeEventListener('resize', debounceResize)
+})
+
+const debounceResize = debounce(() => {
+  if (konvaObj.value.stage) {
+    const containerRect = document
+      .getElementById('konva-crop-editor')
+      ?.getBoundingClientRect()
+    konvaObj.value.stage.width(containerRect.width)
+    konvaObj.value.stage.height(containerRect.height)
+  }
+}, 300)
 
 const konvaObj = ref({
   stage: null,
@@ -21,9 +55,125 @@ const konvaObj = ref({
   image: null,
   cropRect: null,
   transformer: null,
-  CropLayer: null,
+  cropLayer: null,
 })
 
+// 裁剪尺寸控制
+const cropWidth = ref(0)
+const cropHeight = ref(0)
+
+// 宽高比选择
+const aspectRatioOptions = [
+  { label: '自由', value: 0 },
+  { label: '1:1', value: 1 },
+  { label: '4:3', value: 4 / 3 },
+  { label: '16:9', value: 16 / 9 },
+  { label: '3:4', value: 3 / 4 },
+  { label: '9:16', value: 9 / 16 },
+  { label: '自定义', value: -1 },
+]
+const selectedRatio = ref(0)
+
+// 自定义比例输入窗口
+const showCustomRatioModal = ref(false)
+const customRatio = ref({
+  width: 1,
+  height: 1,
+})
+
+/********************************************************************************
+ * @brief: 更新裁剪尺寸显示
+ * @return {*}
+ ********************************************************************************/
+const updateCropSize = () => {
+  if (!konvaObj.value.cropRect) return
+
+  const rectInfo = getCropInfo()
+  if (rectInfo) {
+    cropWidth.value = Math.floor(rectInfo.width)
+    cropHeight.value = Math.floor(rectInfo.height)
+  }
+}
+
+/********************************************************************************
+ * @brief: 设置裁剪尺寸
+ * @return {*}
+ ********************************************************************************/
+const setCropSize = () => {
+  if (!konvaObj.value.cropRect || !konvaObj.value.image) return
+
+  const rect = konvaObj.value.cropRect
+  const image = konvaObj.value.image
+
+  // 计算图片的实际边界
+  const imgX = image.x()
+  const imgY = image.y()
+  const imgW = image.width() * image.scaleX()
+  const imgH = image.height() * image.scaleY()
+
+  // 限制尺寸不超过图片范围
+  const newWidth = Math.min(cropWidth.value, imgW)
+  const newHeight = Math.min(cropHeight.value, imgH)
+
+  // 保持裁剪框居中
+  const rectX = rect.x() + (rect.width() * rect.scaleX() - newWidth) / 2
+  const rectY = rect.y() + (rect.height() * rect.scaleY() - newHeight) / 2
+
+  // 确保裁剪框在图片范围内
+  const finalX = Math.max(imgX, Math.min(rectX, imgX + imgW - newWidth))
+  const finalY = Math.max(imgY, Math.min(rectY, imgY + imgH - newHeight))
+
+  // 更新裁剪框属性
+  rect.x(finalX)
+  rect.y(finalY)
+  rect.width(newWidth)
+  rect.height(newHeight)
+  rect.scaleX(1)
+  rect.scaleY(1)
+
+  konvaObj.value.layer.batchDraw()
+  konvaObj.value.cropLayer.batchDraw()
+}
+
+// 应用宽高比
+/********************************************************************************
+ * @brief:
+ * @return {*}
+ ********************************************************************************/
+const applySelectedRatio = () => {
+  if (selectedRatio.value === -1) {
+    // 打开自定义比例输入窗口
+    showCustomRatioModal.value = true
+    return
+  }
+
+  if (selectedRatio.value > 0) {
+    applyAspectRatio(selectedRatio.value)
+  } else {
+    // 自由比例，取消约束
+    konvaObj.value.transformer.keepRatio(false)
+  }
+
+  // 更新显示的尺寸
+  updateCropSize()
+}
+
+// 应用自定义比例
+const applyCustomRatio = () => {
+  if (customRatio.value.width <= 0 || customRatio.value.height <= 0) {
+    return
+  }
+
+  const ratio = customRatio.value.width / customRatio.value.height
+  applyAspectRatio(ratio)
+  showCustomRatioModal.value = false
+  selectedRatio.value = 0 // 保持自由选择
+}
+
+/********************************************************************************
+ * @brief: 初始化Konva裁剪组件
+ * @return {*}
+ ********************************************************************************/
 const initKonvaCrop = async () => {
   // 检测图片数据
   if (configStore.screenData.baseData == '') {
@@ -64,7 +214,6 @@ const initKonvaCrop = async () => {
     width: w,
     height: h,
     name: 'image',
-    // listening: false,
     draggable: true,
     listening: true,
   })
@@ -79,9 +228,19 @@ const initKonvaCrop = async () => {
 
   // 添加滚轮缩放功能
   addWheelZoom()
+
+  // 更新初始裁剪尺寸
+  updateCropSize()
+
+  // 监听裁剪框变化
+  konvaObj.value.cropRect.on('transform', updateCropSize)
+  konvaObj.value.cropRect.on('dragend', updateCropSize)
 }
 
-// 添加滚轮缩放功能
+/********************************************************************************
+ * @brief: 添加滚轮缩放功能
+ * @return {*}
+ ********************************************************************************/
 const addWheelZoom = () => {
   if (!konvaObj.value.stage || !konvaObj.value.image) return
 
@@ -127,13 +286,21 @@ const addWheelZoom = () => {
 
     // 重新绘制
     konvaObj.value.layer.batchDraw()
-    konvaObj.value.CropLayer.batchDraw()
+    konvaObj.value.cropLayer.batchDraw()
   })
 }
 
+/********************************************************************************
+ * @brief: 绘制裁剪区域
+ * @param {*} w
+ * @param {*} h
+ * @param {*} ix
+ * @param {*} iy
+ * @return {*}
+ ********************************************************************************/
 const drawCrop = ({ w, h, ix, iy }) => {
-  konvaObj.value.CropLayer = new Konva.Layer({ id: 'CropLayer' })
-  konvaObj.value.stage.add(konvaObj.value.CropLayer)
+  konvaObj.value.cropLayer = new Konva.Layer({ id: 'cropLayer' })
+  konvaObj.value.stage.add(konvaObj.value.cropLayer)
   // 裁剪区域
   const initialRectW = w * 0.6
   const initialRectH = h * 0.6
@@ -148,35 +315,34 @@ const drawCrop = ({ w, h, ix, iy }) => {
     strokeWidth: 2,
     draggable: true,
 
-    // 拖拽边界限制 ---
-    // dragBoundFunc: function (pos) {
-    //   // pos 是裁剪框尝试移动到的新绝对坐标
-    //   const imgX = konvaObj.value.image.x()
-    //   const imgY = konvaObj.value.image.y()
-    //   const imgW = konvaObj.value.image.width()
-    //   const imgH = konvaObj.value.image.height()
+    dragBoundFunc: function (pos) {
+      // pos 是裁剪框尝试移动到的新绝对坐标
+      const stageX = konvaObj.value.stage.x()
+      const stageY = konvaObj.value.stage.y()
+      const stageRight = stageX + konvaObj.value.stage.width()
+      const stageBottom = stageY + konvaObj.value.stage.height()
 
-    //   // 计算裁剪框当前的实际大小 (考虑scale)
-    //   const rectW =
-    //     konvaObj.value.cropRect.width() * konvaObj.value.cropRect.scaleX()
-    //   const rectH =
-    //     konvaObj.value.cropRect.height() * konvaObj.value.cropRect.scaleY()
+      // 计算裁剪框当前的实际大小 (考虑scale)
+      const rectW =
+        konvaObj.value.cropRect.width() * konvaObj.value.cropRect.scaleX()
+      const rectH =
+        konvaObj.value.cropRect.height() * konvaObj.value.cropRect.scaleY()
 
-    //   // 限制 X
-    //   let newX = pos.x
-    //   if (newX < imgX) newX = imgX // 不能超出左边
-    //   if (newX + rectW > imgX + imgW) newX = imgX + imgW - rectW // 不能超出右边
+      // 限制 X
+      let newX = pos.x
+      if (newX < stageX) newX = stageX
+      if (newX + rectW > stageRight) newX = stageRight - rectW
 
-    //   // 限制 Y
-    //   let newY = pos.y
-    //   if (newY < imgY) newY = imgY // 不能超出上边
-    //   if (newY + rectH > imgY + imgH) newY = imgY + imgH - rectH // 不能超出下边
+      // 限制 Y
+      let newY = pos.y
+      if (newY < stageY) newY = stageY
+      if (newY + rectH > stageBottom) newY = stageBottom - rectH
 
-    //   return { x: newX, y: newY }
-    // },
+      return { x: newX, y: newY }
+    },
   })
-  
-  konvaObj.value.CropLayer.add(konvaObj.value.cropRect)
+
+  konvaObj.value.cropLayer.add(konvaObj.value.cropRect)
 
   // 调整工具
   konvaObj.value.transformer = new Konva.Transformer({
@@ -186,19 +352,18 @@ const drawCrop = ({ w, h, ix, iy }) => {
 
     // 缩放边界限制 ---
     boundBoxFunc: (oldBox, newBox) => {
-      // newBox 是尝试变形后的新尺寸和位置
-      const imgX = konvaObj.value.image.x()
-      const imgY = konvaObj.value.image.y()
-      const imgRight = imgX + konvaObj.value.image.width()
-      const imgBottom = imgY + konvaObj.value.image.height()
+      //   // newBox 是尝试变形后的新尺寸和位置
+      const stageX = konvaObj.value.stage.x()
+      const stageY = konvaObj.value.stage.y()
+      const stageRight = stageX + konvaObj.value.stage.width()
+      const stageBottom = stageY + konvaObj.value.stage.height()
 
       // 检查是否超出任意边界
-      // 注意：为了防止轻微的浮点数误差导致卡住，可以使用少许容差，或者严格判断
       if (
-        newBox.x < imgX ||
-        newBox.y < imgY ||
-        newBox.x + newBox.width > imgRight ||
-        newBox.y + newBox.height > imgBottom
+        newBox.x < stageX ||
+        newBox.y < stageY ||
+        newBox.x + newBox.width > stageRight ||
+        newBox.y + newBox.height > stageBottom
       ) {
         return oldBox // 如果超出，拒绝变化，保持上一次的状态
       }
@@ -213,7 +378,7 @@ const drawCrop = ({ w, h, ix, iy }) => {
   })
 
   konvaObj.value.layer.add(konvaObj.value.transformer)
-  konvaObj.value.CropLayer.draw()
+  konvaObj.value.cropLayer.draw()
 }
 
 /********************************************************************************
@@ -233,7 +398,7 @@ function applyAspectRatio(ratio) {
 
   // 检查：如果新的高度导致超出图片底部边界？
   const imgY = konvaObj.value.image.y()
-  const imgH = konvaObj.value.image.height()
+  const imgH = konvaObj.value.image.height() * konvaObj.value.image.scaleY()
   const rectY = konvaObj.value.cropRect.y()
 
   // 如果 (当前Y + 新H) > (图片Y + 图片H)，说明高度太高了，需要反向计算宽度
@@ -252,13 +417,22 @@ function applyAspectRatio(ratio) {
     konvaObj.value.cropRect.height(newH)
   }
 
+  // 启用比例锁定
+  konvaObj.value.transformer.keepRatio(true)
+
   konvaObj.value.cropRect.scaleX(1)
   konvaObj.value.cropRect.scaleY(1)
 
   konvaObj.value.layer.batchDraw()
+
+  // 更新尺寸显示
+  updateCropSize()
 }
 
-/** 初始化裁剪框图层 */
+/********************************************************************************
+ * @brief: 初始化裁剪框图层
+ * @return {*}
+ ********************************************************************************/
 function createCropContent() {
   // 裁剪框蒙版
   const rect = new Konva.Rect({
@@ -266,12 +440,15 @@ function createCropContent() {
     sceneFunc: (ctx, shape) => drawCropmaskSceneFunc(ctx, shape),
   })
 
-  konvaObj.value.CropLayer.add(rect)
-
-  // 创建裁剪框
-  // this.renderCrop(layer)
+  konvaObj.value.cropLayer.add(rect)
 }
 
+/********************************************************************************
+ * @brief: 绘制裁剪框蒙版
+ * @param {*} ctx
+ * @param {*} shape
+ * @return {*}
+ ********************************************************************************/
 function drawCropmaskSceneFunc(ctx: Context, shape: Shape) {
   const { width, height } = konvaObj.value.stage.getSize()
   // 获取实际宽高
@@ -314,49 +491,56 @@ function drawCropmaskSceneFunc(ctx: Context, shape: Shape) {
   ctx.fillStrokeShape(shape)
 }
 
-/**
- * @description 获取裁剪框位置信息
- * @param {Stage} stage
- */
+/********************************************************************************
+ * @brief: 获取裁剪框位置信息
+ * @return {*}
+ ********************************************************************************/
 function getCropInfo() {
   return konvaObj.value.cropRect.getClientRect()
 }
 
-/**
- * @description 计算文本宽度
- */
+/********************************************************************************
+ * @brief: 计算文本宽度
+ * @param {*} ctx
+ * @param {*} text
+ * @return {*}
+ ********************************************************************************/
 function getTextWidth(ctx: CanvasRenderingContext2D, text: string) {
   return ctx.measureText(text).width
 }
 
-/**
- * @description 计算文本高度
- */
+/********************************************************************************
+ * @brief: 计算文本高度
+ * @param {*} ctx
+ * @param {*} text
+ * @return {*}
+ ********************************************************************************/
 function getTextHeight(ctx: CanvasRenderingContext2D, text: string) {
   const metrics = ctx.measureText(text)
   return metrics.actualBoundingBoxAscent + metrics.actualBoundingBoxDescent
 }
 
-/**
- * @description 获取裁剪结果
- * @param { "string" | "blob" | "canvas" } type 裁剪结果类型
- * @param { number } [pixelRatio] pixelRatio
- * @param { "png" | "jpeg" } [mimeType] mimeType
- */
-function getResult(
-  type: 'string' | 'blob' | 'canvas',
+/********************************************************************************
+ * @brief: 获取裁剪结果
+ * @param {*} type
+ * @param {*} pixelRatio
+ * @param {*} mimeType
+ * @return {*}
+ ********************************************************************************/
+const getCropResult = (
+  type: 'string' | 'blob' | 'canvas' = 'string',
   pixelRatio = 1,
   mimeType: 'png' | 'jpeg' = 'png'
-) {
-  if (!this.stage) return 'Stage is not exist.'
-
+) => {
   // 通过复制图层实现
-  const stageClone = this.stage.clone()
+  const stageClone = konvaObj.value.stage.clone()
+  // return
   // 删除 transformer
-  const mainLayer = <Layer>stageClone.findOne('#mainLayer')
+  const mainLayer = stageClone.findOne('#cropLayer')
+
   mainLayer.findOne('Transformer')?.remove()
 
-  const cropAttrs = this.getCropAttr()
+  const cropAttrs = getCropInfo()
 
   if (type === 'canvas') {
     return stageClone.toCanvas({ ...cropAttrs, pixelRatio })
@@ -368,10 +552,10 @@ function getResult(
     mimeType: `image/${mimeType}`,
   })
 
+  configStore.screenData.resizeData = base64String
+
   if (type === 'string') {
     return base64String
-  } else if (type === 'blob') {
-    return base64ToBlob(base64String)
   }
 }
 </script>
@@ -379,7 +563,98 @@ function getResult(
 <template>
   <div class="konva-crop-container">
     <div id="konva-crop-editor"></div>
-    <div class="konva-crop-control"></div>
+    <div class="konva-crop-control">
+      <div class="crop-size-container">
+        <div class="control-title">裁剪尺寸</div>
+        <div class="crop-size-content">
+          <div class="crop-size">
+            <NInputNumber
+              v-model:value="cropWidth"
+              :min="10"
+              :max="10000"
+              :step="1"
+              placeholder="宽度"
+              style="width: 100%"
+            />
+            <!-- <span class="size-separator">x</span> -->
+            <NInputNumber
+              v-model:value="cropHeight"
+              :min="10"
+              :max="10000"
+              :step="1"
+              placeholder="高度"
+            />
+          </div>
+          <div
+            class="crop-button"
+            @click="setCropSize"
+          >
+            应用
+          </div>
+        </div>
+      </div>
+
+      <div class="crop-ratio-container">
+        <div class="control-title">宽高比</div>
+        <div class="crop-ratio-content">
+          <NSelect
+            v-model:value="selectedRatio"
+            :options="aspectRatioOptions"
+            placeholder="选择比例"
+            @update:value="applySelectedRatio"
+          />
+          <div
+            class="crop-button"
+            @click="getCropResult"
+          >
+            完成裁剪
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 自定义比例输入窗口 -->
+    <NModal
+      v-model:show="showCustomRatioModal"
+      preset="card"
+      title="自定义宽高比"
+      style="width: 50%"
+    >
+      <NForm>
+        <NFormItem label="宽度">
+          <NInputNumber
+            v-model:value="customRatio.width"
+            :min="1"
+            :step="1"
+            placeholder="请输入宽度"
+            style="width: 100%"
+          />
+        </NFormItem>
+        <NFormItem label="高度">
+          <NInputNumber
+            v-model:value="customRatio.height"
+            :min="1"
+            :step="1"
+            placeholder="请输入高度"
+            style="width: 100%"
+          />
+        </NFormItem>
+      </NForm>
+      <template #action>
+        <NSpace>
+          <NButton
+            type="default"
+            @click="showCustomRatioModal = false"
+            >取消</NButton
+          >
+          <NButton
+            type="primary"
+            @click="applyCustomRatio"
+            >应用</NButton
+          >
+        </NSpace>
+      </template>
+    </NModal>
   </div>
 </template>
 <style lang="scss" scoped>
@@ -387,13 +662,68 @@ function getResult(
   @include global.wh(80%, 90%);
   @include global.ab-center;
   z-index: var(--z-index-3);
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(27, 27, 27, 0.226);
   backdrop-filter: blur(12px);
   padding: 24px;
-  @include global.grid-config(auto, 1fr 120px, 20px);
+  @include global.grid-config(auto, 1fr 140px, 20px);
+  @include global.comm-box;
   // Konva画布容器
-  .konva-crop-canvas {
+  #konva-crop-editor {
     @include global.full-wh;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  // 控制面板
+  .konva-crop-control {
+    padding: 16px;
+    background-color: rgba(255, 255, 255, 0.4);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    @include global.grid-config(1fr 1fr, 1fr, 20px);
+    overflow-y: scroll;
+
+    .control-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      text-align: left;
+    }
+    .crop-button {
+      @include global.full-wh;
+      @include global.style-common(2px, rgba(51, 51, 51, 0.3));
+      @include global.flex-center;
+      cursor: pointer;
+    }
+
+    .crop-size-container {
+      @include global.grid-config(auto, 20px 1fr, 10px);
+      .crop-size-content {
+        @include global.flex-config(1, space-between, 10px);
+        .crop-size {
+          @include global.grid-config(1fr 1fr, 1fr, 8px);
+          .n-input-number {
+            @include global.full-wh;
+          }
+        }
+      }
+    }
+
+    .crop-ratio-container {
+      @include global.grid-config(auto, 20px 1fr, 10px);
+      .crop-ratio-content {
+        .n-select {
+          @include global.full-wh;
+        }
+        @include global.flex-config(1, space-between, 10px);
+      }
+    }
+
+    .size-separator {
+      font-size: 16px;
+      font-weight: 600;
+      color: #666;
+    }
   }
 }
 </style>

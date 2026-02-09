@@ -36,6 +36,7 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "electron-store": "^8.1.0",
+    "es-toolkit": "^1.44.0",
     "fluent-ffmpeg": "^2.1.3",
     "fs-extra": "^11.1.0",
     "ilx1-x-box": "^1.0.0",
