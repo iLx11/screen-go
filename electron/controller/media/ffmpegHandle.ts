@@ -6,7 +6,7 @@ const fs = require('fs-extra')
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
 const ffprobePath = require('@ffprobe-installer/ffprobe').path
 
-const ffmpeg = require('fluent-ffmpeg')
+const ffmpeg = require('@ts-ffmpeg/fluent-ffmpeg')
 const path = require('path')
 
 ffmpeg.setFfmpegPath(ffmpegPath)

@@ -1,0 +1,7 @@
+allowBuilds:
+  canvas: true
+  electron: true
+  esbuild: true
+  node-sass: true
+  sharp: true
+  vue-demi: true
