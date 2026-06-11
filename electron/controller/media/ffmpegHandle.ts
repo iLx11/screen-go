@@ -8,6 +8,48 @@ const path = require('path')
 const DEFAULT_CONFIG_ARRAY = [1, 2, 0, 0, 1]
 const DEFAULT_THRESHOLD = 120
 const videoTaskMap = new Map()
+const TEMP_ROOT_PATH = path.resolve(__dirname, '../../temp')
+const VIDEO_TEMP_DIR_REG = /^video_\d+_[a-f0-9]+$/i
+const VIDEO_TEMP_FRAME_REG = /^temp_\d+\.png$/i
+
+const removeTempPath = targetPath => {
+  try {
+    if (fs.existsSync(targetPath)) {
+      fs.removeSync(targetPath)
+    }
+  } catch (error) {
+    console.error('Remove temp path failed:', targetPath, error)
+  }
+}
+
+const removeTempRootIfEmpty = () => {
+  try {
+    if (fs.existsSync(TEMP_ROOT_PATH) && fs.readdirSync(TEMP_ROOT_PATH).length == 0) {
+      fs.removeSync(TEMP_ROOT_PATH)
+    }
+  } catch (error) {
+    console.error('Remove temp root failed:', error)
+  }
+}
+
+const cleanupVideoTempRoot = () => {
+  try {
+    if (!fs.existsSync(TEMP_ROOT_PATH)) return
+
+    fs.readdirSync(TEMP_ROOT_PATH, { withFileTypes: true }).forEach(item => {
+      const shouldRemove =
+        (item.isDirectory() && VIDEO_TEMP_DIR_REG.test(item.name)) ||
+        (item.isFile() && VIDEO_TEMP_FRAME_REG.test(item.name))
+
+      if (shouldRemove) {
+        removeTempPath(path.join(TEMP_ROOT_PATH, item.name))
+      }
+    })
+    removeTempRootIfEmpty()
+  } catch (error) {
+    console.error('Cleanup video temp failed:', error)
+  }
+}
 
 const getVideoTaskKey = event => {
   return event?.sender?.id || 0
@@ -380,6 +422,8 @@ const generateFrameData = (imageBuffer, width, height, threshold, configArray) =
 }
 
 export const ffmpegListener = async () => {
+  cleanupVideoTempRoot()
+
   ipcMain.handle('get-video-info', async (event, videoPath) => {
     try {
       if (!videoPath) return null
@@ -407,8 +451,7 @@ export const ffmpegListener = async () => {
     ) => {
       // 创建临时目录
       const tempDirPath = path.join(
-        __dirname,
-        '../../temp',
+        TEMP_ROOT_PATH,
         `video_${Date.now()}_${Math.random().toString(16).slice(2)}`
       )
 
@@ -504,9 +547,8 @@ export const ffmpegListener = async () => {
         if (videoTaskMap.get(key) === task) {
           videoTaskMap.delete(key)
         }
-        if (fs.existsSync(tempDirPath)) {
-          fs.removeSync(tempDirPath)
-        }
+        removeTempPath(tempDirPath)
+        removeTempRootIfEmpty()
       }
     }
   )
