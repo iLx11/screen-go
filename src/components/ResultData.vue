@@ -673,11 +673,11 @@ const writeReverseImage = () => {
       <NSpace
         class="result-toolbar-actions"
         align="center"
-        :size="6"
+        :size="8"
       >
         <NButton
           class="result-toolbar-button"
-          size="tiny"
+          size="small"
           secondary
           @click="openResultConfig"
         >
@@ -686,7 +686,7 @@ const writeReverseImage = () => {
         <NButton
           v-if="outputBinFile"
           class="result-toolbar-button"
-          size="tiny"
+          size="small"
           secondary
           @click="exportBinFile"
         >
@@ -694,7 +694,7 @@ const writeReverseImage = () => {
         </NButton>
         <NButton
           class="result-toolbar-button"
-          size="tiny"
+          size="small"
           secondary
           @click="reverseDrawImage"
         >
@@ -702,7 +702,7 @@ const writeReverseImage = () => {
         </NButton>
         <NButton
           class="result-toolbar-button"
-          size="tiny"
+          size="small"
           secondary
           @click="copyResult"
         >
@@ -868,7 +868,7 @@ const writeReverseImage = () => {
 }
 
 #result-data-toolbar {
-  min-height: 30px;
+  min-height: 34px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -890,11 +890,11 @@ const writeReverseImage = () => {
 }
 
 .result-toolbar-button {
-  min-width: 58px;
-  height: 24px;
-  padding: 0 8px;
+  min-width: 72px;
+  height: 30px;
+  padding: 0 12px;
   border-radius: var(--comp-radius-2);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
   line-height: 1;
   box-sizing: border-box;
