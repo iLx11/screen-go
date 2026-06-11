@@ -1,49 +1,73 @@
 <script setup lang="ts">
 import { useScreenStore } from '../stores/store'
-import { getItem, setItem } from '../utils/storage'
-import { onMounted, reactive, ref } from 'vue'
+import { ref, watch } from 'vue'
 import { XBox } from 'ilx1-x-box'
 import { useConfigStore } from '@/stores/configStore'
 
-const win = window as any
-
 const configStore = useConfigStore()
 const screenStore = useScreenStore()
-const modeStyle = ref<boolean>(true)
+const modeStyle = ref<boolean>(
+  Boolean(configStore.screenConfig.configArray[4] ?? screenStore.configArray[4])
+)
+
+const syncBaseData = () => {
+  if (configStore.screenData.baseData == '' && screenStore.editorPicData != '') {
+    configStore.screenData.baseData = screenStore.editorPicData
+  }
+}
+
+// 设置取模颜色模式
+const setColorMode = (mode: number) => {
+  modeStyle.value = Boolean(mode)
+  screenStore.setConfigArray(4, mode)
+  configStore.screenConfig.configArray[4] = mode
+
+  if (mode == 0) {
+    screenStore.setConfigArray(1, 0)
+    configStore.screenConfig.configArray[1] = 0
+  }
+}
 
 // 单色取模
 const monochromeMode = () => {
-  modeStyle.value = true
-  screenStore.setConfigArray(4, 1)
+  setColorMode(1)
 }
 
 // 彩色取模
 const chromeMode = () => {
-  modeStyle.value = false
-  screenStore.setConfigArray(4, 0)
+  setColorMode(0)
 }
 
 // 单色阈值调整
 const thresholdShow = () => {
-  if(screenStore.configArray[4] == 0) {
+  if (configStore.screenConfig.configArray[4] == 0) {
     XBox.popMes('彩色取模不支持调整阈值！')
     return
   }
-  if(screenStore.editorPicData == '') {
+  syncBaseData()
+  if (configStore.screenData.baseData == '' && screenStore.editorPicData == '') {
     XBox.popMes('请先编辑一张图片')
-    return 
+    return
   }
   screenStore.setThresholdShow(true)
 }
 
 // 图片裁剪
 const cropShow = () => {
-  if(configStore.screenData.baseData == '') {
+  syncBaseData()
+  if (configStore.screenData.baseData == '' && screenStore.editorPicData == '') {
     XBox.popMes('请先编辑一张图片')
-    return 
+    return
   }
   screenStore.setCropShow(true)
 }
+
+watch(
+  () => configStore.screenConfig.configArray[4],
+  () => {
+    modeStyle.value = Boolean(configStore.screenConfig.configArray[4])
+  }
+)
 </script>
 
 <template>

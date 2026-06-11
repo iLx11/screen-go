@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import WindowTitle from '../components/tools/WindowTitle.vue'
-import { onMounted, nextTick, ref, watch } from 'vue'
+import { onMounted, onUnmounted, nextTick, ref, watch } from 'vue'
 import ImageEditor from '../components/ImageEditor.vue'
 import ImageConfig from '../components/ImageConfig.vue'
 import VideoConfig from '../components/VideoConfig.vue'
-import ResultDataConfig from '../components/ResultDataConfig.vue'
 import CommitBox from '../components/CommitBox.vue'
 import ResultData from '../components/ResultData.vue'
 import { useScreenStore } from '../stores/store'
@@ -25,12 +24,18 @@ const coverShow = ref<boolean>(false)
 const editorShow = ref<boolean>(false)
 const thresholdShow = ref<boolean>(false)
 const cropShow = ref<boolean>(false)
+let removeVideoFrameProgressListener: (() => void) | null = null
 
 const screenImg = ref<HTMLElement | null>(null)
 
 onMounted(() => {
   // openScreenPage(0)
   mainWindowListener()
+})
+
+onUnmounted(() => {
+  removeVideoFrameProgressListener?.()
+  removeVideoFrameProgressListener = null
 })
 
 /********************************************************************************
@@ -54,6 +59,12 @@ const mainWindowListener = () => {
         console.info(path)
       })
     })
+    if (typeof win.api.videoFrameProgressListener == 'function') {
+      removeVideoFrameProgressListener = win.api.videoFrameProgressListener(data => {
+        screenStore.setWaitProgress(data?.progress ?? 0)
+        screenStore.setWaitProgressText(data?.message || '等待中...')
+      })
+    }
   } catch (error) {
     console.error(error)
     configStore.showPop('数据配置错误')
@@ -63,7 +74,7 @@ const mainWindowListener = () => {
 watch(
   () => configStore.screenData.baseData,
   (newVal, oldVal) => {
-    if (newVal != oldVal) {
+    if (newVal != oldVal && screenImg.value) {
       screenImg.value['src'] = newVal
     }
   },
@@ -97,8 +108,27 @@ const editorCancle = () => {
   closeEditor()
 }
 const editorCommit = (picData: string) => {
-  screenImg.value['src'] = picData
+  if (screenImg.value) {
+    screenImg.value['src'] = picData
+  }
   closeEditor()
+}
+
+const cancelWaitExecute = async () => {
+  if (!screenStore.waitCancelable) return
+  screenStore.setWaitCancelable(false)
+  screenStore.setWaitCanceled(true)
+  screenStore.setWaitProgressText('正在取消视频取模...')
+
+  try {
+    const handler = win.api.cancelVideoFrameData || win.api.data?.cancelVideoFrameData
+    if (typeof handler == 'function') {
+      await handler()
+    }
+  } catch (error) {
+    console.error(error)
+    configStore.showPop('取消视频取模失败')
+  }
 }
 
 watch(
@@ -139,14 +169,18 @@ watch(
   () => screenStore.isResized,
   () => {
     if (screenStore.isResized == true && screenStore.resizePicData != '') {
-      screenImg.value[
-        'src'
-      ] = `data:image/png;base64,${screenStore.resizePicData}`
+      if (screenImg.value) {
+        screenImg.value[
+          'src'
+        ] = `data:image/png;base64,${screenStore.resizePicData}`
+      }
     } else if (
       screenStore.isResized == false &&
       screenStore.editorPicData != ''
     ) {
-      screenImg.value['src'] = screenStore.editorPicData
+      if (screenImg.value) {
+        screenImg.value['src'] = screenStore.editorPicData
+      }
     }
   },
   {
@@ -160,9 +194,14 @@ watch(
   () => configStore.screenData.resizeData,
   (newVal, oldVal) => {
     if (newVal != oldVal) {
-      screenImg.value['src'] = newVal
+      if (screenImg.value) {
+        screenImg.value['src'] = newVal
+      }
       cropShow.value = false
       coverShow.value = false
+      if (screenStore.isCropShow == true) {
+        screenStore.setCropShow(false)
+      }
     }
   },
   {
@@ -176,7 +215,9 @@ watch(
   () => {
     if (screenStore.isCroped) {
       screenStore.setCroped(false)
-      screenImg.value['src'] = screenStore.editorPicData
+      if (screenImg.value) {
+        screenImg.value['src'] = screenStore.editorPicData
+      }
     }
   },
   {
@@ -189,10 +230,9 @@ watch(
   () => screenStore.waitExecute,
   () => {
     if (screenStore.waitExecute) {
-      XBox.popMes('请等待执行...')
       coverShow.value = true
     } else {
-      coverShow.value = false
+      coverShow.value = editorShow.value || thresholdShow.value || cropShow.value
     }
   }
 )
@@ -220,7 +260,38 @@ const setConfigShow = state => {
         id="cover"
         v-if="coverShow"
         @click="closeEditor"
-      ></div>
+      >
+        <div
+          v-if="screenStore.waitExecute"
+          id="wait-mask-content"
+          @click.stop
+        >
+          <div id="wait-mask-icon"></div>
+          <div id="wait-mask-text">{{ screenStore.waitProgressText }}</div>
+          <div
+            v-if="screenStore.waitProgressVisible"
+            id="wait-mask-progress"
+          >
+            <div
+              id="wait-mask-progress-inner"
+              :style="{ width: `${screenStore.waitProgress}%` }"
+            ></div>
+          </div>
+          <div
+            v-if="screenStore.waitProgressVisible"
+            id="wait-mask-percent"
+          >
+            {{ screenStore.waitProgress }}%
+          </div>
+          <button
+            v-if="screenStore.waitCancelable"
+            id="wait-mask-cancel"
+            @click="cancelWaitExecute"
+          >
+            取消处理
+          </button>
+        </div>
+      </div>
       <!-- <div id="head-tool-box"></div> -->
       <div
         id="screen-box"
@@ -258,9 +329,6 @@ const setConfigShow = state => {
       <div id="commit-box">
         <CommitBox />
       </div>
-      <div id="data-setting-box">
-        <ResultDataConfig />
-      </div>
     </div>
     <!-- <HeadMessage /> -->
   </div>
@@ -277,6 +345,85 @@ const setConfigShow = state => {
   background: rgba(133, 133, 133, 0.2);
   border-radius: 25px;
   z-index: var(--z-index-1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#wait-mask-content {
+  width: 220px;
+  min-height: 128px;
+  padding: 18px 24px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 8px 28px rgba(51, 51, 51, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  color: var(--config-text-color);
+  font-size: 15px;
+}
+
+#wait-mask-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 3px solid rgba(51, 51, 51, 0.16);
+  border-top-color: var(--config-muted-text-color);
+  animation: wait-mask-rotate 0.8s linear infinite;
+}
+
+#wait-mask-text {
+  line-height: 20px;
+  max-width: 100%;
+  text-align: center;
+  word-break: break-all;
+}
+
+#wait-mask-progress {
+  width: 100%;
+  height: 7px;
+  border-radius: 7px;
+  background: rgba(51, 51, 51, 0.12);
+  overflow: hidden;
+}
+
+#wait-mask-progress-inner {
+  height: 100%;
+  border-radius: 7px;
+  background: rgba(51, 51, 51, 0.64);
+  transition: width 0.18s ease;
+}
+
+#wait-mask-percent {
+  line-height: 18px;
+  font-size: 13px;
+  color: var(--config-muted-text-color);
+}
+
+#wait-mask-cancel {
+  min-width: 86px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 9px;
+  border: 1px solid rgba(51, 51, 51, 0.2);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--config-muted-text-color);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+#wait-mask-cancel:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+@keyframes wait-mask-rotate {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .home-page-container {
@@ -364,12 +511,12 @@ const setConfigShow = state => {
 }
 
 #result-data-box {
-  grid-area: 1 / 2 / 8 / 3;
-  box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
-    7px 0px 81px -34px rgba(0, 0, 0, 0.12);
-  background: var(--result-data-box-color);
-  border: none;
-  padding: 1.5em;
+  grid-area: 1 / 2 / 12 / 3;
+  // box-shadow: 1.1px 0px 10.8px -34px rgba(0, 0, 0, 0.059),
+  //   7px 0px 81px -34px rgba(0, 0, 0, 0.12);
+  // background: var(--result-data-box-color);
+  border: 0.2px solid rgba(51, 51, 51, 0.1);
+  padding: 0.5em;
 }
 
 #config-tool-box {
@@ -385,6 +532,8 @@ const setConfigShow = state => {
   justify-content: space-between;
   align-items: center;
   padding: 5px;
+  color: var(--config-text-color);
+  font-weight: var(--config-font-weight);
   div {
     width: 48.5%;
     height: 100%;
@@ -395,6 +544,7 @@ const setConfigShow = state => {
     align-items: center;
     border: none;
     cursor: pointer;
+    font-weight: var(--config-font-weight);
   }
 }
 
@@ -402,9 +552,5 @@ const setConfigShow = state => {
   grid-area: 11 / 1 / 12 / 2;
   border: none;
   color: rgb(255, 255, 255) !important;
-}
-
-#data-setting-box {
-  grid-area: 8 / 2 / 12 / 2;
 }
 </style>

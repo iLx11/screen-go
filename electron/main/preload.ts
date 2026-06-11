@@ -3,6 +3,7 @@ import { store, w, file, config, data } from './api'
 
 contextBridge.exposeInMainWorld('api', {
   data,
+  ...data,
   ...file,
   ...store,
   ...w,

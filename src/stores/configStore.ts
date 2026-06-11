@@ -1,6 +1,9 @@
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { XBox } from 'ilx1-x-box'
+
+export const DEFAULT_SCREEN_CONFIG_ARRAY = [1, 2, 0, 0, 1]
+export const DEFAULT_THRESHOLD_DATA = 120
 
 export const useConfigStore = defineStore('config', () => {
   // 显示 pop 窗口
@@ -27,8 +30,8 @@ export const useConfigStore = defineStore('config', () => {
   const screenConfig = ref({
     resizeWidth: 0,
     resizeHeight: 0,
-    thresholdData: 0,
-    configArray: [],
+    thresholdData: DEFAULT_THRESHOLD_DATA,
+    configArray: [...DEFAULT_SCREEN_CONFIG_ARRAY],
   })
 
   return { showPop, screenData, screenConfig }

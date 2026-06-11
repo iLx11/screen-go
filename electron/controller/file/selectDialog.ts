@@ -1,5 +1,5 @@
 import { dialog, ipcMain } from 'electron'
-import { writeJsonSync, readJsonSync } from 'fs-extra'
+import { writeFileSync, writeJsonSync, readJsonSync } from 'fs-extra'
 const path = require('path')
 
 export const getFilePath = async () => {
@@ -74,9 +74,27 @@ const saveConfigFile = async () => {
   return ''
 }
 
+const saveBinFile = async (data: number[], fileName = 'screen-go.bin') => {
+  const savePath = await dialog.showSaveDialog({
+    title: '保存 BIN 文件',
+    defaultPath: fileName,
+    buttonLabel: '保存',
+    filters: [{ name: 'BIN 文件', extensions: ['bin'] }],
+  })
+
+  if (savePath.canceled || !savePath.filePath) return false
+
+  const bytes = data.map(value => Number(value) & 0xff)
+  writeFileSync(savePath.filePath, Buffer.from(bytes))
+  return true
+}
+
 export const fileListener = () => {
   ipcMain.handle('select-video-file', async (event, arg) => {
     let filePath = await getFilePath()
     return filePath
+  })
+  ipcMain.handle('save-bin-file', async (event, data, fileName) => {
+    return await saveBinFile(Array.isArray(data) ? data : [], fileName)
   })
 }

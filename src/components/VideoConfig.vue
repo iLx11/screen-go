@@ -1,109 +1,407 @@
 <script setup lang="ts">
-import { reactive, ref, watch, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { NButton, NInputNumber, NSelect, NSpace, NTag } from 'naive-ui'
 import { useScreenStore } from '../stores/store'
-import { getItem, setItem } from '../utils/storage'
-import FuncBox from '../components/FuncBox.vue'
 import { XBox } from 'ilx1-x-box'
+
+type ScaleMode = 'stretch' | 'contain' | 'cover'
+
+type VideoSelectResult = {
+  filePaths?: string[]
+}
+
+type VideoInfo = {
+  width: number
+  height: number
+  duration: number
+}
 
 const screenStore = useScreenStore()
 const win = window as any
 
-onMounted(() => {
-  XBox.popMes('视频取模模式、宽高与图片取模相同')
-  videoConfigValue.width = String(screenStore.resizeWidth)
-  videoConfigValue.height = String(screenStore.resizeHeight)
-  videoConfigValue.videoDur = String(screenStore.videoDur)
-  videoConfigValue.videoFrame = String(screenStore.videoFrame)
+const videoFilePath = ref<string>('')
+const loadingVideoInfo = ref(false)
+const videoInfo = reactive<VideoInfo>({
+  width: 0,
+  height: 0,
+  duration: 0,
+})
+const videoConfigValue = reactive<{
+  width: number | null
+  height: number | null
+  videoStart: number
+  videoDur: number | null
+  videoFrame: number | null
+  scaleMode: ScaleMode
+}>({
+  width: null,
+  height: null,
+  videoStart: 0,
+  videoDur: null,
+  videoFrame: null,
+  scaleMode: 'stretch',
 })
 
-const videoFilePath = ref<string>('')
-const videoRef = ref<HTMLElement>(null)
-const selectVideoFile = async () => {
-  const videoPath = await win.api.selectVideoFile()
-  if (videoPath && videoPath.filePaths.length != 0) {
-    videoFilePath.value = videoPath.filePaths[0]
-    videoRef.value.src = videoPath.filePaths[0]
-    // 存储路径
-    screenStore.setVideoPath(videoFilePath.value)
-  } else {
-    XBox.popMes('没有选择文件')
+const scaleOptions = [
+  {
+    label: '拉伸',
+    value: 'stretch',
+  },
+  {
+    label: '等比留边',
+    value: 'contain',
+  },
+  {
+    label: '等比裁切',
+    value: 'cover',
+  },
+]
+
+const toPositiveInt = (value: unknown) => {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return 0
+  return Math.max(0, Math.floor(num))
+}
+
+const toNonNegativeNumber = (value: unknown) => {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return 0
+  return Math.max(0, num)
+}
+
+const toConfigNumber = (value: unknown) => {
+  const num = toPositiveInt(value)
+  return num > 0 ? num : null
+}
+
+const normalizeScaleMode = (mode: unknown): ScaleMode => {
+  return mode === 'contain' || mode === 'cover' || mode === 'stretch'
+    ? mode
+    : 'stretch'
+}
+
+const formatBytes = (bytes: number) => {
+  if (bytes <= 0) return '0 B'
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / 1024 / 1024).toFixed(2)} MB`
+}
+
+const videoFileName = computed(() => {
+  return videoFilePath.value.split(/[\\/]/).pop() || ''
+})
+const hasVideoInfo = computed(() => videoInfo.width > 0 && videoInfo.height > 0)
+const videoStartMax = computed(() => {
+  return videoInfo.duration > 0
+    ? Number(Math.max(0, videoInfo.duration - 0.1).toFixed(1))
+    : undefined
+})
+const maxAvailableDuration = computed(() => {
+  if (videoInfo.duration <= 0) return undefined
+  const remain = Math.floor(
+    videoInfo.duration - toNonNegativeNumber(videoConfigValue.videoStart)
+  )
+  return remain > 0 ? remain : undefined
+})
+const frameCount = computed(() => {
+  return (
+    toPositiveInt(videoConfigValue.videoDur) *
+    toPositiveInt(videoConfigValue.videoFrame)
+  )
+})
+const bytesPerFrame = computed(() => {
+  const width = toPositiveInt(videoConfigValue.width)
+  const height = toPositiveInt(videoConfigValue.height)
+  if (!width || !height) return 0
+  if (screenStore.configArray[4] !== 1) return width * height * 2
+  return screenStore.configArray[1] === 0 || screenStore.configArray[1] === 3
+    ? Math.ceil(width / 8) * height
+    : Math.ceil(height / 8) * width
+})
+const bytesPerFrameText = computed(() => formatBytes(bytesPerFrame.value))
+const totalBytesText = computed(() => formatBytes(bytesPerFrame.value * frameCount.value))
+const outputModeText = computed(() => {
+  return screenStore.configArray[4] === 1 ? '单色' : '彩色'
+})
+
+const setVideoInfo = (info: Partial<VideoInfo>) => {
+  const width = toPositiveInt(info.width)
+  const height = toPositiveInt(info.height)
+  const duration = Number(toNonNegativeNumber(info.duration).toFixed(2))
+  videoInfo.width = width
+  videoInfo.height = height
+  videoInfo.duration = duration
+  screenStore.setVideoInfo(width, height, duration)
+}
+
+const applySourceSize = () => {
+  if (!hasVideoInfo.value) return
+  videoConfigValue.width = videoInfo.width
+  videoConfigValue.height = videoInfo.height
+}
+
+const fillDefaultConfigByInfo = () => {
+  if (!videoConfigValue.width && videoInfo.width > 0) {
+    videoConfigValue.width = videoInfo.width
+  }
+  if (!videoConfigValue.height && videoInfo.height > 0) {
+    videoConfigValue.height = videoInfo.height
+  }
+  if (!videoConfigValue.videoFrame) {
+    videoConfigValue.videoFrame = 1
+  }
+  const maxStart = videoStartMax.value
+  if (
+    typeof maxStart === 'number' &&
+    toNonNegativeNumber(videoConfigValue.videoStart) > maxStart
+  ) {
+    videoConfigValue.videoStart = maxStart
+  }
+  const maxDur = maxAvailableDuration.value
+  const dur = toPositiveInt(videoConfigValue.videoDur)
+  if (maxDur && (!dur || dur > maxDur)) {
+    videoConfigValue.videoDur = maxDur
   }
 }
 
-const videoConfigValue = reactive({
-  width: '',
-  height: '',
-  videoDur: '',
-  videoFrame: '',
+const readVideoInfo = async (filePath: string) => {
+  const handler = win.api.getVideoInfo || win.api.data?.getVideoInfo
+  if (typeof handler !== 'function') return
+
+  loadingVideoInfo.value = true
+  try {
+    const info = (await handler(filePath)) as VideoInfo | null
+    if (!info) {
+      XBox.popMes('读取视频信息失败')
+      return
+    }
+    setVideoInfo(info)
+    fillDefaultConfigByInfo()
+  } catch (error) {
+    console.error(error)
+    XBox.popMes('读取视频信息失败')
+  } finally {
+    loadingVideoInfo.value = false
+  }
+}
+
+const selectVideoFile = async () => {
+  try {
+    const videoPath: VideoSelectResult = await win.api.selectVideoFile()
+    const filePath = videoPath?.filePaths?.[0]
+    if (filePath) {
+      videoFilePath.value = filePath
+      // 存储路径
+      screenStore.setVideoPath(videoFilePath.value)
+      await readVideoInfo(filePath)
+    } else {
+      XBox.popMes('没有选择文件')
+    }
+  } catch (error) {
+    console.error(error)
+    XBox.popMes('选择视频失败')
+  }
+}
+
+onMounted(() => {
+  videoFilePath.value = screenStore.videoPath
+  videoConfigValue.width = toConfigNumber(screenStore.resizeWidth)
+  videoConfigValue.height = toConfigNumber(screenStore.resizeHeight)
+  videoConfigValue.videoStart = Number(toNonNegativeNumber(screenStore.videoStart).toFixed(1))
+  videoConfigValue.videoDur = toConfigNumber(screenStore.videoDur)
+  videoConfigValue.videoFrame = toConfigNumber(screenStore.videoFrame)
+  videoConfigValue.scaleMode = normalizeScaleMode(screenStore.videoScaleMode)
+  setVideoInfo({
+    width: screenStore.videoSourceWidth,
+    height: screenStore.videoSourceHeight,
+    duration: screenStore.videoTotalDur,
+  })
+  if (videoFilePath.value && !hasVideoInfo.value) {
+    readVideoInfo(videoFilePath.value)
+  }
 })
 
 watch(
-  [() => videoConfigValue.width, () => videoConfigValue.height],
+  videoConfigValue,
   () => {
-    screenStore.setResizeWidth(parseInt(videoConfigValue.width))
-    screenStore.setResizeHeight(parseInt(videoConfigValue.height))
-    // console.info(screenStore.resizeWidth)
+    screenStore.setResizeWidth(toPositiveInt(videoConfigValue.width))
+    screenStore.setResizeHeight(toPositiveInt(videoConfigValue.height))
+    screenStore.setVideoStart(Number(toNonNegativeNumber(videoConfigValue.videoStart).toFixed(1)))
+    screenStore.setVideoDur(toPositiveInt(videoConfigValue.videoDur))
+    screenStore.setVideoFrame(toPositiveInt(videoConfigValue.videoFrame))
+    screenStore.setVideoScaleMode(normalizeScaleMode(videoConfigValue.scaleMode))
   },
   {
-    immediate: false,
+    deep: true,
   }
 )
+
 watch(
-  [() => videoConfigValue.videoDur, () => videoConfigValue.videoFrame],
+  [() => videoConfigValue.videoStart, () => videoInfo.duration],
   () => {
-    screenStore.setVideoDur(parseInt(videoConfigValue.videoDur))
-    screenStore.setVideoFrame(parseInt(videoConfigValue.videoFrame))
-  },
-  {
-    immediate: false,
+    const maxStart = videoStartMax.value
+    if (
+      typeof maxStart === 'number' &&
+      toNonNegativeNumber(videoConfigValue.videoStart) > maxStart
+    ) {
+      videoConfigValue.videoStart = maxStart
+      return
+    }
+    const maxDur = maxAvailableDuration.value
+    const dur = toPositiveInt(videoConfigValue.videoDur)
+    if (maxDur && dur > maxDur) {
+      videoConfigValue.videoDur = maxDur
+    }
   }
 )
 </script>
 
 <template>
   <div id="config-content">
-    <div id="video-box">
+    <div
+      id="video-box"
+      @click="selectVideoFile"
+    >
       <video
-        ref="videoRef"
-        src=""
-        controls="true"
+        v-if="videoFilePath"
+        :src="videoFilePath"
+        controls
         muted
-        @click="selectVideoFile"
+        @click.stop
       ></video>
+      <NButton
+        v-else
+        type="primary"
+        secondary
+        :loading="loadingVideoInfo"
+        @click.stop="selectVideoFile"
+      >
+        选择视频
+      </NButton>
     </div>
     <div id="video-config-box">
-      <div class="input-group">
-        <input
-          type="number"
-          class="input"
-          v-model.number="videoConfigValue.width"
-        />
-        <label class="user-label">宽度:</label>
-      </div>
-      <div class="input-group">
-        <input
-          type="number"
-          class="input"
-          v-model.number="videoConfigValue.height"
-        />
-        <label class="user-label">高度:</label>
-      </div>
-      <div class="input-group">
-        <input
-          type="number"
-          class="input"
-          v-model.number="videoConfigValue.videoDur"
-        />
-        <label class="user-label">设置时长(s):</label>
-      </div>
-      <div class="input-group">
-        <input
-          type="number"
-          class="input"
-          v-model.number="videoConfigValue.videoFrame"
-        />
-        <label class="user-label">每秒帧数:</label>
-      </div>
+      <NSpace
+        vertical
+        :size="10"
+        class="video-config-space"
+      >
+        <NButton
+          size="small"
+          secondary
+          block
+          :loading="loadingVideoInfo"
+          @click="selectVideoFile"
+        >
+          {{ videoFilePath ? '更换视频' : '选择视频' }}
+        </NButton>
+
+        <div
+          v-if="videoFileName || hasVideoInfo"
+          class="video-meta"
+        >
+          <NTag
+            v-if="videoFileName"
+            size="small"
+            :bordered="false"
+            class="file-name"
+          >
+            {{ videoFileName }}
+          </NTag>
+          <NTag
+            v-if="hasVideoInfo"
+            size="small"
+            type="info"
+            :bordered="false"
+          >
+            {{ videoInfo.width }}×{{ videoInfo.height }}
+          </NTag>
+          <NTag
+            v-if="videoInfo.duration"
+            size="small"
+            type="success"
+            :bordered="false"
+          >
+            {{ videoInfo.duration }}s
+          </NTag>
+          <NButton
+            v-if="hasVideoInfo"
+            size="tiny"
+            quaternary
+            @click="applySourceSize"
+          >
+            源尺寸
+          </NButton>
+        </div>
+
+        <div class="config-grid">
+          <div class="config-item">
+            <div class="config-label">宽度</div>
+            <NInputNumber
+              v-model:value="videoConfigValue.width"
+              :min="1"
+              :step="1"
+              :precision="0"
+              placeholder=""
+            />
+          </div>
+          <div class="config-item">
+            <div class="config-label">高度</div>
+            <NInputNumber
+              v-model:value="videoConfigValue.height"
+              :min="1"
+              :step="1"
+              :precision="0"
+              placeholder=""
+            />
+          </div>
+          <div class="config-item">
+            <div class="config-label">开始(s)</div>
+            <NInputNumber
+              v-model:value="videoConfigValue.videoStart"
+              :min="0"
+              :max="videoStartMax"
+              :step="0.1"
+              :precision="1"
+              placeholder=""
+            />
+          </div>
+          <div class="config-item">
+            <div class="config-label">时长(s)</div>
+            <NInputNumber
+              v-model:value="videoConfigValue.videoDur"
+              :min="1"
+              :max="maxAvailableDuration"
+              :step="1"
+              :precision="0"
+              placeholder=""
+            />
+          </div>
+          <div class="config-item">
+            <div class="config-label">帧/秒</div>
+            <NInputNumber
+              v-model:value="videoConfigValue.videoFrame"
+              :min="1"
+              :step="1"
+              :precision="0"
+              placeholder=""
+            />
+          </div>
+          <div class="config-item">
+            <div class="config-label">缩放</div>
+            <NSelect
+              v-model:value="videoConfigValue.scaleMode"
+              :options="scaleOptions"
+            />
+          </div>
+        </div>
+
+        <div class="estimate-line">
+          <span>{{ frameCount }} 帧</span>
+          <span>{{ outputModeText }}</span>
+          <span>{{ bytesPerFrameText }}/帧</span>
+          <span>{{ totalBytesText }}</span>
+        </div>
+      </NSpace>
     </div>
   </div>
 </template>
@@ -119,6 +417,13 @@ watch(
   padding: 0.7em;
   border: none;
   overflow: hidden;
+  color: var(--config-text-color);
+  font-weight: var(--config-font-weight);
+
+  > div {
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
   #video-box {
     width: 100%;
@@ -131,82 +436,111 @@ watch(
     cursor: pointer;
 
     video {
+      width: 100%;
       height: 100%;
+      object-fit: contain;
+      background: #1f2328;
       cursor: pointer;
-    }
-    video[src=''] {
-      opacity: 0%;
     }
   }
 
   #video-config-box {
     width: 100%;
     flex-grow: 1 !important;
-    background: rgba(213, 216, 216, 0.808);
+    background: rgba(236, 240, 242, 0.808);
     border: none;
-    display: flex;
-    flex-flow: column nowrap;
-    justify-content: space-around;
-    align-items: center;
-    padding: 1em;
-    > div {
-      border: none;
-      overflow: visible;
-    }
-    .input-group {
+    padding: 12px;
+
+    .video-config-space {
       width: 100%;
-      height: 20%;
-      position: relative;
-      box-sizing: border-box;
-      // overflow: hidden;
-      // border-radius: 9px;
+    }
+
+    .video-meta {
+      width: 100%;
+      min-height: 24px;
       display: flex;
-      justify-content: center;
+      flex-wrap: wrap;
       align-items: center;
-      color: var(--text-color-2);
-      font-weight: 900;
-      padding: 0.1em;
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+      gap: 6px;
+    }
 
-      .input {
-        width: 100%;
-        height: 100%;
-        border-radius: 15px;
-        display: block;
-        border: none;
-        font-size: 18px;
-        color: var(--text-color-1);
-        font-family: 'ceyy';
-        text-align: center;
-        outline: none;
-        border: none;
-      }
+    .file-name {
+      max-width: 100%;
+    }
 
-      .user-label {
-        width: auto;
-        height: auto;
-        position: absolute;
-        font-size: 12px;
-        left: 6%;
-        top: 50%;
-        transform: translateY(-50%);
-        transition: all 0.3s ease-in-out;
-      }
+    .config-grid {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
 
-      .input:focus + label {
-        left: 50%;
-        top: 7%;
-        font-size: 12px;
-        transform: translate(-50%, -50%);
+    .config-item {
+      min-width: 0;
+    }
+
+    .config-label {
+      height: 18px;
+      line-height: 18px;
+      margin-bottom: 4px;
+      font-size: 12px;
+      font-weight: var(--config-font-weight);
+      color: var(--config-muted-text-color);
+    }
+
+    .estimate-line {
+      width: 100%;
+      min-height: 26px;
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      align-items: center;
+      gap: 6px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.85);
+      color: var(--config-muted-text-color);
+      font-size: 12px;
+      font-weight: var(--config-font-weight);
+      text-align: center;
+
+      span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
-      // 数字输入框去除上下箭头
-      input::-webkit-outer-spin-button,
-      input::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-      }
-      input[type='number'] {
-        -moz-appearance: textfield;
-      }
+    }
+
+    :deep(.n-input-number),
+    :deep(.n-select) {
+      width: 100%;
+    }
+
+    :deep(.n-input),
+    :deep(.n-base-selection) {
+      border-radius: 8px;
+      color: var(--config-text-color);
+      font-weight: var(--config-font-weight);
+    }
+
+    :deep(.n-input__input-el),
+    :deep(.n-base-selection-input__content),
+    :deep(.n-button__content),
+    :deep(.n-tag__content) {
+      color: var(--config-text-color);
+      font-weight: var(--config-font-weight);
+    }
+
+    :deep(.n-base-selection-placeholder) {
+      color: var(--config-muted-text-color);
+      font-weight: var(--config-font-weight);
+    }
+
+    :deep(.file-name .n-tag__content) {
+      max-width: 128px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 }

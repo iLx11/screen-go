@@ -36,6 +36,8 @@
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
     "@ffprobe-installer/ffprobe": "^2.1.2",
     "@ts-ffmpeg/fluent-ffmpeg": "^2.2.6",
+    "codemirror": "^5.65.21",
+    "codemirror-editor-vue3": "^2.8.0",
     "electron-store": "^8.1.0",
     "es-toolkit": "^1.44.0",
     "fs-extra": "^11.1.0",
@@ -46,6 +48,7 @@
   },
   "devDependencies": {
     "@tsconfig/node18": "^18.2.2",
+    "@types/codemirror": "^5.60.17",
     "@types/node": "^18.17.17",
     "@vitejs/plugin-vue": "^4.3.4",
     "@vue/tsconfig": "^0.4.0",

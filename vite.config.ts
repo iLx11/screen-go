@@ -8,6 +8,7 @@ import electron from 'vite-plugin-electron'
 // import optimizer from 'vite-plugin-optimizer'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import path from 'path'
+import VueDevTools from 'vite-plugin-vue-devtools'
 
 let getReplacer = () => {
   let externalModels = [
@@ -43,7 +44,7 @@ export default defineConfig({
   },
   plugins: [
     // optimizer(getReplacer()),
-    // VueDevTools(),
+    VueDevTools(),
     vue(),
     createSvgIconsPlugin({
       iconDirs: [path.resolve(path.resolve(__dirname, 'src'), 'assets/icons')],
@@ -91,7 +92,8 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        additionalData: '@use "ilx1-x-style/base/global.scss" as global;',
+        additionalData:
+          '@use "ilx1-x-style/base/global.scss" as global; @use "@/styles/theme.scss" as *;',
         api: 'modern', // 添加这一行以使用新的JS API
         silenceDeprecations: ['legacy-js-api'], // 可选：静默此特定警告
       },

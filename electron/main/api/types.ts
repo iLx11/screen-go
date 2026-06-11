@@ -1,3 +1,21 @@
+export type VideoFrameData = Array<Array<number | string>>
+
+export interface VideoFrameProgress {
+  progress: number
+  message: string
+}
+
+export interface VideoInfo {
+  width: number
+  height: number
+  duration: number
+}
+
+export interface SelectFileResult {
+  canceled?: boolean
+  filePaths: string[]
+}
+
 export interface IStore {
   setItem(name: string, item: string): void
   getItem(name: string): Promise<string>
@@ -16,7 +34,10 @@ export interface IWindow {
 }
 
 export interface IData {
-  getVideoFrameData(): Promise<Buffer>
+  getVideoFrameData(...args: unknown[]): Promise<VideoFrameData | null>
+  getVideoInfo(videoPath: string): Promise<VideoInfo | null>
+  cancelVideoFrameData(): Promise<boolean>
+  videoFrameProgressListener(cb: (data: VideoFrameProgress) => void): () => void
 }
 
 export interface IFile {
@@ -29,7 +50,8 @@ export interface IFile {
   readShortcutsFile(path: string): Promise<string>
   writeConfigFile(context: string): void
   getConfigFile(): Promise<string>
-  selectVideoFile(): Promise<string>
+  selectVideoFile(): Promise<SelectFileResult>
+  saveBinFile(data: number[], fileName?: string): Promise<boolean>
 }
 
 export interface IConfig {

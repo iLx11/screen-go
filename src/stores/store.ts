@@ -22,8 +22,18 @@ export const useScreenStore = defineStore('screen', {
       cropHeightData: 0,
       isCroped: false,
       waitExecute: false,
+      waitCancelable: false,
+      waitCanceled: false,
+      waitProgressVisible: false,
+      waitProgress: 0,
+      waitProgressText: '等待中...',
+      videoStart: 0,
       videoDur: 0,
       videoFrame: 0,
+      videoScaleMode: 'stretch',
+      videoSourceWidth: 0,
+      videoSourceHeight: 0,
+      videoTotalDur: 0,
       curMode: false,
       videoPath: ''
     }
@@ -86,11 +96,45 @@ export const useScreenStore = defineStore('screen', {
     setWaitExecute(state: boolean) {
       this.waitExecute = state
     },
+    setWaitCancelable(state: boolean) {
+      this.waitCancelable = state
+    },
+    setWaitCanceled(state: boolean) {
+      this.waitCanceled = state
+    },
+    setWaitProgressVisible(state: boolean) {
+      this.waitProgressVisible = state
+    },
+    setWaitProgress(data: number) {
+      const progress = Math.round(Number(data))
+      this.waitProgress = Number.isFinite(progress)
+        ? Math.max(0, Math.min(progress, 100))
+        : 0
+    },
+    setWaitProgressText(text: string) {
+      this.waitProgressText = text
+    },
+    resetWaitProgress() {
+      this.waitProgress = 0
+      this.waitProgressText = '等待中...'
+      this.waitProgressVisible = false
+    },
+    setVideoStart(data: number) {
+      this.videoStart = data
+    },
     setVideoDur(data: number) {
       this.videoDur = data
     },
     setVideoFrame(data: number) {
       this.videoFrame = data
+    },
+    setVideoScaleMode(mode: string) {
+      this.videoScaleMode = mode
+    },
+    setVideoInfo(width: number, height: number, duration: number) {
+      this.videoSourceWidth = width
+      this.videoSourceHeight = height
+      this.videoTotalDur = duration
     },
     setVideoPath(path: string) {
       this.videoPath = path

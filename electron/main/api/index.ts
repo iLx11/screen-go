@@ -42,8 +42,23 @@ export const w: IWindow = {
 }
 
 export const data: IData = {
-  async getVideoFrameData() {
-    return await ipcRenderer.invoke('get-video-frame-data')
+  async getVideoFrameData(...args) {
+    return await ipcRenderer.invoke('get-video-frame-data', ...args)
+  },
+  async getVideoInfo(videoPath) {
+    return await ipcRenderer.invoke('get-video-info', videoPath)
+  },
+  async cancelVideoFrameData() {
+    return await ipcRenderer.invoke('cancel-video-frame-data')
+  },
+  videoFrameProgressListener(callback) {
+    const listener = (event, data) => {
+      callback(data)
+    }
+    ipcRenderer.on('video-frame-progress', listener)
+    return () => {
+      ipcRenderer.removeListener('video-frame-progress', listener)
+    }
   },
 }
 
@@ -77,6 +92,9 @@ export const file: IFile = {
   },
   async selectVideoFile() {
     return await ipcRenderer.invoke('select-video-file')
+  },
+  async saveBinFile(data: number[], fileName?: string) {
+    return await ipcRenderer.invoke('save-bin-file', data, fileName)
   },
 }
 

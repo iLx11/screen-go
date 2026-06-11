@@ -39,8 +39,23 @@ const w = {
   }
 };
 const data = {
-  async getVideoFrameData() {
-    return await ipcRenderer$1.invoke("get-video-frame-data");
+  async getVideoFrameData(...args) {
+    return await ipcRenderer$1.invoke("get-video-frame-data", ...args);
+  },
+  async getVideoInfo(videoPath) {
+    return await ipcRenderer$1.invoke("get-video-info", videoPath);
+  },
+  async cancelVideoFrameData() {
+    return await ipcRenderer$1.invoke("cancel-video-frame-data");
+  },
+  videoFrameProgressListener(callback) {
+    const listener = (event, data2) => {
+      callback(data2);
+    };
+    ipcRenderer$1.on("video-frame-progress", listener);
+    return () => {
+      ipcRenderer$1.removeListener("video-frame-progress", listener);
+    };
   }
 };
 const file = {
@@ -73,6 +88,9 @@ const file = {
   },
   async selectVideoFile() {
     return await ipcRenderer$1.invoke("select-video-file");
+  },
+  async saveBinFile(data2, fileName) {
+    return await ipcRenderer$1.invoke("save-bin-file", data2, fileName);
   }
 };
 const config = {
@@ -86,6 +104,7 @@ const config = {
 const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("api", {
   data,
+  ...data,
   ...file,
   ...store,
   ...w,

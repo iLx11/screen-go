@@ -290,7 +290,7 @@ export function storeSetter(
       const isSuccess = setMixedPathValue(storeObj, setPath, finalValue)
 
       if (isSuccess) {
-        console.log(`设置数据成功：${setPath} =`, finalValue)
+        // console.log(`设置数据成功：${setPath} =`, finalValue)
       } else {
         console.error(`设置数据失败：路径 ${setPath} 无效`)
       }

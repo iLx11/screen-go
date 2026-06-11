@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, onUnmounted, computed, nextTick } from 'vue'
 import { useConfigStore } from '@/stores/configStore'
+import { useScreenStore } from '@/stores/store'
 import Konva from 'konva'
 import { base64ToImage } from 'ilx1-x-tool'
 import { Stage } from 'konva/lib/Stage'
@@ -24,6 +25,7 @@ import {
 import { debounce } from 'es-toolkit'
 
 const configStore = useConfigStore()
+const screenStore = useScreenStore()
 
 onMounted(() => {
   // 初始化Konva裁剪组件
@@ -532,18 +534,20 @@ const getCropResult = (
   pixelRatio = 1,
   mimeType: 'png' | 'jpeg' = 'png'
 ) => {
+  if (!konvaObj.value.stage || !konvaObj.value.cropRect) return null
+
   // 通过复制图层实现
   const stageClone = konvaObj.value.stage.clone()
-  // return
-  // 删除 transformer
-  const mainLayer = stageClone.findOne('#cropLayer')
-
-  mainLayer.findOne('Transformer')?.remove()
-
   const cropAttrs = getCropInfo()
 
+  // 删除裁剪辅助图层，避免导出的图片包含遮罩和裁剪框
+  stageClone.findOne('Transformer')?.remove()
+  stageClone.findOne('#cropLayer')?.remove()
+
   if (type === 'canvas') {
-    return stageClone.toCanvas({ ...cropAttrs, pixelRatio })
+    const cropCanvas = stageClone.toCanvas({ ...cropAttrs, pixelRatio })
+    stageClone.destroy()
+    return cropCanvas
   }
 
   const base64String = stageClone.toDataURL({
@@ -552,11 +556,23 @@ const getCropResult = (
     mimeType: `image/${mimeType}`,
   })
 
+  configStore.screenData.baseData = base64String
   configStore.screenData.resizeData = base64String
+  screenStore.setEiditorPicData(base64String)
+  screenStore.setResizeWidth(Math.floor(cropAttrs.width))
+  screenStore.setResizeHeight(Math.floor(cropAttrs.height))
+  screenStore.setCroped(true)
+  screenStore.setCropShow(false)
+  stageClone.destroy()
+  configStore.showPop('图片裁剪完成')
 
   if (type === 'string') {
     return base64String
   }
+}
+
+const confirmCrop = () => {
+  getCropResult('string')
 }
 </script>
 
@@ -605,7 +621,7 @@ const getCropResult = (
           />
           <div
             class="crop-button"
-            @click="getCropResult"
+            @click="confirmCrop"
           >
             完成裁剪
           </div>

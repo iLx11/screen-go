@@ -1,51 +1,62 @@
 <script setup lang="ts">
 import { useScreenStore } from '../stores/store'
-import { getItem, setItem } from '../utils/storage'
-import { onMounted, reactive, ref, watch } from 'vue'
+import { useConfigStore } from '@/stores/configStore'
+import { onMounted, ref, watch } from 'vue'
 // const { ipcRenderer } = require('electron')
-const win = window as any
 const screenStore = useScreenStore()
-const presetArray: object[] = reactive([{}, {}, {}])
-const imageCanvas = ref(null)
+const configStore = useConfigStore()
+const imageCanvas = ref<HTMLCanvasElement | null>(null)
 const thresholdValue = ref<number>(120)
-let ctx
-let img
-let offsetX
-let offsetY
-let originImageData
-let imageDataString
+let ctx: CanvasRenderingContext2D | null = null
+let img: HTMLImageElement | null = null
+let offsetX = 0
+let offsetY = 0
+let originImageData: ImageData | null = null
+let imageDataString = ''
 onMounted(() => {
-  thresholdValue.value = screenStore.thresholdData
-  ctx = imageCanvas.value.getContext('2d')
+  thresholdValue.value = configStore.screenConfig.thresholdData
+  ctx = imageCanvas.value?.getContext('2d') ?? null
+  if (!ctx || !imageCanvas.value) return
+
   img = new Image()
-  img.src = screenStore.editorPicData
-  // 完整图片中心绘制 canvas 算法
-  let rate = img.width / img.height
-  if (img.width > imageCanvas.value.width) {
-    img.width = imageCanvas.value.width
-    img.height = img.width / rate
-    if (img.height > imageCanvas.value.height) {
-      img.height = imageCanvas.value.height
-      img.width = img.height * rate
+  img.onload = () => {
+    if (!ctx || !imageCanvas.value || !img) return
+
+    // 完整图片中心绘制 canvas 算法
+    let drawWidth = img.naturalWidth || img.width
+    let drawHeight = img.naturalHeight || img.height
+    const rate = drawWidth / drawHeight
+
+    if (drawWidth > imageCanvas.value.width) {
+      drawWidth = imageCanvas.value.width
+      drawHeight = drawWidth / rate
+      if (drawHeight > imageCanvas.value.height) {
+        drawHeight = imageCanvas.value.height
+        drawWidth = drawHeight * rate
+      }
     }
+
+    // 绘制到中心
+    offsetX = (imageCanvas.value.width - drawWidth) / 2
+    offsetY = (imageCanvas.value.height - drawHeight) / 2
+    ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight)
+    originImageData = ctx.getImageData(offsetX, offsetY, drawWidth, drawHeight)
+    // console.log(originImageData)
+    previewSetting()
   }
-  // 绘制到中心
-  offsetX = (imageCanvas.value.width - img.width) / 2
-  offsetY = (imageCanvas.value.height - img.height) / 2
-  ctx.drawImage(img, offsetX, offsetY, img.width, img.height)
-  originImageData = ctx.getImageData(offsetX, offsetY, img.width, img.height)
-  // console.log(originImageData)
-  previewSetting()
+  img.src = configStore.screenData.baseData || screenStore.editorPicData
 })
 
 // 阈值预览
 const previewSetting = () => {
+  if (!originImageData || !ctx || !imageCanvas.value) return
+
   let imageData = Object.assign([], originImageData.data)
   imageDataString = JSON.stringify(imageData)
   for (let i = 0; i < imageData.length; i += 4) {
     let avg =
       0.299 * imageData[i] + 0.587 * imageData[i + 1] + 0.114 * imageData[i + 2]
-    if (avg > screenStore.thresholdData) {
+    if (avg > configStore.screenConfig.thresholdData) {
       avg = 254
     } else {
       avg = 0
@@ -61,8 +72,8 @@ const previewSetting = () => {
     offsetY,
     0,
     0,
-    img.width,
-    img.height,
+    originImageData.width,
+    originImageData.height
   )
 }
 
@@ -70,10 +81,11 @@ const previewSetting = () => {
 const confirmThreshold = () => {
   screenStore.setThresholdShow(false)
   screenStore.setThreshold(thresholdValue.value)
+  configStore.screenConfig.thresholdData = thresholdValue.value
 }
 
 // 节流
-let timer = null
+let timer: ReturnType<typeof setTimeout> | null = null
 const delayTime = (callback: Function, delay: number) => {
   if (!timer) {
     timer = setTimeout(() => {
@@ -90,7 +102,10 @@ watch(
       if (thresholdValue.value > 255) thresholdValue.value = 255
       else if (thresholdValue.value < 0) thresholdValue.value = 0
       screenStore.setThreshold(thresholdValue.value)
+      configStore.screenConfig.thresholdData = thresholdValue.value
       // console.log(imageDataString)
+      if (!originImageData || !ctx || !imageCanvas.value || !imageDataString)
+        return
       let tempImageData = Object.assign([], JSON.parse(imageDataString))
       // console.log(tempImageData)
       for (let i = 0; i < tempImageData.length; i += 4) {
@@ -108,15 +123,15 @@ watch(
           offsetY,
           0,
           0,
-          img.width,
-          img.height,
+          originImageData.width,
+          originImageData.height
         )
       }
     }, 320)
   },
   {
     immediate: false,
-  },
+  }
 )
 </script>
 
@@ -131,7 +146,7 @@ watch(
         class="win10-thumb"
         min="0"
         max="255"
-        v-model="thresholdValue"
+        v-model.number="thresholdValue"
         step="2"
       />
       <div
