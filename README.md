@@ -1,130 +1,158 @@
-# SCREEN-GO
+# ScreenGo
 
-此项目基于大佬 [yhf](https://github.com/yhf98 ) 的项目思路所开发，并遵循 MIT 开源协议
+ScreenGo 是一个基于 Electron + Vue 的取模工具，主要用于把图片、视频帧和字体字符转换为嵌入式项目常用的数组数据，也支持把数组数据反向绘制成图片进行校验。
 
- 此项目为图片取模软件
+## 功能概览
 
-🍚 可以直接模拟对硬件屏幕的布局和显示进行编辑和调整
+- 图片取模：导入图片后按目标尺寸生成单色或彩色数组。
+- 视频取模：读取视频信息，按时间范围和帧率截取视频帧并批量取模。
+- 字体取模：选择系统字体或导入字体文件，对输入字符或 TXT 文件内容取模。
+- 结果展示：使用 CodeMirror 展示和编辑生成结果，支持复制、正则替换、BIN 导出和反绘图片。
+- 自动更新：支持从 GitHub Release 检查、下载和安装新版本。
+- 多平台打包：支持 Windows、Linux、macOS x64、macOS arm64 构建。
 
- 🍫  可以导入任何类型的图片
+## 图片取模
 
-🍜 编辑文字与图形
+![image-20260612165507438](.\res\image-20260612165507438.png)
 
-🥘 添加与调整不同滤镜
+图片模式支持以下配置：
 
-🥠 任意缩放与裁剪图片
+- 取模颜色：单色、彩色。
+- 宽高设置：手动输入目标宽度和高度。
+- 常用宽高：提交生成成功后记录宽高，最多保留 8 个常用尺寸。
+- 单色阈值：单色取模时调整黑白判断阈值。
+- 图片裁剪：通过裁剪工具调整图片区域，支持裁剪尺寸和宽高比控制。
+- 图片缩放预览：按当前宽高预览缩放结果，并可返回原始图片。
 
-🍵 支持单色和彩色图片取模，并直接生成可修改可一键复制的图片取模数组（支持正则替换修改）。
+图片数据配置：
 
- 之后应该会不断优化此软件或开发更多有意思的软件，感谢您的支持！！！
+- 点阵格式：阳码、阴码。
+- 取模方式：逐行式、逐列式、列行式、行列式。
+- 取模走向：逆向、顺向。
+- 输出进制：十六进制、十进制。
 
+彩色取模目前使用 RGB565 数据格式，且只支持逐行式输出。
 
+## 视频取模
 
-### 安装项目所需包文件
+![image-20260612165639912](.\res\image-20260612165639912.png)
 
-需要安装 node ，可以访问 nodejs 官网安装；还需安装 pnpm，也可以不安装，直接把 pnpm 替换为 npm run 即可
+视频模式支持以下配置：
+
+- 选择视频文件并读取视频宽高、时长。
+- 输出宽高：可手动输入，也可使用源视频尺寸。
+- 开始时间：从指定秒数开始截取。
+- 取模时长：配置需要处理的视频时长。
+- 帧/秒：配置每秒截取多少帧。
+- 缩放方式：
+  - 拉伸：强制缩放到目标宽高。
+  - 等比留边：保持比例并补边。
+  - 等比裁切：保持比例并裁切填满目标宽高。
+- 数据估算：显示总帧数、单帧大小和预计总数据量。
+- 处理进度：视频取模时显示进度，可取消处理。
+
+视频取模使用项目内打包的 ffmpeg / ffprobe。打包时会按当前目标平台只保留对应系统和架构的二进制文件。
+
+## 字体取模
+
+![image-20260612165832222](.\res\image-20260612165832222.png)
+
+字体模式支持以下配置：
+
+- 字体选择：选择常用系统字体，也可以直接输入字体名。
+- 导入字体：支持导入 ttf、otf、woff、woff2、ttc 字体文件。
+- 字符输入：手动输入需要取模的字符。
+- TXT 导入：读取 TXT 文件内容并提取可取模字符。
+- 自动去重：不同来源的字符会去重，避免重复取模。
+- 字体参数：字宽、字高、字号、字重、X 偏移、Y 偏移。
+
+字体取模使用单色取模配置，输出会按字符生成二维数组，并在每个字符数组前写入字符注释。
+
+## 结果数据
+
+结果区域支持：
+
+- CodeMirror 结果展示和手动编辑。
+- 一键复制全部结果。
+- 结果配置：
+  - 数组名。
+  - 数组前缀注释。
+  - 数组后缀注释。
+  - 自定义正则替换。
+  - 视频数组输出方式：二维数组、多个一维数组。
+  - BIN 文件输出：只保留图片数据，不包含数组名和注释。
+- 导出 BIN 文件：根据当前模式默认导出为 `image-data.bin`、`video-data.bin` 或 `font-data.bin`。
+- 反绘图片：从结果中的 `{}` 数据解析字节，并按当前取模配置反向绘制图片。
+- 写入图片区：反绘成功后可将图片写回图片区域继续处理。
+
+## 自动更新
+
+软件内置 GitHub Release 更新能力：
+
+- 检查当前版本和最新版本。
+- 展示 Release 包信息和更新说明。
+- 下载更新包并显示下载进度。
+- 取消下载。
+- 打开 Release 页面。
+- 下载完成后安装更新。
+
+## 开发
+
+安装依赖：
 
 ```sh
 pnpm install
 ```
 
-### 项目开发
+开发运行：
 
 ```sh
 pnpm start
 ```
 
-### 项目打包
+只构建前端和 Electron 主进程产物：
+
+```sh
+pnpm build-only
+```
+
+打包全部平台：
 
 ```sh
 pnpm electron:build
 ```
 
+单平台打包：
 
-
-## 项目结构
-
-```bash
-│  .gitignore
-│  2_0_0icon.psd // 2.0.0 版本的图标 PS 文件
-│  env.d.ts
-│  icon.psd
-│  index.html
-│  package.json
-│  pnpm-lock.yaml
-│  README.md // 介绍文件
-│  tsconfig.app.json
-│  tsconfig.json
-│  tsconfig.node.json
-│  tui-image-editor.css // 修改的 tui-image-editor 组件的样式，导入包后替换即可
-│  vite.config.ts
-│  
-├─electron // 主进程
-│  ├─controller	// 主进程逻辑的执行层
-│  │      checkPackage.js // 包检查脚本
-│  │      ImageToHexArray.js // 图片信息转取模数组的执行脚本
-│  │      picDataEditor.js // 图片编辑与裁剪的执行脚本
-│  │      windowControl.js // 窗口事件的执行
-│  │      
-│  └─main
-│          main.js // 主进程入口文件
-│          preload.js // 预加载文件，渲染进程与主进程在此文件中交互
-│          
-├─public
-│  │  favicon.ico
-│  │  icon.ico // 软件图标文件，可以进行替换
-│  │  
-│  └─img // 黑白色的画布基础图片
-│          black.png
-│          blank.png
-│  
-└─src // 渲染进程
-    │  App.vue
-    │  main.ts
-    │  
-    ├─assets
-    │  ├─font
-    │  │      ceyy.ttf
-    │  │      
-    │  └─img
-    │          black.png
-    │          blank.png
-    │    
-    ├─components // 所有没有通过路由显示的组件
-    │      CommitBox.vue
-    │      CropConfig.vue
-    │      FuncBox.vue
-    │      HeadMessage.vue
-    │      ImageConfig.vue
-    │      ImageEditor.vue
-    │      PopBox.vue
-    │      ResultData.vue
-    │      ResultDataConfig.vue
-    │      ThresholdConfig.vue
-    │      WindowTools.vue
-    │      
-    ├─router
-    │      index.ts
-    │      
-    ├─stores // pinia stores （没有进一步解耦，所有的都写在一起了）
-    │      counter.ts
-    │      store.ts
-    │  
-    ├─styles // 默认与基础样式
-    │      index.scss
-    │      reset.scss
-    │      variable.scss
-    │  
-    ├─utils // 渲染进程所使用的工具函数，操作图片的函数适用于渲染层使用 Node 包，但是不推荐
-    │      ImageToHexArray.ts
-    │      imgTools.ts
-    │      storage.ts
-    │      theme.ts
-    │      
-    └─window
-            HomePage.vue
+```sh
+pnpm electron:build:win
+pnpm electron:build:mac
+pnpm electron:build:linux
 ```
 
+生成图标资源：
 
+```sh
+pnpm build:icons
+```
 
- 
+## 打包说明
+
+GitHub Actions 会在 tag 推送或手动触发时构建安装包：
+
+- Windows x64
+- Linux x64
+- macOS x64
+- macOS arm64
+
+ffmpeg / ffprobe 通过 `scripts/prune-ffmpeg-platforms.mjs` 在打包前清理非目标平台文件，避免安装包同时包含多个平台的视频处理二进制。
+
+## 技术栈
+
+- Electron
+- Vue 3
+- Vite
+- Pinia
+- Naive UI
+- CodeMirror
+- ffmpeg / ffprobe
