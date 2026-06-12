@@ -16,7 +16,6 @@ import {
   downloadSoftwareUpdate,
   formatSoftwarePackageSize,
   getSoftwareUpdateState,
-  installSoftwareUpdate,
   normalizeSoftwareUpdateState,
   openSoftwareUpdatePage,
   type SoftwareUpdateViewState,
@@ -86,18 +85,6 @@ const handleCancelDownload = async () => {
   } catch (error) {
     console.error(error)
     XBox.popMes('取消下载失败')
-  }
-}
-
-const handleInstallUpdate = async () => {
-  try {
-    const result = await installSoftwareUpdate()
-    if (!result?.success) {
-      XBox.popMes(result?.message || '启动安装失败')
-    }
-  } catch (error) {
-    console.error(error)
-    XBox.popMes('启动安装失败')
   }
 }
 
@@ -246,14 +233,7 @@ onUnmounted(() => {
             :disabled="updateState.busy"
             @click="handleDownloadUpdate"
           >
-            下载安装包
-          </NButton>
-          <NButton
-            v-if="hasDownloaded"
-            type="primary"
-            @click="handleInstallUpdate"
-          >
-            立即安装
+            下载并安装
           </NButton>
         </NSpace>
       </template>

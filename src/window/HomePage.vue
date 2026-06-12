@@ -26,6 +26,7 @@ const editorShow = ref<boolean>(false)
 const thresholdShow = ref<boolean>(false)
 const cropShow = ref<boolean>(false)
 let removeVideoFrameProgressListener: (() => void) | null = null
+let removeVideoFrameErrorListener: (() => void) | null = null
 
 const screenImg = ref<HTMLElement | null>(null)
 
@@ -36,7 +37,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   removeVideoFrameProgressListener?.()
+  removeVideoFrameErrorListener?.()
   removeVideoFrameProgressListener = null
+  removeVideoFrameErrorListener = null
 })
 
 /********************************************************************************
@@ -64,6 +67,11 @@ const mainWindowListener = () => {
       removeVideoFrameProgressListener = win.api.videoFrameProgressListener(data => {
         screenStore.setWaitProgress(data?.progress ?? 0)
         screenStore.setWaitProgressText(data?.message || '等待中...')
+      })
+    }
+    if (typeof win.api.videoFrameErrorListener == 'function') {
+      removeVideoFrameErrorListener = win.api.videoFrameErrorListener(data => {
+        console.error('视频取模主进程错误:', data)
       })
     }
   } catch (error) {

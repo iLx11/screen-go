@@ -21,10 +21,15 @@
   "pnpm": {
     "supportedArchitectures": {
       "os": [
-        "current"
+        "win32",
+        "darwin",
+        "linux"
       ],
       "cpu": [
-        "current"
+        "x64",
+        "arm64",
+        "ia32",
+        "arm"
       ]
     }
   },
@@ -50,6 +55,7 @@
     "@vue/tsconfig": "^0.4.0",
     "electron": "42.4.0",
     "electron-builder": "^26.0.12",
+    "electron-icon-builder": "^2.0.1",
     "fast-glob": "^3.3.3",
     "ilx1-x-style": "^1.1.2",
     "naive-ui": "^2.43.2",
@@ -83,7 +89,7 @@
       }
     ],
     "win": {
-      "icon": "./public/icon.ico",
+      "icon": "./public/icons/icon.ico",
       "target": [
         {
           "target": "nsis",
@@ -92,12 +98,10 @@
           ]
         }
       ],
-      "asarUnpack": [
-        "**/node_modules/electron-store/**/*"
-      ],
       "artifactName": "${productName}-Setup-${version}-${os}-${arch}.${ext}"
     },
     "linux": {
+      "icon": "./public/icons",
       "mimeTypes": [
         "x-scheme-handler/screen-go"
       ],
@@ -112,6 +116,7 @@
       "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
     },
     "mac": {
+      "icon": "./public/icons/icon.icns",
       "identity": null,
       "category": "public.app-category.productivity",
       "target": [
@@ -141,14 +146,21 @@
       "./appDir"
     ],
     "asar": true,
+    "asarUnpack": [
+      "**/node_modules/electron-store/**/*",
+      "**/node_modules/@ffmpeg-installer/**/*",
+      "**/node_modules/@ffprobe-installer/**/*",
+      "**/node_modules/.pnpm/@ffmpeg-installer+*/**/*",
+      "**/node_modules/.pnpm/@ffprobe-installer+*/**/*"
+    ],
     "nsis": {
       "oneClick": false,
       "allowElevation": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "./public/icon.ico",
-      "uninstallerIcon": "./public/icon.ico",
-      "installerHeaderIcon": "./public/icon.ico",
+      "installerIcon": "./public/icons/icon.ico",
+      "uninstallerIcon": "./public/icons/icon.ico",
+      "installerHeaderIcon": "./public/icons/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }

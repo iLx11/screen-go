@@ -60,6 +60,15 @@ export const data: IData = {
       ipcRenderer.removeListener('video-frame-progress', listener)
     }
   },
+  videoFrameErrorListener(callback) {
+    const listener = (event, data) => {
+      callback(data)
+    }
+    ipcRenderer.on('video-frame-error', listener)
+    return () => {
+      ipcRenderer.removeListener('video-frame-error', listener)
+    }
+  },
 }
 
 export const file: IFile = {

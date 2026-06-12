@@ -5,6 +5,35 @@ export interface VideoFrameProgress {
   message: string
 }
 
+export interface VideoFrameError {
+  phase?: string
+  name?: string
+  message?: string
+  stack?: string
+  code?: string
+  errno?: number
+  syscall?: string
+  path?: string
+  exitCode?: number
+  stderr?: string
+  args?: string[]
+  binaryPath?: string
+  ffmpegPath?: string
+  ffprobePath?: string
+  platform?: string
+  arch?: string
+  videoPath?: string
+  tempDirPath?: string
+  width?: unknown
+  height?: unknown
+  videoStart?: unknown
+  videoDur?: unknown
+  videoFrame?: unknown
+  scaleMode?: unknown
+  threshold?: unknown
+  configArray?: unknown[]
+}
+
 export interface VideoInfo {
   width: number
   height: number
@@ -69,6 +98,7 @@ export interface IData {
   getVideoInfo(videoPath: string): Promise<VideoInfo | null>
   cancelVideoFrameData(): Promise<boolean>
   videoFrameProgressListener(cb: (data: VideoFrameProgress) => void): () => void
+  videoFrameErrorListener(cb: (data: VideoFrameError) => void): () => void
 }
 
 export interface IFile {

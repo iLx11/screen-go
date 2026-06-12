@@ -1,16 +1,25 @@
 const { ipcMain, nativeImage } = require('electron')
 const fs = require('fs-extra')
-const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
-const ffprobePath = require('@ffprobe-installer/ffprobe').path
 const { spawn } = require('child_process')
 const path = require('path')
+const os = require('os')
+
+const normalizeAsarBinaryPath = binaryPath => {
+  return String(binaryPath).replace(/app\.asar([\\/])/, 'app.asar.unpacked$1')
+}
+
+const ffmpegPath = normalizeAsarBinaryPath(require('@ffmpeg-installer/ffmpeg').path)
+const ffprobePath = normalizeAsarBinaryPath(require('@ffprobe-installer/ffprobe').path)
 
 const DEFAULT_CONFIG_ARRAY = [1, 2, 0, 0, 1]
 const DEFAULT_THRESHOLD = 120
 const videoTaskMap = new Map()
-const TEMP_ROOT_PATH = path.resolve(__dirname, '../../temp')
 const VIDEO_TEMP_DIR_REG = /^video_\d+_[a-f0-9]+$/i
 const VIDEO_TEMP_FRAME_REG = /^temp_\d+\.png$/i
+
+const getVideoTempRootPath = () => {
+  return path.join(os.tmpdir() || process.cwd(), 'screen-go-video')
+}
 
 const removeTempPath = targetPath => {
   try {
@@ -24,8 +33,9 @@ const removeTempPath = targetPath => {
 
 const removeTempRootIfEmpty = () => {
   try {
-    if (fs.existsSync(TEMP_ROOT_PATH) && fs.readdirSync(TEMP_ROOT_PATH).length == 0) {
-      fs.removeSync(TEMP_ROOT_PATH)
+    const tempRootPath = getVideoTempRootPath()
+    if (fs.existsSync(tempRootPath) && fs.readdirSync(tempRootPath).length == 0) {
+      fs.removeSync(tempRootPath)
     }
   } catch (error) {
     console.error('Remove temp root failed:', error)
@@ -34,15 +44,16 @@ const removeTempRootIfEmpty = () => {
 
 const cleanupVideoTempRoot = () => {
   try {
-    if (!fs.existsSync(TEMP_ROOT_PATH)) return
+    const tempRootPath = getVideoTempRootPath()
+    if (!fs.existsSync(tempRootPath)) return
 
-    fs.readdirSync(TEMP_ROOT_PATH, { withFileTypes: true }).forEach(item => {
+    fs.readdirSync(tempRootPath, { withFileTypes: true }).forEach(item => {
       const shouldRemove =
         (item.isDirectory() && VIDEO_TEMP_DIR_REG.test(item.name)) ||
         (item.isFile() && VIDEO_TEMP_FRAME_REG.test(item.name))
 
       if (shouldRemove) {
-        removeTempPath(path.join(TEMP_ROOT_PATH, item.name))
+        removeTempPath(path.join(tempRootPath, item.name))
       }
     })
     removeTempRootIfEmpty()
@@ -96,6 +107,52 @@ const sendVideoProgress = (event, progress, message) => {
   })
 }
 
+const getErrorMessage = error => {
+  if (error?.message) return String(error.message)
+  if (typeof error == 'string') return error
+  try {
+    return JSON.stringify(error)
+  } catch {
+    return String(error)
+  }
+}
+
+const removeEmptyErrorFields = payload => {
+  Object.keys(payload).forEach(key => {
+    if (payload[key] == null || payload[key] === '') {
+      delete payload[key]
+    }
+  })
+  return payload
+}
+
+const createVideoErrorPayload = (error, extra = {}) => {
+  return removeEmptyErrorFields({
+    ...extra,
+    name: error?.name || 'Error',
+    message: getErrorMessage(error),
+    stack: error?.stack,
+    code: error?.code,
+    phase: error?.phase || extra?.phase,
+    errno: error?.errno,
+    syscall: error?.syscall,
+    path: error?.path,
+    exitCode: error?.exitCode,
+    stderr: error?.stderr,
+    args: error?.args,
+    binaryPath: error?.binaryPath,
+    ffmpegPath,
+    ffprobePath,
+    platform: process.platform,
+    arch: process.arch,
+  })
+}
+
+const sendVideoError = (event, error, extra = {}) => {
+  if (!event?.sender || event.sender.isDestroyed()) return
+  event.sender.send('video-frame-error', createVideoErrorPayload(error, extra))
+}
+
 const toPositiveInt = value => {
   const num = Number(value)
   if (!Number.isFinite(num)) return 0
@@ -126,7 +183,15 @@ const runFfmpeg = (args, task = null) => {
       })
     }
 
-    ffmpegProc.on('error', reject)
+    ffmpegProc.on('error', error => {
+      reject(
+        Object.assign(error, {
+          phase: 'spawn-ffmpeg',
+          args,
+          binaryPath: ffmpegPath,
+        })
+      )
+    })
     ffmpegProc.on('close', code => {
       if (task?.process === ffmpegProc) task.process = null
       if (task?.cancelled) {
@@ -137,7 +202,15 @@ const runFfmpeg = (args, task = null) => {
         resolve(true)
         return
       }
-      reject(new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-1000)}`))
+      reject(
+        Object.assign(new Error(`ffmpeg exited with code ${code}: ${stderr.slice(-1000)}`), {
+          phase: 'run-ffmpeg',
+          exitCode: code,
+          stderr: stderr.slice(-4000),
+          args,
+          binaryPath: ffmpegPath,
+        })
+      )
     })
   })
 }
@@ -162,13 +235,29 @@ const runFfprobe = args => {
       })
     }
 
-    ffprobeProc.on('error', reject)
+    ffprobeProc.on('error', error => {
+      reject(
+        Object.assign(error, {
+          phase: 'spawn-ffprobe',
+          args,
+          binaryPath: ffprobePath,
+        })
+      )
+    })
     ffprobeProc.on('close', code => {
       if (code === 0) {
         resolve(stdout)
         return
       }
-      reject(new Error(`ffprobe exited with code ${code}: ${stderr.slice(-1000)}`))
+      reject(
+        Object.assign(new Error(`ffprobe exited with code ${code}: ${stderr.slice(-1000)}`), {
+          phase: 'run-ffprobe',
+          exitCode: code,
+          stderr: stderr.slice(-4000),
+          args,
+          binaryPath: ffprobePath,
+        })
+      )
     })
   })
 }
@@ -430,6 +519,10 @@ export const ffmpegListener = async () => {
       return await getVideoInfo(videoPath)
     } catch (error) {
       console.error('Error reading video info:', error)
+      sendVideoError(event, error, {
+        phase: error?.phase || 'get-video-info',
+        videoPath,
+      })
       return null
     }
   })
@@ -451,7 +544,7 @@ export const ffmpegListener = async () => {
     ) => {
       // 创建临时目录
       const tempDirPath = path.join(
-        TEMP_ROOT_PATH,
+        getVideoTempRootPath(),
         `video_${Date.now()}_${Math.random().toString(16).slice(2)}`
       )
 
@@ -465,6 +558,18 @@ export const ffmpegListener = async () => {
         const targetFrame = toPositiveInt(videoFrame)
 
         if (!targetWidth || !targetHeight || !targetDur || !targetFrame) {
+          sendVideoError(event, new Error('视频配置错误'), {
+            phase: 'validate-video-config',
+            videoPath,
+            width,
+            height,
+            videoStart,
+            videoDur,
+            videoFrame,
+            scaleMode,
+            threshold,
+            configArray,
+          })
           sendVideoProgress(event, 100, '视频配置错误')
           return null
         }
@@ -495,6 +600,11 @@ export const ffmpegListener = async () => {
         assertVideoTaskActive(task)
         if (!result) {
           console.info('video frame error')
+          sendVideoError(event, new Error('视频帧截取失败'), {
+            phase: 'capture-video-frame',
+            videoPath,
+            tempDirPath,
+          })
           sendVideoProgress(event, 100, '视频取模失败')
           return null
         }
@@ -509,6 +619,11 @@ export const ffmpegListener = async () => {
           .sort((a, b) => getFrameIndex(a.name) - getFrameIndex(b.name))
 
         if (files.length == 0) {
+          sendVideoError(event, new Error('视频帧文件为空'), {
+            phase: 'read-video-frame-files',
+            videoPath,
+            tempDirPath,
+          })
           sendVideoProgress(event, 100, '视频取模失败')
           return null
         }
@@ -541,6 +656,19 @@ export const ffmpegListener = async () => {
           return null
         }
         console.error('Error reading image:', error)
+        sendVideoError(event, error, {
+          phase: error?.phase || 'get-video-frame-data',
+          videoPath,
+          tempDirPath,
+          width,
+          height,
+          videoStart,
+          videoDur,
+          videoFrame,
+          scaleMode,
+          threshold,
+          configArray,
+        })
         sendVideoProgress(event, 100, '视频取模失败')
         return null
       } finally {

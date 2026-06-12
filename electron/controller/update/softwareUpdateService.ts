@@ -198,15 +198,16 @@ class SoftwareUpdateService {
 
       this.downloadAbortController = null
       this.setState({
-        phase: 'downloaded',
-        busy: false,
+        phase: 'installing',
+        busy: true,
         progress: 100,
         downloadedSize: finishedPackageInfo.fileSize,
         updateInfo: finishedPackageInfo,
         downloadedFilePath: targetFilePath,
-        message: '安装包已下载完成',
+        message: '安装包已下载完成，正在启动安装...',
       })
 
+      await this.launchInstaller(targetFilePath)
       return successResult(finishedPackageInfo)
     } catch (error) {
       this.downloadAbortController = null
@@ -223,7 +224,12 @@ class SoftwareUpdateService {
         return errorResult('已取消更新下载')
       }
 
-      const message = this.getErrorMessage(error, '下载更新失败')
+      const message = this.getErrorMessage(
+        error,
+        this.updateState.phase == 'installing'
+          ? '启动安装包失败'
+          : '下载更新失败'
+      )
       this.setState({
         phase: 'error',
         busy: false,
