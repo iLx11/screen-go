@@ -19,11 +19,11 @@ jobs:
       matrix:
         include:
           - os: windows-latest
-            build-command: pnpm electron:build:win --publish never
+            build-command: pnpm electron:build:win --x64 --publish never
           - os: macos-latest
-            build-command: pnpm electron:build:mac --publish never
+            build-command: pnpm electron:build:mac --x64 --publish never
           - os: ubuntu-latest
-            build-command: pnpm electron:build:linux --publish never
+            build-command: pnpm electron:build:linux --x64 --publish never
 
     steps:
       - name: Checkout

@@ -1,6 +1,6 @@
 {
   "name": "screen-go",
-  "version": "4.0.0",
+  "version": "1.0.0",
   "private": true,
   "main": "appDir/main/main.js",
   "author": "iLx1",
@@ -12,23 +12,19 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "electron:build": "rimraf dist && pnpm build-only && electron-builder -wml --x64 --arm64",
-    "electron:build:win": "rimraf dist && pnpm build-only && electron-builder --win --x64 --arm64",
-    "electron:build:mac": "rimraf dist && pnpm build-only && electron-builder --mac --x64 --arm64",
-    "electron:build:linux": "rimraf dist && pnpm build-only && electron-builder --linux --x64 --arm64",
+    "electron:build": "rimraf dist dist_electron && pnpm build-only && electron-builder -wml --x64",
+    "electron:build:win": "rimraf dist dist_electron && pnpm build-only && electron-builder --win",
+    "electron:build:mac": "rimraf dist dist_electron && pnpm build-only && electron-builder --mac",
+    "electron:build:linux": "rimraf dist dist_electron && pnpm build-only && electron-builder --linux",
     "build:icons": "electron-icon-builder --input=./public/icon.png --output=./public/ --flatten"
   },
   "pnpm": {
     "supportedArchitectures": {
       "os": [
-        "win32",
-        "darwin",
-        "linux",
         "current"
       ],
       "cpu": [
-        "x64",
-        "arm64"
+        "current"
       ]
     }
   },
@@ -92,8 +88,7 @@
         {
           "target": "nsis",
           "arch": [
-            "x64",
-            "arm64"
+            "x64"
           ]
         }
       ],
