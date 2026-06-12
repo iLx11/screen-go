@@ -19,10 +19,16 @@ jobs:
       matrix:
         include:
           - os: windows-latest
+            platform: win32
+            arch: x64
             build-command: pnpm electron:build:win --x64 --publish never
-          - os: macos-latest
+          - os: macos-13
+            platform: darwin
+            arch: x64
             build-command: pnpm electron:build:mac --x64 --publish never
           - os: ubuntu-latest
+            platform: linux
+            arch: x64
             build-command: pnpm electron:build:linux --x64 --publish never
 
     steps:
@@ -40,10 +46,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+        env:
+          npm_config_platform: ${{ matrix.platform }}
+          npm_config_arch: ${{ matrix.arch }}
 
       - name: Build app
         run: ${{ matrix.build-command }}
         env:
+          npm_config_platform: ${{ matrix.platform }}
+          npm_config_arch: ${{ matrix.arch }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

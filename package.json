@@ -12,26 +12,12 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "electron:build": "rimraf dist dist_electron && pnpm build-only && electron-builder -wml --x64",
-    "electron:build:win": "rimraf dist dist_electron && pnpm build-only && electron-builder --win",
-    "electron:build:mac": "rimraf dist dist_electron && pnpm build-only && electron-builder --mac",
-    "electron:build:linux": "rimraf dist dist_electron && pnpm build-only && electron-builder --linux",
+    "prune:ffmpeg": "node scripts/prune-ffmpeg-platforms.mjs",
+    "electron:build": "rimraf dist dist_electron && pnpm build-only && pnpm prune:ffmpeg && electron-builder -wml --x64",
+    "electron:build:win": "rimraf dist dist_electron && pnpm build-only && pnpm prune:ffmpeg && electron-builder --win",
+    "electron:build:mac": "rimraf dist dist_electron && pnpm build-only && pnpm prune:ffmpeg && electron-builder --mac",
+    "electron:build:linux": "rimraf dist dist_electron && pnpm build-only && pnpm prune:ffmpeg && electron-builder --linux",
     "build:icons": "electron-icon-builder --input=./public/icon.png --output=./public/ --flatten"
-  },
-  "pnpm": {
-    "supportedArchitectures": {
-      "os": [
-        "win32",
-        "darwin",
-        "linux"
-      ],
-      "cpu": [
-        "x64",
-        "arm64",
-        "ia32",
-        "arm"
-      ]
-    }
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
