@@ -52,6 +52,7 @@
     "@types/node": "^18.17.17",
     "@vitejs/plugin-vue": "^4.3.4",
     "@vue/tsconfig": "^0.4.0",
+    "electron": "42.4.0",
     "electron-builder": "^26.0.12",
     "fast-glob": "^3.3.3",
     "ilx1-x-style": "^1.1.2",
