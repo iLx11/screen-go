@@ -5,6 +5,7 @@ import CreateWindow from '../controller/window/createWindow'
 import { ffmpegListener } from '../controller/media/ffmpegHandle'
 import { fileListener } from '../controller/file/selectDialog'
 import { storeListener } from '../controller/store/storage'
+import { softwareUpdateListener } from '../controller/update/softwareUpdateListener'
 
 // 窗口监听
 windowControlListener()
@@ -14,6 +15,7 @@ fileListener()
 ffmpegListener()
 // 存储
 storeListener()
+softwareUpdateListener()
 
 // pinia
 ipcMain.on('store-set', (event, objData) => {

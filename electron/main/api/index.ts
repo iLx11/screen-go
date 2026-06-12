@@ -1,4 +1,4 @@
-import type { IStore, IWindow, IFile, IConfig, IData } from './types'
+import type { IStore, IWindow, IFile, IConfig, IData, IUpdate } from './types'
 const { ipcRenderer } = require('electron')
 
 export const store: IStore = {
@@ -106,4 +106,39 @@ export const config: IConfig = {
     ipcRenderer.on('store-get', (event, data) => {
       callback(data)
     }),
+}
+
+export const update: IUpdate = {
+  async getSoftwareUpdateState() {
+    return await ipcRenderer.invoke('get-software-update-state')
+  },
+  async resetSoftwareUpdateState() {
+    return await ipcRenderer.invoke('reset-software-update-state')
+  },
+  async checkSoftwareUpdate() {
+    return await ipcRenderer.invoke('check-software-update')
+  },
+  async downloadSoftwareUpdate() {
+    return await ipcRenderer.invoke('download-software-update')
+  },
+  async cancelSoftwareUpdate() {
+    return await ipcRenderer.invoke('cancel-software-update')
+  },
+  async installSoftwareUpdate() {
+    return await ipcRenderer.invoke('install-software-update')
+  },
+  async openSoftwareUpdatePage() {
+    return await ipcRenderer.invoke('open-software-update-page')
+  },
+  softwareUpdateListener(callback) {
+    const listener = (event, data) => {
+      callback(data)
+    }
+    ipcRenderer.on('software-update-state', listener)
+    ipcRenderer.on('softwareUpdate', listener)
+    return () => {
+      ipcRenderer.removeListener('software-update-state', listener)
+      ipcRenderer.removeListener('softwareUpdate', listener)
+    }
+  },
 }

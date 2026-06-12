@@ -1,53 +1,80 @@
-// build.yml
-name: Build
+name: Build Release
 
 on:
-    push:
-        branches:
-          - master
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
 
 jobs:
-    release:
-        name: build and release electron app
-        runs-on: ${{ matrix.os }}
-        
+  release:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+
     strategy:
-        fail-fast: false
-        matrix:
-          os: [windows-latest, macos-latest, ubuntu-latest]
-            
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            build-command: pnpm electron:build:win --publish never
+          - os: macos-latest
+            build-command: pnpm electron:build:mac --publish never
+          - os: ubuntu-latest
+            build-command: pnpm electron:build:linux --publish never
+
     steps:
-        - name: Check out git repository
-          uses: actions/checkout@v3.0.0
-        
-        - name: Install Node.js
-          uses: actions/setup-node@v3.0.0
-          with:
-            node-version: "18"
-            
-        - name: Install Dependencies
-          run: npm install
-          
-        - name: Build Electron App
-          run: npm run electron:build
-          env:
-            GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
-        
-        - name: Cleanup Artifacts for Windows
-          if: matrix.os == 'windows-latest'
-          run: |
-            npx rimraf "dist_electron/!(*.exe)"
-            
-        - name: upload artifacts
-          uses: actions/upload-artifact@v3.0.0
-          with:
-            name: ${{ matrix.os }}
-            path: dist_electron
-            
-        - name: release
-          uses: softprops/action-gh-release@v0.1.14
-          if: startsWith(github.ref, 'refs/tags/')
-          with:
-            files: "dist_electron/**"
-          env:
-            GITHUB_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.11.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build app
+        run: ${{ matrix.build-command }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: screen-go-${{ matrix.os }}
+          path: |
+            dist_electron/*.exe
+            dist_electron/*.dmg
+            dist_electron/*.AppImage
+            dist_electron/*.deb
+            dist_electron/*.zip
+            dist_electron/*.blockmap
+            dist_electron/latest*.yml
+          if-no-files-found: ignore
+
+      - name: Upload release assets
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist_electron/*.exe
+            dist_electron/*.dmg
+            dist_electron/*.AppImage
+            dist_electron/*.deb
+            dist_electron/*.zip
+            dist_electron/*.blockmap
+            dist_electron/latest*.yml
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

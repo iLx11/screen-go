@@ -11,6 +11,37 @@ export interface VideoInfo {
   duration: number
 }
 
+export interface SoftwareUpdateInfo {
+  currentVersion: string
+  latestVersion: string
+  platformKey: string
+  fileName: string
+  fileSize: number
+  downloadUrl: string
+  pageUrl: string
+  releaseNotes: string
+  checksum: string
+  publishedAt: string
+  hasDirectPackage: boolean
+}
+
+export interface SoftwareUpdateState {
+  phase: string
+  busy: boolean
+  progress: number
+  downloadedSize: number
+  message: string
+  updateInfo: SoftwareUpdateInfo | null
+  downloadedFilePath: string
+  updatedAt: number
+}
+
+export interface ActionResult<T = unknown> {
+  success: boolean
+  data?: T
+  message?: string
+}
+
 export interface SelectFileResult {
   canceled?: boolean
   filePaths: string[]
@@ -57,4 +88,15 @@ export interface IFile {
 export interface IConfig {
   setConfigStore(obj: unknown): void
   storeChangeListener(cb: (data: unknown) => void): void
+}
+
+export interface IUpdate {
+  getSoftwareUpdateState(): Promise<SoftwareUpdateState>
+  resetSoftwareUpdateState(): Promise<ActionResult<boolean>>
+  checkSoftwareUpdate(): Promise<ActionResult<SoftwareUpdateInfo>>
+  downloadSoftwareUpdate(): Promise<ActionResult<SoftwareUpdateInfo>>
+  cancelSoftwareUpdate(): Promise<ActionResult<boolean>>
+  installSoftwareUpdate(): Promise<ActionResult<boolean>>
+  openSoftwareUpdatePage(): Promise<ActionResult<boolean>>
+  softwareUpdateListener(cb: (data: SoftwareUpdateState) => void): () => void
 }

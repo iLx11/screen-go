@@ -2,6 +2,7 @@
 import { onMounted, ref, onUnmounted } from 'vue'
 import { useConfigStore } from '@/stores/configStore'
 import SvgIcon from './SvgIcon.vue'
+import SoftwareUpdate from './SoftwareUpdate.vue'
 
 const configStore = useConfigStore()
 const win = window as any
@@ -72,6 +73,7 @@ const iconConfig = ref({
 <template>
   <div class="top-bar">
     <div class="top-bar-tools">
+      <SoftwareUpdate />
       <!-- 置顶工具 -->
       <div
         @click="setWindowOnTop"
@@ -127,7 +129,7 @@ const iconConfig = ref({
 .top-bar {
   height: 27px;
   line-height: 25px;
-  width: 125px;
+  width: 160px;
   // position: absolute;
   // top: 20px;
   // right: 20px;

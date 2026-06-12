@@ -1,6 +1,6 @@
 {
   "name": "screen-go",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "private": true,
   "main": "appDir/main/main.js",
   "author": "iLx1",
@@ -12,10 +12,10 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --noEmit -p tsconfig.app.json --composite false",
-    "electron:build": "rimraf dist && vite build && electron-builder -wml --x64 --arm64",
-    "electron:build:win": "rimraf dist && vite build && electron-builder --win",
-    "electron:build:mac": "rimraf dist && vite build && electron-builder --mac --x64 --arm64",
-    "electron:build:linux": "rimraf dist && vite build && electron-builder --linux --x64 --arm64",
+    "electron:build": "rimraf dist && pnpm build-only && electron-builder -wml --x64 --arm64",
+    "electron:build:win": "rimraf dist && pnpm build-only && electron-builder --win --x64 --arm64",
+    "electron:build:mac": "rimraf dist && pnpm build-only && electron-builder --mac --x64 --arm64",
+    "electron:build:linux": "rimraf dist && pnpm build-only && electron-builder --linux --x64 --arm64",
     "build:icons": "electron-icon-builder --input=./public/icon.png --output=./public/ --flatten"
   },
   "pnpm": {
@@ -78,13 +78,21 @@
     "directories": {
       "output": "dist_electron"
     },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "iLx11",
+        "repo": "screen-go"
+      }
+    ],
     "win": {
-      "icon": "./public/icons/icon.ico",
+      "icon": "./public/icon.ico",
       "target": [
         {
           "target": "nsis",
           "arch": [
-            "x64"
+            "x64",
+            "arm64"
           ]
         }
       ],
@@ -97,8 +105,8 @@
       "mimeTypes": [
         "x-scheme-handler/screen-go"
       ],
-      "icon": "./public/icons/256x256.png",
       "target": [
+        "AppImage",
         "deb"
       ],
       "category": "Utility",
@@ -113,12 +121,8 @@
       "target": [
         "dmg"
       ],
-      "icon": "./public/icons/icon.icns",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
-      "entitlements": "electron-builder/entitlements.plist",
-      "entitlementsInherit": "electron-builder/entitlements.plist",
-      "provisioningProfile": "electron-builder/comalibabaslobs.provisionprofile",
       "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
     },
     "dmg": {
@@ -146,9 +150,9 @@
       "allowElevation": true,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "installerIcon": "./public/icons/icon.ico",
-      "uninstallerIcon": "./public/icons/icon.ico",
-      "installerHeaderIcon": "./public/icons/icon.ico",
+      "installerIcon": "./public/icon.ico",
+      "uninstallerIcon": "./public/icon.ico",
+      "installerHeaderIcon": "./public/icon.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
     }

@@ -1,15 +1,12915 @@
-"use strict";const oe=require("electron"),ue=require("path"),mr=require("fs"),hl=require("constants"),ml=require("stream"),as=require("util"),Xo=require("assert"),pl=require("crypto"),yl=require("events"),$l=require("os"),gl=require("path"),vl=!0,le=class le{constructor(){this.getWindowById=t=>oe.BrowserWindow.fromId(t),this.debounce=(t,r)=>{let n;return function(){const s=this,i=arguments;clearTimeout(n),n=setTimeout(()=>{t.apply(s,i)},r)}},this.moveDepWindow=t=>{if(le.windowMap.get("bottom")&&le.windowMap.get("bottom").window.setBounds({x:t.getPosition()[0],y:t.getPosition()[1]+t.getSize()[1],width:680,height:400}),le.windowMap.get("right")){const r=le.windowMap.get("right").window;r.setBounds({x:t.getPosition()[0]+t.getSize()[0],y:t.getPosition()[1],width:r.getSize()[0],height:r.getSize()[1]})}},this.defaultConfig={route:"",parentId:null,isMainWin:!1,width:900,height:700,center:!0,transparent:!0,frame:!1,titleBarStyle:"hidden",backgroundColor:"#00000000",show:!1,maxWidth:null,maxHeight:null,minWidth:null,minHeight:null,autoHideMenuBar:!0,resizable:!0,minimizable:!0,maximizable:!0,windowName:"",modal:!1,parent:null,titleBarOverlay:!1,maximize:!1,webPreferences:{devTools:vl,contextIsolation:!0,webSecurity:!1,nodeIntegration:!0,preload:gl.join(__dirname,"../preload/preload.js"),offscreen:!1,backgroundThrottling:!1}}}createWindow(t){if(!t.windowName){console.info("window name is required");return}if(le.windowMap.has(t.windowName)){console.info("window is already created"),le.windowMap.get(t.windowName).window.blur();return}let r=Object.assign({},this.defaultConfig,t);r.isMainWin||(r.parent=le.getMainWindow());let n=new oe.BrowserWindow(r);n.setTitle(""),console.log("window id:"+n.id),le.windowMap.set(r.windowName,{windowId:n.id,route:r.route,windowName:r.windowName,window:n}),r.maximize&&r.resizable&&n.maximize(),process.platform=="darwin"&&n.setWindowButtonVisibility(!1),n.on("close",()=>{if(n==le.windowMap.get("main").window){oe.app.quit();return}le.windowMap.forEach((i,o)=>{i.window==n&&(n.webContents.closeDevTools(),le.windowMap.delete(o))}),n.setOpacity(0)}),n.on("ready-to-show",()=>{n.show(),n.focus()});let s;return oe.app.isPackaged?n.loadFile(ue.join(__dirname,"../../dist/index.html"),{hash:r.route}):(s=r.route?`${process.env.VITE_DEV_SERVER_URL}/#${r.route}`:`${process.env.VITE_DEV_SERVER_URL}}/#`,n.loadURL(s)),n.setMenu(null),n.webContents.once("did-finish-load",()=>{n.webContents.openDevTools({mode:"detach"})}),n.on("hide",()=>n.webContents.closeDevTools()),oe.globalShortcut.register("CommandOrControl+Shift+i",function(){n.webContents.openDevTools()}),n}};le.windowMap=new Map,le.travWindowSend=(t,r=null)=>{le.windowMap.forEach((n,s)=>{r&&n.window==r||n.window.webContents.send("store-get",t)})},le.sendToWindow=(t,r)=>{le.windowMap.has(t)&&le.windowMap.get(t).window.webContents.send("store-get",r)},le.getMainWindow=()=>le.windowMap.get("main").window;let or=le;const{ipcMain:ft,BrowserWindow:Bt,screen:ji}=require("electron"),wl=()=>{ft.on("window-create",(e,t)=>{new or().createWindow(t)}),ft.handle("get-screen-size",()=>ji.getPrimaryDisplay().size),ft.on("window-on-top",(e,t)=>{const r=e.sender;Bt.fromWebContents(r).setAlwaysOnTop(t)}),ft.on("window-min",e=>{const t=e.sender;Bt.fromWebContents(t).minimize()}),ft.on("window-max",(e,t,r={})=>{const n=e.sender,s=Bt.fromWebContents(n);if(t){const{width:i,height:o}=ji.getPrimaryDisplay().workAreaSize,l=Math.round((i-r.width)/2),c=Math.round((o-r.height)/2);s.setBounds({...r,x:l,y:c})}else s.maximize()}),ft.on("window-close",e=>{const t=e.sender;Bt.fromWebContents(t).close()}),ft.handle("get-window-position",async e=>{const t=e.sender;return Bt.fromWebContents(t).getPosition()})},{ipcMain:Tn,nativeImage:_l}=require("electron"),Ke=require("fs-extra"),El=require("@ffmpeg-installer/ffmpeg").path,Sl=require("@ffprobe-installer/ffprobe").path,{spawn:Yo}=require("child_process"),ar=require("path"),bl=[1,2,0,0,1],Pl=120,cr=new Map,gt=ar.resolve(__dirname,"../../temp"),Ol=/^video_\d+_[a-f0-9]+$/i,Nl=/^temp_\d+\.png$/i,Qo=e=>{try{Ke.existsSync(e)&&Ke.removeSync(e)}catch(t){console.error("Remove temp path failed:",e,t)}},Zo=()=>{try{Ke.existsSync(gt)&&Ke.readdirSync(gt).length==0&&Ke.removeSync(gt)}catch(e){console.error("Remove temp root failed:",e)}},Il=()=>{try{if(!Ke.existsSync(gt))return;Ke.readdirSync(gt,{withFileTypes:!0}).forEach(e=>{(e.isDirectory()&&Ol.test(e.name)||e.isFile()&&Nl.test(e.name))&&Qo(ar.join(gt,e.name))}),Zo()}catch(e){console.error("Cleanup video temp failed:",e)}},ea=e=>{var t;return((t=e==null?void 0:e.sender)==null?void 0:t.id)||0},Rl=e=>{const t=ea(e),r=cr.get(t);r!=null&&r.process&&!r.process.killed&&(r.cancelled=!0,r.process.kill("SIGTERM"));const n={cancelled:!1,process:null};return cr.set(t,n),{key:t,task:n}},Tl=e=>{const t=cr.get(ea(e));return t?(t.cancelled=!0,t.process&&!t.process.killed&&t.process.kill("SIGTERM"),!0):!1},Zt=e=>{if(e!=null&&e.cancelled)throw new Error("VIDEO_TASK_CANCELLED")},qe=(e,t,r)=>{if(!(e!=null&&e.sender)||e.sender.isDestroyed())return;const n=Math.round(Number(t));e.sender.send("video-frame-progress",{progress:Number.isFinite(n)?Math.max(0,Math.min(n,100)):0,message:r})},st=e=>{const t=Number(e);return Number.isFinite(t)?Math.max(0,Math.floor(t)):0},cs=e=>{const t=Number(e);return Number.isFinite(t)?Math.max(0,t):0},Al=(e,t=null)=>new Promise((r,n)=>{if(t!=null&&t.cancelled){n(new Error("VIDEO_TASK_CANCELLED"));return}let s="";const i=Yo(El,e,{windowsHide:!0});t&&(t.process=i),i.stderr&&(i.stderr.setEncoding("utf8"),i.stderr.on("data",o=>{s+=o})),i.on("error",n),i.on("close",o=>{if((t==null?void 0:t.process)===i&&(t.process=null),t!=null&&t.cancelled){n(new Error("VIDEO_TASK_CANCELLED"));return}if(o===0){r(!0);return}n(new Error(`ffmpeg exited with code ${o}: ${s.slice(-1e3)}`))})}),kl=e=>new Promise((t,r)=>{let n="",s="";const i=Yo(Sl,e,{windowsHide:!0});i.stdout&&(i.stdout.setEncoding("utf8"),i.stdout.on("data",o=>{n+=o})),i.stderr&&(i.stderr.setEncoding("utf8"),i.stderr.on("data",o=>{s+=o})),i.on("error",r),i.on("close",o=>{if(o===0){t(n);return}r(new Error(`ffprobe exited with code ${o}: ${s.slice(-1e3)}`))})}),jl=async e=>{var i,o;const t=await kl(["-v","error","-select_streams","v:0","-show_entries","format=duration:stream=width,height,duration","-of","json",e]),r=JSON.parse(t||"{}"),n=((i=r.streams)==null?void 0:i[0])||{},s=cs(((o=r.format)==null?void 0:o.duration)||n.duration);return{width:st(n.width),height:st(n.height),duration:Number(s.toFixed(2))}},Dl=(e,t,r)=>{switch(r){case"contain":return`scale=${e}:${t}:force_original_aspect_ratio=decrease,pad=${e}:${t}:(ow-iw)/2:(oh-ih)/2:black`;case"cover":return`scale=${e}:${t}:force_original_aspect_ratio=increase,crop=${e}:${t}`;default:return`scale=${e}:${t}`}},Cl=async(e,t,r,n,s,i,o,l)=>{for(let c=0;c<t.length;c++){Zt(l);const f=ar.join(r,`temp_${c+1}.png`),a=["-y","-ss",String(t[c]),"-i",e,"-frames:v","1","-vf",Dl(n,s,i),f];await Al(a,l),Zt(l),o==null||o(c+1,t.length)}return console.info("screeshot ok"),!0},Ll=e=>bl.map((t,r)=>{const n=Number(e==null?void 0:e[r]);return Number.isFinite(n)?Math.trunc(n):t}),Fl=(e,t)=>{const r=Array.from(e);return t===0?r.map(n=>`0x${n.toString(16).padStart(2,"0")}`):r},Yr=(e,t)=>t[2]!=0?1<<7-e:1<<e,Qr=(e,t)=>t[0]!==0?e===0?1:0:e,Zr=(e,t,r,n)=>{n===0?e[t]|=r:e[t]&=~r},Ml=(e,t,r,n)=>{const s=Math.ceil(t/8),i=new Uint8Array(s*r);for(let o=0;o<e.length;o++){const l=o%t,f=Math.floor(o/t)*s+Math.floor(l/8),a=Yr(l%8,n),d=Qr(e[o],n);Zr(i,f,a,d)}return i},Ul=(e,t,r,n)=>{const s=Math.ceil(r/8),i=new Uint8Array(s*t);for(let o=0;o<e.length;o++){const l=o%t,c=Math.floor(o/t),f=l*s+Math.floor(c/8),a=Yr(c%8,n),d=Qr(e[o],n);Zr(i,f,a,d)}return i},Di=(e,t,r,n)=>{const s=new Uint8Array(Math.ceil(r/8)*t);for(let i=0;i<e.length;i++){const o=i%t,l=Math.floor(i/t),c=o+Math.floor(l/8)*t,f=Yr(l%8,n),a=Qr(e[i],n);Zr(s,c,f,a)}return s},Vl=(e,t,r,n)=>{const s=new Uint8Array(Math.ceil(t/8)*r);for(let i=0;i<e.length;i++){const o=i%t,l=Math.floor(i/t),c=Math.floor(o/8)*r+l,f=Yr(o%8,n),a=Qr(e[i],n);Zr(s,c,f,a)}return s},zl=(e,t,r,n,s)=>{const i=new Uint8Array(t*r);for(let o=0,l=0;o<e.length;o+=4,l++){const c=e[o],f=e[o+1],d=.299*e[o+2]+.587*f+.114*c;i[l]=d>n?1:0}switch(s[1]){case 0:return Ml(i,t,r,s);case 1:return Ul(i,t,r,s);case 2:return Di(i,t,r,s);case 3:return Vl(i,t,r,s);default:return Di(i,t,r,s)}},ql=(e,t)=>{const r=new Uint8Array(e.length/4*2);let n=0;for(let s=0;s<e.length;s+=4){const i=e[s],o=e[s+1],c=e[s+2]>>3<<11|o>>2<<5|i>>3;let f=c>>8&255,a=c&255;(t[0]==0||t[2]==1)&&(f=~f&255,a=~a&255),r[n++]=f,r[n++]=a}return r},Ci=e=>{const t=e.match(/temp_(\d+)\.png$/i);return t?Number(t[1]):0},xl=(e,t,r,n,s)=>{const i=Ll(s),o=Number(n),l=_l.createFromBuffer(e);if(l.isEmpty())throw new Error("视频帧图片解析失败");const c=Number(t),f=Number(r),a=c>0&&f>0?l.resize({width:c,height:f,quality:"best"}):l,d=a.getSize(),v=a.toBitmap(),m=i[4]===1?zl(v,d.width,d.height,Number.isFinite(o)?o:Pl,i):ql(v,i);return Fl(m,i[3])},Gl=async()=>{Il(),Tn.handle("get-video-info",async(e,t)=>{try{return t?await jl(t):null}catch(r){return console.error("Error reading video info:",r),null}}),Tn.handle("get-video-frame-data",async(e,t,r,n,s,i,o,l,c,...f)=>{const a=ar.join(gt,`video_${Date.now()}_${Math.random().toString(16).slice(2)}`),{key:d,task:v}=Rl(e);try{const m=st(r),S=st(n),g=cs(s),E=st(i),y=st(o);if(!m||!S||!E||!y)return qe(e,100,"视频配置错误"),null;Ke.ensureDirSync(a),qe(e,0,"准备视频取模...");const P=Wl(g,E,y);Zt(v);const I=await Cl(t,P,a,m,S,l,(U,x)=>{v.cancelled||qe(e,x>0?U/x*70:0,`正在截取视频帧 ${U}/${x}`)},v);if(Zt(v),!I)return console.info("video frame error"),qe(e,100,"视频取模失败"),null;let A=[];const k=Ke.readdirSync(a,{withFileTypes:!0}).filter(U=>U.isFile()&&U.name.toLowerCase().endsWith(".png")).sort((U,x)=>Ci(U.name)-Ci(x.name));if(k.length==0)return qe(e,100,"视频取模失败"),null;for(let U=0;U<k.length;U++){Zt(v);const x=k[U],ae=Ke.readFileSync(ar.join(a,x.name)),T=xl(ae,m,S,c,f);if(A.push(T),v.cancelled)return null;qe(e,70+(U+1)/k.length*30,`正在生成取模数据 ${U+1}/${k.length}`)}return qe(e,100,"视频取模完成"),A}catch(m){return(m==null?void 0:m.message)==="VIDEO_TASK_CANCELLED"?(qe(e,100,"已取消视频取模"),null):(console.error("Error reading image:",m),qe(e,100,"视频取模失败"),null)}finally{cr.get(d)===v&&cr.delete(d),Qo(a),Zo()}}),Tn.handle("cancel-video-frame-data",async e=>{const t=Tl(e);return t&&qe(e,100,"正在取消视频取模..."),t})},Wl=(e,t,r)=>{const n=cs(e),s=st(t),i=st(r),o=1/i,l=[];for(let c=0;c<s;c++)for(let f=0;f<i;f++)l.push(String((n+c+o*f).toFixed(2)));return l};var $t=typeof globalThis<"u"?globalThis:typeof window<"u"?window:typeof global<"u"?global:typeof self<"u"?self:{};function Hl(e){return e&&e.__esModule&&Object.prototype.hasOwnProperty.call(e,"default")?e.default:e}var Ie={},de={};de.fromCallback=function(e){return Object.defineProperty(function(...t){if(typeof t[t.length-1]=="function")e.apply(this,t);else return new Promise((r,n)=>{t.push((s,i)=>s!=null?n(s):r(i)),e.apply(this,t)})},"name",{value:e.name})};de.fromPromise=function(e){return Object.defineProperty(function(...t){const r=t[t.length-1];if(typeof r!="function")return e.apply(this,t);t.pop(),e.apply(this,t).then(n=>r(null,n),r)},"name",{value:e.name})};var Ze=hl,Kl=process.cwd,Fr=null,Bl=process.env.GRACEFUL_FS_PLATFORM||process.platform;process.cwd=function(){return Fr||(Fr=Kl.call(process)),Fr};try{process.cwd()}catch{}if(typeof process.chdir=="function"){var Li=process.chdir;process.chdir=function(e){Fr=null,Li.call(process,e)},Object.setPrototypeOf&&Object.setPrototypeOf(process.chdir,Li)}var Jl=Xl;function Xl(e){Ze.hasOwnProperty("O_SYMLINK")&&process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)&&t(e),e.lutimes||r(e),e.chown=i(e.chown),e.fchown=i(e.fchown),e.lchown=i(e.lchown),e.chmod=n(e.chmod),e.fchmod=n(e.fchmod),e.lchmod=n(e.lchmod),e.chownSync=o(e.chownSync),e.fchownSync=o(e.fchownSync),e.lchownSync=o(e.lchownSync),e.chmodSync=s(e.chmodSync),e.fchmodSync=s(e.fchmodSync),e.lchmodSync=s(e.lchmodSync),e.stat=l(e.stat),e.fstat=l(e.fstat),e.lstat=l(e.lstat),e.statSync=c(e.statSync),e.fstatSync=c(e.fstatSync),e.lstatSync=c(e.lstatSync),e.chmod&&!e.lchmod&&(e.lchmod=function(a,d,v){v&&process.nextTick(v)},e.lchmodSync=function(){}),e.chown&&!e.lchown&&(e.lchown=function(a,d,v,m){m&&process.nextTick(m)},e.lchownSync=function(){}),Bl==="win32"&&(e.rename=typeof e.rename!="function"?e.rename:function(a){function d(v,m,S){var g=Date.now(),E=0;a(v,m,function y(P){if(P&&(P.code==="EACCES"||P.code==="EPERM"||P.code==="EBUSY")&&Date.now()-g<6e4){setTimeout(function(){e.stat(m,function(I,A){I&&I.code==="ENOENT"?a(v,m,y):S(P)})},E),E<100&&(E+=10);return}S&&S(P)})}return Object.setPrototypeOf&&Object.setPrototypeOf(d,a),d}(e.rename)),e.read=typeof e.read!="function"?e.read:function(a){function d(v,m,S,g,E,y){var P;if(y&&typeof y=="function"){var I=0;P=function(A,k,U){if(A&&A.code==="EAGAIN"&&I<10)return I++,a.call(e,v,m,S,g,E,P);y.apply(this,arguments)}}return a.call(e,v,m,S,g,E,P)}return Object.setPrototypeOf&&Object.setPrototypeOf(d,a),d}(e.read),e.readSync=typeof e.readSync!="function"?e.readSync:function(a){return function(d,v,m,S,g){for(var E=0;;)try{return a.call(e,d,v,m,S,g)}catch(y){if(y.code==="EAGAIN"&&E<10){E++;continue}throw y}}}(e.readSync);function t(a){a.lchmod=function(d,v,m){a.open(d,Ze.O_WRONLY|Ze.O_SYMLINK,v,function(S,g){if(S){m&&m(S);return}a.fchmod(g,v,function(E){a.close(g,function(y){m&&m(E||y)})})})},a.lchmodSync=function(d,v){var m=a.openSync(d,Ze.O_WRONLY|Ze.O_SYMLINK,v),S=!0,g;try{g=a.fchmodSync(m,v),S=!1}finally{if(S)try{a.closeSync(m)}catch{}else a.closeSync(m)}return g}}function r(a){Ze.hasOwnProperty("O_SYMLINK")&&a.futimes?(a.lutimes=function(d,v,m,S){a.open(d,Ze.O_SYMLINK,function(g,E){if(g){S&&S(g);return}a.futimes(E,v,m,function(y){a.close(E,function(P){S&&S(y||P)})})})},a.lutimesSync=function(d,v,m){var S=a.openSync(d,Ze.O_SYMLINK),g,E=!0;try{g=a.futimesSync(S,v,m),E=!1}finally{if(E)try{a.closeSync(S)}catch{}else a.closeSync(S)}return g}):a.futimes&&(a.lutimes=function(d,v,m,S){S&&process.nextTick(S)},a.lutimesSync=function(){})}function n(a){return a&&function(d,v,m){return a.call(e,d,v,function(S){f(S)&&(S=null),m&&m.apply(this,arguments)})}}function s(a){return a&&function(d,v){try{return a.call(e,d,v)}catch(m){if(!f(m))throw m}}}function i(a){return a&&function(d,v,m,S){return a.call(e,d,v,m,function(g){f(g)&&(g=null),S&&S.apply(this,arguments)})}}function o(a){return a&&function(d,v,m){try{return a.call(e,d,v,m)}catch(S){if(!f(S))throw S}}}function l(a){return a&&function(d,v,m){typeof v=="function"&&(m=v,v=null);function S(g,E){E&&(E.uid<0&&(E.uid+=4294967296),E.gid<0&&(E.gid+=4294967296)),m&&m.apply(this,arguments)}return v?a.call(e,d,v,S):a.call(e,d,S)}}function c(a){return a&&function(d,v){var m=v?a.call(e,d,v):a.call(e,d);return m&&(m.uid<0&&(m.uid+=4294967296),m.gid<0&&(m.gid+=4294967296)),m}}function f(a){if(!a||a.code==="ENOSYS")return!0;var d=!process.getuid||process.getuid()!==0;return!!(d&&(a.code==="EINVAL"||a.code==="EPERM"))}}var Fi=ml.Stream,Yl=Ql;function Ql(e){return{ReadStream:t,WriteStream:r};function t(n,s){if(!(this instanceof t))return new t(n,s);Fi.call(this);var i=this;this.path=n,this.fd=null,this.readable=!0,this.paused=!1,this.flags="r",this.mode=438,this.bufferSize=64*1024,s=s||{};for(var o=Object.keys(s),l=0,c=o.length;l<c;l++){var f=o[l];this[f]=s[f]}if(this.encoding&&this.setEncoding(this.encoding),this.start!==void 0){if(typeof this.start!="number")throw TypeError("start must be a Number");if(this.end===void 0)this.end=1/0;else if(typeof this.end!="number")throw TypeError("end must be a Number");if(this.start>this.end)throw new Error("start must be <= end");this.pos=this.start}if(this.fd!==null){process.nextTick(function(){i._read()});return}e.open(this.path,this.flags,this.mode,function(a,d){if(a){i.emit("error",a),i.readable=!1;return}i.fd=d,i.emit("open",d),i._read()})}function r(n,s){if(!(this instanceof r))return new r(n,s);Fi.call(this),this.path=n,this.fd=null,this.writable=!0,this.flags="w",this.encoding="binary",this.mode=438,this.bytesWritten=0,s=s||{};for(var i=Object.keys(s),o=0,l=i.length;o<l;o++){var c=i[o];this[c]=s[c]}if(this.start!==void 0){if(typeof this.start!="number")throw TypeError("start must be a Number");if(this.start<0)throw new Error("start must be >= zero");this.pos=this.start}this.busy=!1,this._queue=[],this.fd===null&&(this._open=e.open,this._queue.push([this._open,this.path,this.flags,this.mode,void 0]),this.flush())}}var Zl=tu,eu=Object.getPrototypeOf||function(e){return e.__proto__};function tu(e){if(e===null||typeof e!="object")return e;if(e instanceof Object)var t={__proto__:eu(e)};else var t=Object.create(null);return Object.getOwnPropertyNames(e).forEach(function(r){Object.defineProperty(t,r,Object.getOwnPropertyDescriptor(e,r))}),t}var se=mr,ru=Jl,nu=Yl,su=Zl,_r=as,ve,Gr;typeof Symbol=="function"&&typeof Symbol.for=="function"?(ve=Symbol.for("graceful-fs.queue"),Gr=Symbol.for("graceful-fs.previous")):(ve="___graceful-fs.queue",Gr="___graceful-fs.previous");function iu(){}function ta(e,t){Object.defineProperty(e,ve,{get:function(){return t}})}var vt=iu;_r.debuglog?vt=_r.debuglog("gfs4"):/\bgfs4\b/i.test(process.env.NODE_DEBUG||"")&&(vt=function(){var e=_r.format.apply(_r,arguments);e="GFS4: "+e.split(/\n/).join(`
-GFS4: `),console.error(e)});if(!se[ve]){var ou=$t[ve]||[];ta(se,ou),se.close=function(e){function t(r,n){return e.call(se,r,function(s){s||Mi(),typeof n=="function"&&n.apply(this,arguments)})}return Object.defineProperty(t,Gr,{value:e}),t}(se.close),se.closeSync=function(e){function t(r){e.apply(se,arguments),Mi()}return Object.defineProperty(t,Gr,{value:e}),t}(se.closeSync),/\bgfs4\b/i.test(process.env.NODE_DEBUG||"")&&process.on("exit",function(){vt(se[ve]),Xo.equal(se[ve].length,0)})}$t[ve]||ta($t,se[ve]);var qt=ls(su(se));process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH&&!se.__patched&&(qt=ls(se),se.__patched=!0);function ls(e){ru(e),e.gracefulify=ls,e.createReadStream=k,e.createWriteStream=U;var t=e.readFile;e.readFile=r;function r(T,D,M){return typeof D=="function"&&(M=D,D=null),V(T,D,M);function V(B,H,G,X){return t(B,H,function(R){R&&(R.code==="EMFILE"||R.code==="ENFILE")?Ot([V,[B,H,G],R,X||Date.now(),Date.now()]):typeof G=="function"&&G.apply(this,arguments)})}}var n=e.writeFile;e.writeFile=s;function s(T,D,M,V){return typeof M=="function"&&(V=M,M=null),B(T,D,M,V);function B(H,G,X,R,_){return n(H,G,X,function(O){O&&(O.code==="EMFILE"||O.code==="ENFILE")?Ot([B,[H,G,X,R],O,_||Date.now(),Date.now()]):typeof R=="function"&&R.apply(this,arguments)})}}var i=e.appendFile;i&&(e.appendFile=o);function o(T,D,M,V){return typeof M=="function"&&(V=M,M=null),B(T,D,M,V);function B(H,G,X,R,_){return i(H,G,X,function(O){O&&(O.code==="EMFILE"||O.code==="ENFILE")?Ot([B,[H,G,X,R],O,_||Date.now(),Date.now()]):typeof R=="function"&&R.apply(this,arguments)})}}var l=e.copyFile;l&&(e.copyFile=c);function c(T,D,M,V){return typeof M=="function"&&(V=M,M=0),B(T,D,M,V);function B(H,G,X,R,_){return l(H,G,X,function(O){O&&(O.code==="EMFILE"||O.code==="ENFILE")?Ot([B,[H,G,X,R],O,_||Date.now(),Date.now()]):typeof R=="function"&&R.apply(this,arguments)})}}var f=e.readdir;e.readdir=d;var a=/^v[0-5]\./;function d(T,D,M){typeof D=="function"&&(M=D,D=null);var V=a.test(process.version)?function(G,X,R,_){return f(G,B(G,X,R,_))}:function(G,X,R,_){return f(G,X,B(G,X,R,_))};return V(T,D,M);function B(H,G,X,R){return function(_,O){_&&(_.code==="EMFILE"||_.code==="ENFILE")?Ot([V,[H,G,X],_,R||Date.now(),Date.now()]):(O&&O.sort&&O.sort(),typeof X=="function"&&X.call(this,_,O))}}}if(process.version.substr(0,4)==="v0.8"){var v=nu(e);y=v.ReadStream,I=v.WriteStream}var m=e.ReadStream;m&&(y.prototype=Object.create(m.prototype),y.prototype.open=P);var S=e.WriteStream;S&&(I.prototype=Object.create(S.prototype),I.prototype.open=A),Object.defineProperty(e,"ReadStream",{get:function(){return y},set:function(T){y=T},enumerable:!0,configurable:!0}),Object.defineProperty(e,"WriteStream",{get:function(){return I},set:function(T){I=T},enumerable:!0,configurable:!0});var g=y;Object.defineProperty(e,"FileReadStream",{get:function(){return g},set:function(T){g=T},enumerable:!0,configurable:!0});var E=I;Object.defineProperty(e,"FileWriteStream",{get:function(){return E},set:function(T){E=T},enumerable:!0,configurable:!0});function y(T,D){return this instanceof y?(m.apply(this,arguments),this):y.apply(Object.create(y.prototype),arguments)}function P(){var T=this;ae(T.path,T.flags,T.mode,function(D,M){D?(T.autoClose&&T.destroy(),T.emit("error",D)):(T.fd=M,T.emit("open",M),T.read())})}function I(T,D){return this instanceof I?(S.apply(this,arguments),this):I.apply(Object.create(I.prototype),arguments)}function A(){var T=this;ae(T.path,T.flags,T.mode,function(D,M){D?(T.destroy(),T.emit("error",D)):(T.fd=M,T.emit("open",M))})}function k(T,D){return new e.ReadStream(T,D)}function U(T,D){return new e.WriteStream(T,D)}var x=e.open;e.open=ae;function ae(T,D,M,V){return typeof M=="function"&&(V=M,M=null),B(T,D,M,V);function B(H,G,X,R,_){return x(H,G,X,function(O,$){O&&(O.code==="EMFILE"||O.code==="ENFILE")?Ot([B,[H,G,X,R],O,_||Date.now(),Date.now()]):typeof R=="function"&&R.apply(this,arguments)})}}return e}function Ot(e){vt("ENQUEUE",e[0].name,e[1]),se[ve].push(e),us()}var Er;function Mi(){for(var e=Date.now(),t=0;t<se[ve].length;++t)se[ve][t].length>2&&(se[ve][t][3]=e,se[ve][t][4]=e);us()}function us(){if(clearTimeout(Er),Er=void 0,se[ve].length!==0){var e=se[ve].shift(),t=e[0],r=e[1],n=e[2],s=e[3],i=e[4];if(s===void 0)vt("RETRY",t.name,r),t.apply(null,r);else if(Date.now()-s>=6e4){vt("TIMEOUT",t.name,r);var o=r.pop();typeof o=="function"&&o.call(null,n)}else{var l=Date.now()-i,c=Math.max(i-s,1),f=Math.min(c*1.2,100);l>=f?(vt("RETRY",t.name,r),t.apply(null,r.concat([s]))):se[ve].push(e)}Er===void 0&&(Er=setTimeout(us,0))}}(function(e){const t=de.fromCallback,r=qt,n=["access","appendFile","chmod","chown","close","copyFile","cp","fchmod","fchown","fdatasync","fstat","fsync","ftruncate","futimes","glob","lchmod","lchown","lutimes","link","lstat","mkdir","mkdtemp","open","opendir","readdir","readFile","readlink","realpath","rename","rm","rmdir","stat","statfs","symlink","truncate","unlink","utimes","writeFile"].filter(s=>typeof r[s]=="function");Object.assign(e,r),n.forEach(s=>{e[s]=t(r[s])}),e.exists=function(s,i){return typeof i=="function"?r.exists(s,i):new Promise(o=>r.exists(s,o))},e.read=function(s,i,o,l,c,f){return typeof f=="function"?r.read(s,i,o,l,c,f):new Promise((a,d)=>{r.read(s,i,o,l,c,(v,m,S)=>{if(v)return d(v);a({bytesRead:m,buffer:S})})})},e.write=function(s,i,...o){return typeof o[o.length-1]=="function"?r.write(s,i,...o):new Promise((l,c)=>{r.write(s,i,...o,(f,a,d)=>{if(f)return c(f);l({bytesWritten:a,buffer:d})})})},e.readv=function(s,i,...o){return typeof o[o.length-1]=="function"?r.readv(s,i,...o):new Promise((l,c)=>{r.readv(s,i,...o,(f,a,d)=>{if(f)return c(f);l({bytesRead:a,buffers:d})})})},e.writev=function(s,i,...o){return typeof o[o.length-1]=="function"?r.writev(s,i,...o):new Promise((l,c)=>{r.writev(s,i,...o,(f,a,d)=>{if(f)return c(f);l({bytesWritten:a,buffers:d})})})},typeof r.realpath.native=="function"?e.realpath.native=t(r.realpath.native):process.emitWarning("fs.realpath.native is not a function. Is fs being monkey-patched?","Warning","fs-extra-WARN0003")})(Ie);var fs={},ra={};const au=ue;ra.checkPath=function(t){if(process.platform==="win32"&&/[<>:"|?*]/.test(t.replace(au.parse(t).root,""))){const n=new Error(`Path contains invalid characters: ${t}`);throw n.code="EINVAL",n}};const na=Ie,{checkPath:sa}=ra,ia=e=>{const t={mode:511};return typeof e=="number"?e:{...t,...e}.mode};fs.makeDir=async(e,t)=>(sa(e),na.mkdir(e,{mode:ia(t),recursive:!0}));fs.makeDirSync=(e,t)=>(sa(e),na.mkdirSync(e,{mode:ia(t),recursive:!0}));const cu=de.fromPromise,{makeDir:lu,makeDirSync:An}=fs,kn=cu(lu);var Be={mkdirs:kn,mkdirsSync:An,mkdirp:kn,mkdirpSync:An,ensureDir:kn,ensureDirSync:An};const uu=de.fromPromise,oa=Ie;function fu(e){return oa.access(e).then(()=>!0).catch(()=>!1)}var St={pathExists:uu(fu),pathExistsSync:oa.existsSync};const kt=Ie,du=de.fromPromise;async function hu(e,t,r){const n=await kt.open(e,"r+");let s=null;try{await kt.futimes(n,t,r)}catch(i){s=i}finally{try{await kt.close(n)}catch(i){s||(s=i)}}if(s)throw s}function mu(e,t,r){const n=kt.openSync(e,"r+");let s=null;try{kt.futimesSync(n,t,r)}catch(i){s=i}finally{try{kt.closeSync(n)}catch(i){s||(s=i)}}if(s)throw s}var aa={utimesMillis:du(hu),utimesMillisSync:mu};const Ct=Ie,pe=ue,Ui=de.fromPromise;function pu(e,t,r){const n=r.dereference?s=>Ct.stat(s,{bigint:!0}):s=>Ct.lstat(s,{bigint:!0});return Promise.all([n(e),n(t).catch(s=>{if(s.code==="ENOENT")return null;throw s})]).then(([s,i])=>({srcStat:s,destStat:i}))}function yu(e,t,r){let n;const s=r.dereference?o=>Ct.statSync(o,{bigint:!0}):o=>Ct.lstatSync(o,{bigint:!0}),i=s(e);try{n=s(t)}catch(o){if(o.code==="ENOENT")return{srcStat:i,destStat:null};throw o}return{srcStat:i,destStat:n}}async function $u(e,t,r,n){const{srcStat:s,destStat:i}=await pu(e,t,n);if(i){if(pr(s,i)){const o=pe.basename(e),l=pe.basename(t);if(r==="move"&&o!==l&&o.toLowerCase()===l.toLowerCase())return{srcStat:s,destStat:i,isChangingCase:!0};throw new Error("Source and destination must not be the same.")}if(s.isDirectory()&&!i.isDirectory())throw new Error(`Cannot overwrite non-directory '${t}' with directory '${e}'.`);if(!s.isDirectory()&&i.isDirectory())throw new Error(`Cannot overwrite directory '${t}' with non-directory '${e}'.`)}if(s.isDirectory()&&ds(e,t))throw new Error(en(e,t,r));return{srcStat:s,destStat:i}}function gu(e,t,r,n){const{srcStat:s,destStat:i}=yu(e,t,n);if(i){if(pr(s,i)){const o=pe.basename(e),l=pe.basename(t);if(r==="move"&&o!==l&&o.toLowerCase()===l.toLowerCase())return{srcStat:s,destStat:i,isChangingCase:!0};throw new Error("Source and destination must not be the same.")}if(s.isDirectory()&&!i.isDirectory())throw new Error(`Cannot overwrite non-directory '${t}' with directory '${e}'.`);if(!s.isDirectory()&&i.isDirectory())throw new Error(`Cannot overwrite directory '${t}' with non-directory '${e}'.`)}if(s.isDirectory()&&ds(e,t))throw new Error(en(e,t,r));return{srcStat:s,destStat:i}}async function ca(e,t,r,n){const s=pe.resolve(pe.dirname(e)),i=pe.resolve(pe.dirname(r));if(i===s||i===pe.parse(i).root)return;let o;try{o=await Ct.stat(i,{bigint:!0})}catch(l){if(l.code==="ENOENT")return;throw l}if(pr(t,o))throw new Error(en(e,r,n));return ca(e,t,i,n)}function la(e,t,r,n){const s=pe.resolve(pe.dirname(e)),i=pe.resolve(pe.dirname(r));if(i===s||i===pe.parse(i).root)return;let o;try{o=Ct.statSync(i,{bigint:!0})}catch(l){if(l.code==="ENOENT")return;throw l}if(pr(t,o))throw new Error(en(e,r,n));return la(e,t,i,n)}function pr(e,t){return t.ino!==void 0&&t.dev!==void 0&&t.ino===e.ino&&t.dev===e.dev}function ds(e,t){const r=pe.resolve(e).split(pe.sep).filter(s=>s),n=pe.resolve(t).split(pe.sep).filter(s=>s);return r.every((s,i)=>n[i]===s)}function en(e,t,r){return`Cannot ${r} '${e}' to a subdirectory of itself, '${t}'.`}var xt={checkPaths:Ui($u),checkPathsSync:gu,checkParentPaths:Ui(ca),checkParentPathsSync:la,isSrcSubdir:ds,areIdentical:pr};async function vu(e,t){const r=[];for await(const n of e)r.push(t(n).then(()=>null,s=>s??new Error("unknown error")));await Promise.all(r.map(n=>n.then(s=>{if(s!==null)throw s})))}var wu={asyncIteratorConcurrentProcess:vu};const _e=Ie,lr=ue,{mkdirs:_u}=Be,{pathExists:Eu}=St,{utimesMillis:Su}=aa,ur=xt,{asyncIteratorConcurrentProcess:bu}=wu;async function Pu(e,t,r={}){typeof r=="function"&&(r={filter:r}),r.clobber="clobber"in r?!!r.clobber:!0,r.overwrite="overwrite"in r?!!r.overwrite:r.clobber,r.preserveTimestamps&&process.arch==="ia32"&&process.emitWarning(`Using the preserveTimestamps option in 32-bit node is not recommended;
-
-	see https://github.com/jprichardson/node-fs-extra/issues/269`,"Warning","fs-extra-WARN0001");const{srcStat:n,destStat:s}=await ur.checkPaths(e,t,"copy",r);if(await ur.checkParentPaths(e,n,t,"copy"),!await ua(e,t,r))return;const o=lr.dirname(t);await Eu(o)||await _u(o),await fa(s,e,t,r)}async function ua(e,t,r){return r.filter?r.filter(e,t):!0}async function fa(e,t,r,n){const i=await(n.dereference?_e.stat:_e.lstat)(t);if(i.isDirectory())return Ru(i,e,t,r,n);if(i.isFile()||i.isCharacterDevice()||i.isBlockDevice())return Ou(i,e,t,r,n);if(i.isSymbolicLink())return Tu(e,t,r,n);throw i.isSocket()?new Error(`Cannot copy a socket file: ${t}`):i.isFIFO()?new Error(`Cannot copy a FIFO pipe: ${t}`):new Error(`Unknown file: ${t}`)}async function Ou(e,t,r,n,s){if(!t)return Vi(e,r,n,s);if(s.overwrite)return await _e.unlink(n),Vi(e,r,n,s);if(s.errorOnExist)throw new Error(`'${n}' already exists`)}async function Vi(e,t,r,n){if(await _e.copyFile(t,r),n.preserveTimestamps){Nu(e.mode)&&await Iu(r,e.mode);const s=await _e.stat(t);await Su(r,s.atime,s.mtime)}return _e.chmod(r,e.mode)}function Nu(e){return(e&128)===0}function Iu(e,t){return _e.chmod(e,t|128)}async function Ru(e,t,r,n,s){t||await _e.mkdir(n),await bu(await _e.opendir(r),async i=>{const o=lr.join(r,i.name),l=lr.join(n,i.name);if(await ua(o,l,s)){const{destStat:f}=await ur.checkPaths(o,l,"copy",s);await fa(f,o,l,s)}}),t||await _e.chmod(n,e.mode)}async function Tu(e,t,r,n){let s=await _e.readlink(t);if(n.dereference&&(s=lr.resolve(process.cwd(),s)),!e)return _e.symlink(s,r);let i=null;try{i=await _e.readlink(r)}catch(o){if(o.code==="EINVAL"||o.code==="UNKNOWN")return _e.symlink(s,r);throw o}if(n.dereference&&(i=lr.resolve(process.cwd(),i)),s!==i){if(ur.isSrcSubdir(s,i))throw new Error(`Cannot copy '${s}' to a subdirectory of itself, '${i}'.`);if(ur.isSrcSubdir(i,s))throw new Error(`Cannot overwrite '${i}' with '${s}'.`)}return await _e.unlink(r),_e.symlink(s,r)}var Au=Pu;const Oe=qt,fr=ue,ku=Be.mkdirsSync,ju=aa.utimesMillisSync,dr=xt;function Du(e,t,r){typeof r=="function"&&(r={filter:r}),r=r||{},r.clobber="clobber"in r?!!r.clobber:!0,r.overwrite="overwrite"in r?!!r.overwrite:r.clobber,r.preserveTimestamps&&process.arch==="ia32"&&process.emitWarning(`Using the preserveTimestamps option in 32-bit node is not recommended;
-
-	see https://github.com/jprichardson/node-fs-extra/issues/269`,"Warning","fs-extra-WARN0002");const{srcStat:n,destStat:s}=dr.checkPathsSync(e,t,"copy",r);if(dr.checkParentPathsSync(e,n,t,"copy"),r.filter&&!r.filter(e,t))return;const i=fr.dirname(t);return Oe.existsSync(i)||ku(i),da(s,e,t,r)}function da(e,t,r,n){const i=(n.dereference?Oe.statSync:Oe.lstatSync)(t);if(i.isDirectory())return zu(i,e,t,r,n);if(i.isFile()||i.isCharacterDevice()||i.isBlockDevice())return Cu(i,e,t,r,n);if(i.isSymbolicLink())return Gu(e,t,r,n);throw i.isSocket()?new Error(`Cannot copy a socket file: ${t}`):i.isFIFO()?new Error(`Cannot copy a FIFO pipe: ${t}`):new Error(`Unknown file: ${t}`)}function Cu(e,t,r,n,s){return t?Lu(e,r,n,s):ha(e,r,n,s)}function Lu(e,t,r,n){if(n.overwrite)return Oe.unlinkSync(r),ha(e,t,r,n);if(n.errorOnExist)throw new Error(`'${r}' already exists`)}function ha(e,t,r,n){return Oe.copyFileSync(t,r),n.preserveTimestamps&&Fu(e.mode,t,r),hs(r,e.mode)}function Fu(e,t,r){return Mu(e)&&Uu(r,e),Vu(t,r)}function Mu(e){return(e&128)===0}function Uu(e,t){return hs(e,t|128)}function hs(e,t){return Oe.chmodSync(e,t)}function Vu(e,t){const r=Oe.statSync(e);return ju(t,r.atime,r.mtime)}function zu(e,t,r,n,s){return t?ma(r,n,s):qu(e.mode,r,n,s)}function qu(e,t,r,n){return Oe.mkdirSync(r),ma(t,r,n),hs(r,e)}function ma(e,t,r){const n=Oe.opendirSync(e);try{let s;for(;(s=n.readSync())!==null;)xu(s.name,e,t,r)}finally{n.closeSync()}}function xu(e,t,r,n){const s=fr.join(t,e),i=fr.join(r,e);if(n.filter&&!n.filter(s,i))return;const{destStat:o}=dr.checkPathsSync(s,i,"copy",n);return da(o,s,i,n)}function Gu(e,t,r,n){let s=Oe.readlinkSync(t);if(n.dereference&&(s=fr.resolve(process.cwd(),s)),e){let i;try{i=Oe.readlinkSync(r)}catch(o){if(o.code==="EINVAL"||o.code==="UNKNOWN")return Oe.symlinkSync(s,r);throw o}if(n.dereference&&(i=fr.resolve(process.cwd(),i)),s!==i){if(dr.isSrcSubdir(s,i))throw new Error(`Cannot copy '${s}' to a subdirectory of itself, '${i}'.`);if(dr.isSrcSubdir(i,s))throw new Error(`Cannot overwrite '${i}' with '${s}'.`)}return Wu(s,r)}else return Oe.symlinkSync(s,r)}function Wu(e,t){return Oe.unlinkSync(t),Oe.symlinkSync(e,t)}var Hu=Du;const Ku=de.fromPromise;var ms={copy:Ku(Au),copySync:Hu};const pa=qt,Bu=de.fromCallback;function Ju(e,t){pa.rm(e,{recursive:!0,force:!0},t)}function Xu(e){pa.rmSync(e,{recursive:!0,force:!0})}var tn={remove:Bu(Ju),removeSync:Xu};const Yu=de.fromPromise,ya=Ie,$a=ue,ga=Be,va=tn,zi=Yu(async function(t){let r;try{r=await ya.readdir(t)}catch{return ga.mkdirs(t)}return Promise.all(r.map(n=>va.remove($a.join(t,n))))});function qi(e){let t;try{t=ya.readdirSync(e)}catch{return ga.mkdirsSync(e)}t.forEach(r=>{r=$a.join(e,r),va.removeSync(r)})}var Qu={emptyDirSync:qi,emptydirSync:qi,emptyDir:zi,emptydir:zi};const Zu=de.fromPromise,wa=ue,Xe=Ie,_a=Be;async function ef(e){let t;try{t=await Xe.stat(e)}catch{}if(t&&t.isFile())return;const r=wa.dirname(e);let n=null;try{n=await Xe.stat(r)}catch(s){if(s.code==="ENOENT"){await _a.mkdirs(r),await Xe.writeFile(e,"");return}else throw s}n.isDirectory()?await Xe.writeFile(e,""):await Xe.readdir(r)}function tf(e){let t;try{t=Xe.statSync(e)}catch{}if(t&&t.isFile())return;const r=wa.dirname(e);try{Xe.statSync(r).isDirectory()||Xe.readdirSync(r)}catch(n){if(n&&n.code==="ENOENT")_a.mkdirsSync(r);else throw n}Xe.writeFileSync(e,"")}var rf={createFile:Zu(ef),createFileSync:tf};const nf=de.fromPromise,Ea=ue,rt=Ie,Sa=Be,{pathExists:sf}=St,{areIdentical:ba}=xt;async function of(e,t){let r;try{r=await rt.lstat(t,{bigint:!0})}catch{}let n;try{n=await rt.lstat(e,{bigint:!0})}catch(o){throw o.message=o.message.replace("lstat","ensureLink"),o}if(r&&ba(n,r))return;const s=Ea.dirname(t);await sf(s)||await Sa.mkdirs(s),await rt.link(e,t)}function af(e,t){let r;try{r=rt.lstatSync(t,{bigint:!0})}catch{}try{const i=rt.lstatSync(e,{bigint:!0});if(r&&ba(i,r))return}catch(i){throw i.message=i.message.replace("lstat","ensureLink"),i}const n=Ea.dirname(t);return rt.existsSync(n)||Sa.mkdirsSync(n),rt.linkSync(e,t)}var cf={createLink:nf(of),createLinkSync:af};const it=ue,er=Ie,{pathExists:lf}=St,uf=de.fromPromise;async function ff(e,t){if(it.isAbsolute(e)){try{await er.lstat(e)}catch(i){throw i.message=i.message.replace("lstat","ensureSymlink"),i}return{toCwd:e,toDst:e}}const r=it.dirname(t),n=it.join(r,e);if(await lf(n))return{toCwd:n,toDst:e};try{await er.lstat(e)}catch(i){throw i.message=i.message.replace("lstat","ensureSymlink"),i}return{toCwd:e,toDst:it.relative(r,e)}}function df(e,t){if(it.isAbsolute(e)){if(!er.existsSync(e))throw new Error("absolute srcpath does not exist");return{toCwd:e,toDst:e}}const r=it.dirname(t),n=it.join(r,e);if(er.existsSync(n))return{toCwd:n,toDst:e};if(!er.existsSync(e))throw new Error("relative srcpath does not exist");return{toCwd:e,toDst:it.relative(r,e)}}var hf={symlinkPaths:uf(ff),symlinkPathsSync:df};const Pa=Ie,mf=de.fromPromise;async function pf(e,t){if(t)return t;let r;try{r=await Pa.lstat(e)}catch{return"file"}return r&&r.isDirectory()?"dir":"file"}function yf(e,t){if(t)return t;let r;try{r=Pa.lstatSync(e)}catch{return"file"}return r&&r.isDirectory()?"dir":"file"}var $f={symlinkType:mf(pf),symlinkTypeSync:yf};const gf=de.fromPromise,ot=ue,Ae=Ie,{mkdirs:vf,mkdirsSync:wf}=Be,{symlinkPaths:_f,symlinkPathsSync:Ef}=hf,{symlinkType:Sf,symlinkTypeSync:bf}=$f,{pathExists:Pf}=St,{areIdentical:Oa}=xt;async function Of(e,t,r){let n;try{n=await Ae.lstat(t)}catch{}if(n&&n.isSymbolicLink()){let l;if(ot.isAbsolute(e))l=await Ae.stat(e,{bigint:!0});else{const f=ot.dirname(t),a=ot.join(f,e);try{l=await Ae.stat(a,{bigint:!0})}catch{l=await Ae.stat(e,{bigint:!0})}}const c=await Ae.stat(t,{bigint:!0});if(Oa(l,c))return}const s=await _f(e,t);e=s.toDst;const i=await Sf(s.toCwd,r),o=ot.dirname(t);return await Pf(o)||await vf(o),Ae.symlink(e,t,i)}function Nf(e,t,r){let n;try{n=Ae.lstatSync(t)}catch{}if(n&&n.isSymbolicLink()){let l;if(ot.isAbsolute(e))l=Ae.statSync(e,{bigint:!0});else{const f=ot.dirname(t),a=ot.join(f,e);try{l=Ae.statSync(a,{bigint:!0})}catch{l=Ae.statSync(e,{bigint:!0})}}const c=Ae.statSync(t,{bigint:!0});if(Oa(l,c))return}const s=Ef(e,t);e=s.toDst,r=bf(s.toCwd,r);const i=ot.dirname(t);return Ae.existsSync(i)||wf(i),Ae.symlinkSync(e,t,r)}var If={createSymlink:gf(Of),createSymlinkSync:Nf};const{createFile:xi,createFileSync:Gi}=rf,{createLink:Wi,createLinkSync:Hi}=cf,{createSymlink:Ki,createSymlinkSync:Bi}=If;var Rf={createFile:xi,createFileSync:Gi,ensureFile:xi,ensureFileSync:Gi,createLink:Wi,createLinkSync:Hi,ensureLink:Wi,ensureLinkSync:Hi,createSymlink:Ki,createSymlinkSync:Bi,ensureSymlink:Ki,ensureSymlinkSync:Bi};function Tf(e,{EOL:t=`
-`,finalEOL:r=!0,replacer:n=null,spaces:s}={}){const i=r?t:"",o=JSON.stringify(e,n,s);if(o===void 0)throw new TypeError(`Converting ${typeof e} value to JSON is not supported`);return o.replace(/\n/g,t)+i}function Af(e){return Buffer.isBuffer(e)&&(e=e.toString("utf8")),e.replace(/^\uFEFF/,"")}var ps={stringify:Tf,stripBom:Af};let Lt;try{Lt=qt}catch{Lt=mr}const rn=de,{stringify:Na,stripBom:Ia}=ps;async function kf(e,t={}){typeof t=="string"&&(t={encoding:t});const r=t.fs||Lt,n="throws"in t?t.throws:!0;let s=await rn.fromCallback(r.readFile)(e,t);s=Ia(s);let i;try{i=JSON.parse(s,t?t.reviver:null)}catch(o){if(n)throw o.message=`${e}: ${o.message}`,o;return null}return i}const jf=rn.fromPromise(kf);function Df(e,t={}){typeof t=="string"&&(t={encoding:t});const r=t.fs||Lt,n="throws"in t?t.throws:!0;try{let s=r.readFileSync(e,t);return s=Ia(s),JSON.parse(s,t.reviver)}catch(s){if(n)throw s.message=`${e}: ${s.message}`,s;return null}}async function Cf(e,t,r={}){const n=r.fs||Lt,s=Na(t,r);await rn.fromCallback(n.writeFile)(e,s,r)}const Lf=rn.fromPromise(Cf);function Ff(e,t,r={}){const n=r.fs||Lt,s=Na(t,r);return n.writeFileSync(e,s,r)}var Mf={readFile:jf,readFileSync:Df,writeFile:Lf,writeFileSync:Ff};const Sr=Mf;var Uf={readJson:Sr.readFile,readJsonSync:Sr.readFileSync,writeJson:Sr.writeFile,writeJsonSync:Sr.writeFileSync};const Vf=de.fromPromise,Wn=Ie,Ra=ue,Ta=Be,zf=St.pathExists;async function qf(e,t,r="utf-8"){const n=Ra.dirname(e);return await zf(n)||await Ta.mkdirs(n),Wn.writeFile(e,t,r)}function xf(e,...t){const r=Ra.dirname(e);Wn.existsSync(r)||Ta.mkdirsSync(r),Wn.writeFileSync(e,...t)}var ys={outputFile:Vf(qf),outputFileSync:xf};const{stringify:Gf}=ps,{outputFile:Wf}=ys;async function Hf(e,t,r={}){const n=Gf(t,r);await Wf(e,n,r)}var Kf=Hf;const{stringify:Bf}=ps,{outputFileSync:Jf}=ys;function Xf(e,t,r){const n=Bf(t,r);Jf(e,n,r)}var Yf=Xf;const Qf=de.fromPromise,Ne=Uf;Ne.outputJson=Qf(Kf);Ne.outputJsonSync=Yf;Ne.outputJSON=Ne.outputJson;Ne.outputJSONSync=Ne.outputJsonSync;Ne.writeJSON=Ne.writeJson;Ne.writeJSONSync=Ne.writeJsonSync;Ne.readJSON=Ne.readJson;Ne.readJSONSync=Ne.readJsonSync;var Zf=Ne;const ed=Ie,Ji=ue,{copy:td}=ms,{remove:Aa}=tn,{mkdirp:rd}=Be,{pathExists:nd}=St,Xi=xt;async function sd(e,t,r={}){const n=r.overwrite||r.clobber||!1,{srcStat:s,isChangingCase:i=!1}=await Xi.checkPaths(e,t,"move",r);await Xi.checkParentPaths(e,s,t,"move");const o=Ji.dirname(t);return Ji.parse(o).root!==o&&await rd(o),id(e,t,n,i)}async function id(e,t,r,n){if(!n){if(r)await Aa(t);else if(await nd(t))throw new Error("dest already exists.")}try{await ed.rename(e,t)}catch(s){if(s.code!=="EXDEV")throw s;await od(e,t,r)}}async function od(e,t,r){return await td(e,t,{overwrite:r,errorOnExist:!0,preserveTimestamps:!0}),Aa(e)}var ad=sd;const ka=qt,Hn=ue,cd=ms.copySync,ja=tn.removeSync,ld=Be.mkdirpSync,Yi=xt;function ud(e,t,r){r=r||{};const n=r.overwrite||r.clobber||!1,{srcStat:s,isChangingCase:i=!1}=Yi.checkPathsSync(e,t,"move",r);return Yi.checkParentPathsSync(e,s,t,"move"),fd(t)||ld(Hn.dirname(t)),dd(e,t,n,i)}function fd(e){const t=Hn.dirname(e);return Hn.parse(t).root===t}function dd(e,t,r,n){if(n)return jn(e,t,r);if(r)return ja(t),jn(e,t,r);if(ka.existsSync(t))throw new Error("dest already exists.");return jn(e,t,r)}function jn(e,t,r){try{ka.renameSync(e,t)}catch(n){if(n.code!=="EXDEV")throw n;return hd(e,t,r)}}function hd(e,t,r){return cd(e,t,{overwrite:r,errorOnExist:!0,preserveTimestamps:!0}),ja(e)}var md=ud;const pd=de.fromPromise;var yd={move:pd(ad),moveSync:md},$d={...Ie,...ms,...Qu,...Rf,...Zf,...Be,...yd,...ys,...St,...tn};require("path");const gd=async()=>await oe.dialog.showOpenDialog({title:"选择一个文件",buttonLabel:"确认选择",properties:["openFile"],filters:[{name:"视频资源",extensions:["mp4","avi","mkv","mov","flv","wmv","webm","mpeg","mpg","ogv","3gp","m4v","asf","rm","rmvb","ts"]}]}),vd=async(e,t="screen-go.bin")=>{const r=await oe.dialog.showSaveDialog({title:"保存 BIN 文件",defaultPath:t,buttonLabel:"保存",filters:[{name:"BIN 文件",extensions:["bin"]}]});if(r.canceled||!r.filePath)return!1;const n=e.map(s=>Number(s)&255);return $d.writeFileSync(r.filePath,Buffer.from(n)),!0},wd=()=>{oe.ipcMain.handle("select-video-file",async(e,t)=>await gd()),oe.ipcMain.handle("save-bin-file",async(e,t,r)=>await vd(Array.isArray(t)?t:[],r))};var Kn={exports:{}},_d=e=>{const t=typeof e;return e!==null&&(t==="object"||t==="function")};const dt=_d,Ed=new Set(["__proto__","prototype","constructor"]),Sd=e=>!e.some(t=>Ed.has(t));function br(e){const t=e.split("."),r=[];for(let n=0;n<t.length;n++){let s=t[n];for(;s[s.length-1]==="\\"&&t[n+1]!==void 0;)s=s.slice(0,-1)+".",s+=t[++n];r.push(s)}return Sd(r)?r:[]}var bd={get(e,t,r){if(!dt(e)||typeof t!="string")return r===void 0?e:r;const n=br(t);if(n.length!==0){for(let s=0;s<n.length;s++)if(e=e[n[s]],e==null){if(s!==n.length-1)return r;break}return e===void 0?r:e}},set(e,t,r){if(!dt(e)||typeof t!="string")return e;const n=e,s=br(t);for(let i=0;i<s.length;i++){const o=s[i];dt(e[o])||(e[o]={}),i===s.length-1&&(e[o]=r),e=e[o]}return n},delete(e,t){if(!dt(e)||typeof t!="string")return!1;const r=br(t);for(let n=0;n<r.length;n++){const s=r[n];if(n===r.length-1)return delete e[s],!0;if(e=e[s],!dt(e))return!1}},has(e,t){if(!dt(e)||typeof t!="string")return!1;const r=br(t);if(r.length===0)return!1;for(let n=0;n<r.length;n++)if(dt(e)){if(!(r[n]in e))return!1;e=e[r[n]]}else return!1;return!0}},$s={exports:{}},gs={exports:{}},vs={exports:{}},ws={exports:{}};const Da=mr;ws.exports=e=>new Promise(t=>{Da.access(e,r=>{t(!r)})});ws.exports.sync=e=>{try{return Da.accessSync(e),!0}catch{return!1}};var Pd=ws.exports,_s={exports:{}},Es={exports:{}};const Ca=(e,...t)=>new Promise(r=>{r(e(...t))});Es.exports=Ca;Es.exports.default=Ca;var Od=Es.exports;const Nd=Od,La=e=>{if(!((Number.isInteger(e)||e===1/0)&&e>0))return Promise.reject(new TypeError("Expected `concurrency` to be a number from 1 and up"));const t=[];let r=0;const n=()=>{r--,t.length>0&&t.shift()()},s=(l,c,...f)=>{r++;const a=Nd(l,...f);c(a),a.then(n,n)},i=(l,c,...f)=>{r<e?s(l,c,...f):t.push(s.bind(null,l,c,...f))},o=(l,...c)=>new Promise(f=>i(l,f,...c));return Object.defineProperties(o,{activeCount:{get:()=>r},pendingCount:{get:()=>t.length},clearQueue:{value:()=>{t.length=0}}}),o};_s.exports=La;_s.exports.default=La;var Id=_s.exports;const Qi=Id;class Fa extends Error{constructor(t){super(),this.value=t}}const Rd=(e,t)=>Promise.resolve(e).then(t),Td=e=>Promise.all(e).then(t=>t[1]===!0&&Promise.reject(new Fa(t[0])));var Ad=(e,t,r)=>{r=Object.assign({concurrency:1/0,preserveOrder:!0},r);const n=Qi(r.concurrency),s=[...e].map(o=>[o,n(Rd,o,t)]),i=Qi(r.preserveOrder?1:1/0);return Promise.all(s.map(o=>i(Td,o))).then(()=>{}).catch(o=>o instanceof Fa?o.value:Promise.reject(o))};const Ma=ue,Ua=Pd,kd=Ad;vs.exports=(e,t)=>(t=Object.assign({cwd:process.cwd()},t),kd(e,r=>Ua(Ma.resolve(t.cwd,r)),t));vs.exports.sync=(e,t)=>{t=Object.assign({cwd:process.cwd()},t);for(const r of e)if(Ua.sync(Ma.resolve(t.cwd,r)))return r};var jd=vs.exports;const at=ue,Va=jd;gs.exports=(e,t={})=>{const r=at.resolve(t.cwd||""),{root:n}=at.parse(r),s=[].concat(e);return new Promise(i=>{(function o(l){Va(s,{cwd:l}).then(c=>{c?i(at.join(l,c)):l===n?i(null):o(at.dirname(l))})})(r)})};gs.exports.sync=(e,t={})=>{let r=at.resolve(t.cwd||"");const{root:n}=at.parse(r),s=[].concat(e);for(;;){const i=Va.sync(s,{cwd:r});if(i)return at.join(r,i);if(r===n)return null;r=at.dirname(r)}};var Dd=gs.exports;const za=Dd;$s.exports=async({cwd:e}={})=>za("package.json",{cwd:e});$s.exports.sync=({cwd:e}={})=>za.sync("package.json",{cwd:e});var Cd=$s.exports,Ss={exports:{}};const ie=ue,qa=$l,nt=qa.homedir(),bs=qa.tmpdir(),{env:Tt}=process,Ld=e=>{const t=ie.join(nt,"Library");return{data:ie.join(t,"Application Support",e),config:ie.join(t,"Preferences",e),cache:ie.join(t,"Caches",e),log:ie.join(t,"Logs",e),temp:ie.join(bs,e)}},Fd=e=>{const t=Tt.APPDATA||ie.join(nt,"AppData","Roaming"),r=Tt.LOCALAPPDATA||ie.join(nt,"AppData","Local");return{data:ie.join(r,e,"Data"),config:ie.join(t,e,"Config"),cache:ie.join(r,e,"Cache"),log:ie.join(r,e,"Log"),temp:ie.join(bs,e)}},Md=e=>{const t=ie.basename(nt);return{data:ie.join(Tt.XDG_DATA_HOME||ie.join(nt,".local","share"),e),config:ie.join(Tt.XDG_CONFIG_HOME||ie.join(nt,".config"),e),cache:ie.join(Tt.XDG_CACHE_HOME||ie.join(nt,".cache"),e),log:ie.join(Tt.XDG_STATE_HOME||ie.join(nt,".local","state"),e),temp:ie.join(bs,t,e)}},xa=(e,t)=>{if(typeof e!="string")throw new TypeError(`Expected string, got ${typeof e}`);return t=Object.assign({suffix:"nodejs"},t),t.suffix&&(e+=`-${t.suffix}`),process.platform==="darwin"?Ld(e):process.platform==="win32"?Fd(e):Md(e)};Ss.exports=xa;Ss.exports.default=xa;var Ud=Ss.exports,We={},Z={};Object.defineProperty(Z,"__esModule",{value:!0});Z.NOOP=Z.LIMIT_FILES_DESCRIPTORS=Z.LIMIT_BASENAME_LENGTH=Z.IS_USER_ROOT=Z.IS_POSIX=Z.DEFAULT_TIMEOUT_SYNC=Z.DEFAULT_TIMEOUT_ASYNC=Z.DEFAULT_WRITE_OPTIONS=Z.DEFAULT_READ_OPTIONS=Z.DEFAULT_FOLDER_MODE=Z.DEFAULT_FILE_MODE=Z.DEFAULT_ENCODING=void 0;const Vd="utf8";Z.DEFAULT_ENCODING=Vd;const zd=438;Z.DEFAULT_FILE_MODE=zd;const qd=511;Z.DEFAULT_FOLDER_MODE=qd;const xd={};Z.DEFAULT_READ_OPTIONS=xd;const Gd={};Z.DEFAULT_WRITE_OPTIONS=Gd;const Wd=5e3;Z.DEFAULT_TIMEOUT_ASYNC=Wd;const Hd=100;Z.DEFAULT_TIMEOUT_SYNC=Hd;const Kd=!!process.getuid;Z.IS_POSIX=Kd;const Bd=process.getuid?!process.getuid():!1;Z.IS_USER_ROOT=Bd;const Jd=128;Z.LIMIT_BASENAME_LENGTH=Jd;const Xd=1e4;Z.LIMIT_FILES_DESCRIPTORS=Xd;const Yd=()=>{};Z.NOOP=Yd;var nn={},Ft={};Object.defineProperty(Ft,"__esModule",{value:!0});Ft.attemptifySync=Ft.attemptifyAsync=void 0;const Ga=Z,Qd=(e,t=Ga.NOOP)=>function(){return e.apply(void 0,arguments).catch(t)};Ft.attemptifyAsync=Qd;const Zd=(e,t=Ga.NOOP)=>function(){try{return e.apply(void 0,arguments)}catch(r){return t(r)}};Ft.attemptifySync=Zd;var Ps={};Object.defineProperty(Ps,"__esModule",{value:!0});const eh=Z,Wa={isChangeErrorOk:e=>{const{code:t}=e;return t==="ENOSYS"||!eh.IS_USER_ROOT&&(t==="EINVAL"||t==="EPERM")},isRetriableError:e=>{const{code:t}=e;return t==="EMFILE"||t==="ENFILE"||t==="EAGAIN"||t==="EBUSY"||t==="EACCESS"||t==="EACCS"||t==="EPERM"},onChangeError:e=>{if(!Wa.isChangeErrorOk(e))throw e}};Ps.default=Wa;var Mt={},Os={};Object.defineProperty(Os,"__esModule",{value:!0});const th=Z,re={interval:25,intervalId:void 0,limit:th.LIMIT_FILES_DESCRIPTORS,queueActive:new Set,queueWaiting:new Set,init:()=>{re.intervalId||(re.intervalId=setInterval(re.tick,re.interval))},reset:()=>{re.intervalId&&(clearInterval(re.intervalId),delete re.intervalId)},add:e=>{re.queueWaiting.add(e),re.queueActive.size<re.limit/2?re.tick():re.init()},remove:e=>{re.queueWaiting.delete(e),re.queueActive.delete(e)},schedule:()=>new Promise(e=>{const t=()=>re.remove(r),r=()=>e(t);re.add(r)}),tick:()=>{if(!(re.queueActive.size>=re.limit)){if(!re.queueWaiting.size)return re.reset();for(const e of re.queueWaiting){if(re.queueActive.size>=re.limit)break;re.queueWaiting.delete(e),re.queueActive.add(e),e()}}}};Os.default=re;Object.defineProperty(Mt,"__esModule",{value:!0});Mt.retryifySync=Mt.retryifyAsync=void 0;const rh=Os,nh=(e,t)=>function(r){return function n(){return rh.default.schedule().then(s=>e.apply(void 0,arguments).then(i=>(s(),i),i=>{if(s(),Date.now()>=r)throw i;if(t(i)){const o=Math.round(100+400*Math.random());return new Promise(c=>setTimeout(c,o)).then(()=>n.apply(void 0,arguments))}throw i}))}};Mt.retryifyAsync=nh;const sh=(e,t)=>function(r){return function n(){try{return e.apply(void 0,arguments)}catch(s){if(Date.now()>r)throw s;if(t(s))return n.apply(void 0,arguments);throw s}}};Mt.retryifySync=sh;Object.defineProperty(nn,"__esModule",{value:!0});const ee=mr,Se=as,be=Ft,me=Ps,Re=Mt,ih={chmodAttempt:be.attemptifyAsync(Se.promisify(ee.chmod),me.default.onChangeError),chownAttempt:be.attemptifyAsync(Se.promisify(ee.chown),me.default.onChangeError),closeAttempt:be.attemptifyAsync(Se.promisify(ee.close)),fsyncAttempt:be.attemptifyAsync(Se.promisify(ee.fsync)),mkdirAttempt:be.attemptifyAsync(Se.promisify(ee.mkdir)),realpathAttempt:be.attemptifyAsync(Se.promisify(ee.realpath)),statAttempt:be.attemptifyAsync(Se.promisify(ee.stat)),unlinkAttempt:be.attemptifyAsync(Se.promisify(ee.unlink)),closeRetry:Re.retryifyAsync(Se.promisify(ee.close),me.default.isRetriableError),fsyncRetry:Re.retryifyAsync(Se.promisify(ee.fsync),me.default.isRetriableError),openRetry:Re.retryifyAsync(Se.promisify(ee.open),me.default.isRetriableError),readFileRetry:Re.retryifyAsync(Se.promisify(ee.readFile),me.default.isRetriableError),renameRetry:Re.retryifyAsync(Se.promisify(ee.rename),me.default.isRetriableError),statRetry:Re.retryifyAsync(Se.promisify(ee.stat),me.default.isRetriableError),writeRetry:Re.retryifyAsync(Se.promisify(ee.write),me.default.isRetriableError),chmodSyncAttempt:be.attemptifySync(ee.chmodSync,me.default.onChangeError),chownSyncAttempt:be.attemptifySync(ee.chownSync,me.default.onChangeError),closeSyncAttempt:be.attemptifySync(ee.closeSync),mkdirSyncAttempt:be.attemptifySync(ee.mkdirSync),realpathSyncAttempt:be.attemptifySync(ee.realpathSync),statSyncAttempt:be.attemptifySync(ee.statSync),unlinkSyncAttempt:be.attemptifySync(ee.unlinkSync),closeSyncRetry:Re.retryifySync(ee.closeSync,me.default.isRetriableError),fsyncSyncRetry:Re.retryifySync(ee.fsyncSync,me.default.isRetriableError),openSyncRetry:Re.retryifySync(ee.openSync,me.default.isRetriableError),readFileSyncRetry:Re.retryifySync(ee.readFileSync,me.default.isRetriableError),renameSyncRetry:Re.retryifySync(ee.renameSync,me.default.isRetriableError),statSyncRetry:Re.retryifySync(ee.statSync,me.default.isRetriableError),writeSyncRetry:Re.retryifySync(ee.writeSync,me.default.isRetriableError)};nn.default=ih;var Ns={};Object.defineProperty(Ns,"__esModule",{value:!0});const oh={isFunction:e=>typeof e=="function",isString:e=>typeof e=="string",isUndefined:e=>typeof e>"u"};Ns.default=oh;var Is={};Object.defineProperty(Is,"__esModule",{value:!0});const Pr={},Bn={next:e=>{const t=Pr[e];if(!t)return;t.shift();const r=t[0];r?r(()=>Bn.next(e)):delete Pr[e]},schedule:e=>new Promise(t=>{let r=Pr[e];r||(r=Pr[e]=[]),r.push(t),!(r.length>1)&&t(()=>Bn.next(e))})};Is.default=Bn;var Rs={};Object.defineProperty(Rs,"__esModule",{value:!0});const ah=ue,Zi=Z,eo=nn,je={store:{},create:e=>{const t=`000000${Math.floor(Math.random()*16777215).toString(16)}`.slice(-6),r=Date.now().toString().slice(-10),n="tmp-",s=`.${n}${r}${t}`;return`${e}${s}`},get:(e,t,r=!0)=>{const n=je.truncate(t(e));return n in je.store?je.get(e,t,r):(je.store[n]=r,[n,()=>delete je.store[n]])},purge:e=>{je.store[e]&&(delete je.store[e],eo.default.unlinkAttempt(e))},purgeSync:e=>{je.store[e]&&(delete je.store[e],eo.default.unlinkSyncAttempt(e))},purgeSyncAll:()=>{for(const e in je.store)je.purgeSync(e)},truncate:e=>{const t=ah.basename(e);if(t.length<=Zi.LIMIT_BASENAME_LENGTH)return e;const r=/^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(t);if(!r)return e;const n=t.length-Zi.LIMIT_BASENAME_LENGTH;return`${e.slice(0,-t.length)}${r[1]}${r[2].slice(0,-n)}${r[3]}`}};process.on("exit",je.purgeSyncAll);Rs.default=je;Object.defineProperty(We,"__esModule",{value:!0});We.writeFileSync=We.writeFile=We.readFileSync=We.readFile=void 0;const Ha=ue,$e=Z,Q=nn,De=Ns,ch=Is,ct=Rs;function Ka(e,t=$e.DEFAULT_READ_OPTIONS){var r;if(De.default.isString(t))return Ka(e,{encoding:t});const n=Date.now()+((r=t.timeout)!==null&&r!==void 0?r:$e.DEFAULT_TIMEOUT_ASYNC);return Q.default.readFileRetry(n)(e,t)}We.readFile=Ka;function Ba(e,t=$e.DEFAULT_READ_OPTIONS){var r;if(De.default.isString(t))return Ba(e,{encoding:t});const n=Date.now()+((r=t.timeout)!==null&&r!==void 0?r:$e.DEFAULT_TIMEOUT_SYNC);return Q.default.readFileSyncRetry(n)(e,t)}We.readFileSync=Ba;const Ja=(e,t,r,n)=>{if(De.default.isFunction(r))return Ja(e,t,$e.DEFAULT_WRITE_OPTIONS,r);const s=Xa(e,t,r);return n&&s.then(n,n),s};We.writeFile=Ja;const Xa=async(e,t,r=$e.DEFAULT_WRITE_OPTIONS)=>{var n;if(De.default.isString(r))return Xa(e,t,{encoding:r});const s=Date.now()+((n=r.timeout)!==null&&n!==void 0?n:$e.DEFAULT_TIMEOUT_ASYNC);let i=null,o=null,l=null,c=null,f=null;try{r.schedule&&(i=await r.schedule(e)),o=await ch.default.schedule(e),e=await Q.default.realpathAttempt(e)||e,[c,l]=ct.default.get(e,r.tmpCreate||ct.default.create,r.tmpPurge!==!1);const a=$e.IS_POSIX&&De.default.isUndefined(r.chown),d=De.default.isUndefined(r.mode);if(a||d){const m=await Q.default.statAttempt(e);m&&(r={...r},a&&(r.chown={uid:m.uid,gid:m.gid}),d&&(r.mode=m.mode))}const v=Ha.dirname(e);await Q.default.mkdirAttempt(v,{mode:$e.DEFAULT_FOLDER_MODE,recursive:!0}),f=await Q.default.openRetry(s)(c,"w",r.mode||$e.DEFAULT_FILE_MODE),r.tmpCreated&&r.tmpCreated(c),De.default.isString(t)?await Q.default.writeRetry(s)(f,t,0,r.encoding||$e.DEFAULT_ENCODING):De.default.isUndefined(t)||await Q.default.writeRetry(s)(f,t,0,t.length,0),r.fsync!==!1&&(r.fsyncWait!==!1?await Q.default.fsyncRetry(s)(f):Q.default.fsyncAttempt(f)),await Q.default.closeRetry(s)(f),f=null,r.chown&&await Q.default.chownAttempt(c,r.chown.uid,r.chown.gid),r.mode&&await Q.default.chmodAttempt(c,r.mode);try{await Q.default.renameRetry(s)(c,e)}catch(m){if(m.code!=="ENAMETOOLONG")throw m;await Q.default.renameRetry(s)(c,ct.default.truncate(e))}l(),c=null}finally{f&&await Q.default.closeAttempt(f),c&&ct.default.purge(c),i&&i(),o&&o()}},Ya=(e,t,r=$e.DEFAULT_WRITE_OPTIONS)=>{var n;if(De.default.isString(r))return Ya(e,t,{encoding:r});const s=Date.now()+((n=r.timeout)!==null&&n!==void 0?n:$e.DEFAULT_TIMEOUT_SYNC);let i=null,o=null,l=null;try{e=Q.default.realpathSyncAttempt(e)||e,[o,i]=ct.default.get(e,r.tmpCreate||ct.default.create,r.tmpPurge!==!1);const c=$e.IS_POSIX&&De.default.isUndefined(r.chown),f=De.default.isUndefined(r.mode);if(c||f){const d=Q.default.statSyncAttempt(e);d&&(r={...r},c&&(r.chown={uid:d.uid,gid:d.gid}),f&&(r.mode=d.mode))}const a=Ha.dirname(e);Q.default.mkdirSyncAttempt(a,{mode:$e.DEFAULT_FOLDER_MODE,recursive:!0}),l=Q.default.openSyncRetry(s)(o,"w",r.mode||$e.DEFAULT_FILE_MODE),r.tmpCreated&&r.tmpCreated(o),De.default.isString(t)?Q.default.writeSyncRetry(s)(l,t,0,r.encoding||$e.DEFAULT_ENCODING):De.default.isUndefined(t)||Q.default.writeSyncRetry(s)(l,t,0,t.length,0),r.fsync!==!1&&(r.fsyncWait!==!1?Q.default.fsyncSyncRetry(s)(l):Q.default.fsyncAttempt(l)),Q.default.closeSyncRetry(s)(l),l=null,r.chown&&Q.default.chownSyncAttempt(o,r.chown.uid,r.chown.gid),r.mode&&Q.default.chmodSyncAttempt(o,r.mode);try{Q.default.renameSyncRetry(s)(o,e)}catch(d){if(d.code!=="ENAMETOOLONG")throw d;Q.default.renameSyncRetry(s)(o,ct.default.truncate(e))}i(),o=null}finally{l&&Q.default.closeSyncAttempt(l),o&&ct.default.purge(o)}};We.writeFileSync=Ya;var Jn={exports:{}},Qa={},Ue={},Ut={},yr={},W={},hr={};(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.regexpCode=e.getEsmExportName=e.getProperty=e.safeStringify=e.stringify=e.strConcat=e.addCodeArg=e.str=e._=e.nil=e._Code=e.Name=e.IDENTIFIER=e._CodeOrName=void 0;class t{}e._CodeOrName=t,e.IDENTIFIER=/^[a-z$_][a-z$_0-9]*$/i;class r extends t{constructor(P){if(super(),!e.IDENTIFIER.test(P))throw new Error("CodeGen: name must be a valid identifier");this.str=P}toString(){return this.str}emptyStr(){return!1}get names(){return{[this.str]:1}}}e.Name=r;class n extends t{constructor(P){super(),this._items=typeof P=="string"?[P]:P}toString(){return this.str}emptyStr(){if(this._items.length>1)return!1;const P=this._items[0];return P===""||P==='""'}get str(){var P;return(P=this._str)!==null&&P!==void 0?P:this._str=this._items.reduce((I,A)=>`${I}${A}`,"")}get names(){var P;return(P=this._names)!==null&&P!==void 0?P:this._names=this._items.reduce((I,A)=>(A instanceof r&&(I[A.str]=(I[A.str]||0)+1),I),{})}}e._Code=n,e.nil=new n("");function s(y,...P){const I=[y[0]];let A=0;for(;A<P.length;)l(I,P[A]),I.push(y[++A]);return new n(I)}e._=s;const i=new n("+");function o(y,...P){const I=[m(y[0])];let A=0;for(;A<P.length;)I.push(i),l(I,P[A]),I.push(i,m(y[++A]));return c(I),new n(I)}e.str=o;function l(y,P){P instanceof n?y.push(...P._items):P instanceof r?y.push(P):y.push(d(P))}e.addCodeArg=l;function c(y){let P=1;for(;P<y.length-1;){if(y[P]===i){const I=f(y[P-1],y[P+1]);if(I!==void 0){y.splice(P-1,3,I);continue}y[P++]="+"}P++}}function f(y,P){if(P==='""')return y;if(y==='""')return P;if(typeof y=="string")return P instanceof r||y[y.length-1]!=='"'?void 0:typeof P!="string"?`${y.slice(0,-1)}${P}"`:P[0]==='"'?y.slice(0,-1)+P.slice(1):void 0;if(typeof P=="string"&&P[0]==='"'&&!(y instanceof r))return`"${y}${P.slice(1)}`}function a(y,P){return P.emptyStr()?y:y.emptyStr()?P:o`${y}${P}`}e.strConcat=a;function d(y){return typeof y=="number"||typeof y=="boolean"||y===null?y:m(Array.isArray(y)?y.join(","):y)}function v(y){return new n(m(y))}e.stringify=v;function m(y){return JSON.stringify(y).replace(/\u2028/g,"\\u2028").replace(/\u2029/g,"\\u2029")}e.safeStringify=m;function S(y){return typeof y=="string"&&e.IDENTIFIER.test(y)?new n(`.${y}`):s`[${y}]`}e.getProperty=S;function g(y){if(typeof y=="string"&&e.IDENTIFIER.test(y))return new n(`${y}`);throw new Error(`CodeGen: invalid export name: ${y}, use explicit $id name mapping`)}e.getEsmExportName=g;function E(y){return new n(y.toString())}e.regexpCode=E})(hr);var Xn={};(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.ValueScope=e.ValueScopeName=e.Scope=e.varKinds=e.UsedValueState=void 0;const t=hr;class r extends Error{constructor(f){super(`CodeGen: "code" for ${f} not defined`),this.value=f.value}}var n;(function(c){c[c.Started=0]="Started",c[c.Completed=1]="Completed"})(n||(e.UsedValueState=n={})),e.varKinds={const:new t.Name("const"),let:new t.Name("let"),var:new t.Name("var")};class s{constructor({prefixes:f,parent:a}={}){this._names={},this._prefixes=f,this._parent=a}toName(f){return f instanceof t.Name?f:this.name(f)}name(f){return new t.Name(this._newName(f))}_newName(f){const a=this._names[f]||this._nameGroup(f);return`${f}${a.index++}`}_nameGroup(f){var a,d;if(!((d=(a=this._parent)===null||a===void 0?void 0:a._prefixes)===null||d===void 0)&&d.has(f)||this._prefixes&&!this._prefixes.has(f))throw new Error(`CodeGen: prefix "${f}" is not allowed in this scope`);return this._names[f]={prefix:f,index:0}}}e.Scope=s;class i extends t.Name{constructor(f,a){super(a),this.prefix=f}setValue(f,{property:a,itemIndex:d}){this.value=f,this.scopePath=(0,t._)`.${new t.Name(a)}[${d}]`}}e.ValueScopeName=i;const o=(0,t._)`\n`;class l extends s{constructor(f){super(f),this._values={},this._scope=f.scope,this.opts={...f,_n:f.lines?o:t.nil}}get(){return this._scope}name(f){return new i(f,this._newName(f))}value(f,a){var d;if(a.ref===void 0)throw new Error("CodeGen: ref must be passed in value");const v=this.toName(f),{prefix:m}=v,S=(d=a.key)!==null&&d!==void 0?d:a.ref;let g=this._values[m];if(g){const P=g.get(S);if(P)return P}else g=this._values[m]=new Map;g.set(S,v);const E=this._scope[m]||(this._scope[m]=[]),y=E.length;return E[y]=a.ref,v.setValue(a,{property:m,itemIndex:y}),v}getValue(f,a){const d=this._values[f];if(d)return d.get(a)}scopeRefs(f,a=this._values){return this._reduceValues(a,d=>{if(d.scopePath===void 0)throw new Error(`CodeGen: name "${d}" has no value`);return(0,t._)`${f}${d.scopePath}`})}scopeCode(f=this._values,a,d){return this._reduceValues(f,v=>{if(v.value===void 0)throw new Error(`CodeGen: name "${v}" has no value`);return v.value.code},a,d)}_reduceValues(f,a,d={},v){let m=t.nil;for(const S in f){const g=f[S];if(!g)continue;const E=d[S]=d[S]||new Map;g.forEach(y=>{if(E.has(y))return;E.set(y,n.Started);let P=a(y);if(P){const I=this.opts.es5?e.varKinds.var:e.varKinds.const;m=(0,t._)`${m}${I} ${y} = ${P};${this.opts._n}`}else if(P=v==null?void 0:v(y))m=(0,t._)`${m}${P}${this.opts._n}`;else throw new r(y);E.set(y,n.Completed)})}return m}}e.ValueScope=l})(Xn);(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.or=e.and=e.not=e.CodeGen=e.operators=e.varKinds=e.ValueScopeName=e.ValueScope=e.Scope=e.Name=e.regexpCode=e.stringify=e.getProperty=e.nil=e.strConcat=e.str=e._=void 0;const t=hr,r=Xn;var n=hr;Object.defineProperty(e,"_",{enumerable:!0,get:function(){return n._}}),Object.defineProperty(e,"str",{enumerable:!0,get:function(){return n.str}}),Object.defineProperty(e,"strConcat",{enumerable:!0,get:function(){return n.strConcat}}),Object.defineProperty(e,"nil",{enumerable:!0,get:function(){return n.nil}}),Object.defineProperty(e,"getProperty",{enumerable:!0,get:function(){return n.getProperty}}),Object.defineProperty(e,"stringify",{enumerable:!0,get:function(){return n.stringify}}),Object.defineProperty(e,"regexpCode",{enumerable:!0,get:function(){return n.regexpCode}}),Object.defineProperty(e,"Name",{enumerable:!0,get:function(){return n.Name}});var s=Xn;Object.defineProperty(e,"Scope",{enumerable:!0,get:function(){return s.Scope}}),Object.defineProperty(e,"ValueScope",{enumerable:!0,get:function(){return s.ValueScope}}),Object.defineProperty(e,"ValueScopeName",{enumerable:!0,get:function(){return s.ValueScopeName}}),Object.defineProperty(e,"varKinds",{enumerable:!0,get:function(){return s.varKinds}}),e.operators={GT:new t._Code(">"),GTE:new t._Code(">="),LT:new t._Code("<"),LTE:new t._Code("<="),EQ:new t._Code("==="),NEQ:new t._Code("!=="),NOT:new t._Code("!"),OR:new t._Code("||"),AND:new t._Code("&&"),ADD:new t._Code("+")};class i{optimizeNodes(){return this}optimizeNames(u,h){return this}}class o extends i{constructor(u,h,N){super(),this.varKind=u,this.name=h,this.rhs=N}render({es5:u,_n:h}){const N=u?r.varKinds.var:this.varKind,C=this.rhs===void 0?"":` = ${this.rhs}`;return`${N} ${this.name}${C};`+h}optimizeNames(u,h){if(u[this.name.str])return this.rhs&&(this.rhs=H(this.rhs,u,h)),this}get names(){return this.rhs instanceof t._CodeOrName?this.rhs.names:{}}}class l extends i{constructor(u,h,N){super(),this.lhs=u,this.rhs=h,this.sideEffects=N}render({_n:u}){return`${this.lhs} = ${this.rhs};`+u}optimizeNames(u,h){if(!(this.lhs instanceof t.Name&&!u[this.lhs.str]&&!this.sideEffects))return this.rhs=H(this.rhs,u,h),this}get names(){const u=this.lhs instanceof t.Name?{}:{...this.lhs.names};return B(u,this.rhs)}}class c extends l{constructor(u,h,N,C){super(u,N,C),this.op=h}render({_n:u}){return`${this.lhs} ${this.op}= ${this.rhs};`+u}}class f extends i{constructor(u){super(),this.label=u,this.names={}}render({_n:u}){return`${this.label}:`+u}}class a extends i{constructor(u){super(),this.label=u,this.names={}}render({_n:u}){return`break${this.label?` ${this.label}`:""};`+u}}class d extends i{constructor(u){super(),this.error=u}render({_n:u}){return`throw ${this.error};`+u}get names(){return this.error.names}}class v extends i{constructor(u){super(),this.code=u}render({_n:u}){return`${this.code};`+u}optimizeNodes(){return`${this.code}`?this:void 0}optimizeNames(u,h){return this.code=H(this.code,u,h),this}get names(){return this.code instanceof t._CodeOrName?this.code.names:{}}}class m extends i{constructor(u=[]){super(),this.nodes=u}render(u){return this.nodes.reduce((h,N)=>h+N.render(u),"")}optimizeNodes(){const{nodes:u}=this;let h=u.length;for(;h--;){const N=u[h].optimizeNodes();Array.isArray(N)?u.splice(h,1,...N):N?u[h]=N:u.splice(h,1)}return u.length>0?this:void 0}optimizeNames(u,h){const{nodes:N}=this;let C=N.length;for(;C--;){const j=N[C];j.optimizeNames(u,h)||(G(u,j.names),N.splice(C,1))}return N.length>0?this:void 0}get names(){return this.nodes.reduce((u,h)=>V(u,h.names),{})}}class S extends m{render(u){return"{"+u._n+super.render(u)+"}"+u._n}}class g extends m{}class E extends S{}E.kind="else";class y extends S{constructor(u,h){super(h),this.condition=u}render(u){let h=`if(${this.condition})`+super.render(u);return this.else&&(h+="else "+this.else.render(u)),h}optimizeNodes(){super.optimizeNodes();const u=this.condition;if(u===!0)return this.nodes;let h=this.else;if(h){const N=h.optimizeNodes();h=this.else=Array.isArray(N)?new E(N):N}if(h)return u===!1?h instanceof y?h:h.nodes:this.nodes.length?this:new y(X(u),h instanceof y?[h]:h.nodes);if(!(u===!1||!this.nodes.length))return this}optimizeNames(u,h){var N;if(this.else=(N=this.else)===null||N===void 0?void 0:N.optimizeNames(u,h),!!(super.optimizeNames(u,h)||this.else))return this.condition=H(this.condition,u,h),this}get names(){const u=super.names;return B(u,this.condition),this.else&&V(u,this.else.names),u}}y.kind="if";class P extends S{}P.kind="for";class I extends P{constructor(u){super(),this.iteration=u}render(u){return`for(${this.iteration})`+super.render(u)}optimizeNames(u,h){if(super.optimizeNames(u,h))return this.iteration=H(this.iteration,u,h),this}get names(){return V(super.names,this.iteration.names)}}class A extends P{constructor(u,h,N,C){super(),this.varKind=u,this.name=h,this.from=N,this.to=C}render(u){const h=u.es5?r.varKinds.var:this.varKind,{name:N,from:C,to:j}=this;return`for(${h} ${N}=${C}; ${N}<${j}; ${N}++)`+super.render(u)}get names(){const u=B(super.names,this.from);return B(u,this.to)}}class k extends P{constructor(u,h,N,C){super(),this.loop=u,this.varKind=h,this.name=N,this.iterable=C}render(u){return`for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})`+super.render(u)}optimizeNames(u,h){if(super.optimizeNames(u,h))return this.iterable=H(this.iterable,u,h),this}get names(){return V(super.names,this.iterable.names)}}class U extends S{constructor(u,h,N){super(),this.name=u,this.args=h,this.async=N}render(u){return`${this.async?"async ":""}function ${this.name}(${this.args})`+super.render(u)}}U.kind="func";class x extends m{render(u){return"return "+super.render(u)}}x.kind="return";class ae extends S{render(u){let h="try"+super.render(u);return this.catch&&(h+=this.catch.render(u)),this.finally&&(h+=this.finally.render(u)),h}optimizeNodes(){var u,h;return super.optimizeNodes(),(u=this.catch)===null||u===void 0||u.optimizeNodes(),(h=this.finally)===null||h===void 0||h.optimizeNodes(),this}optimizeNames(u,h){var N,C;return super.optimizeNames(u,h),(N=this.catch)===null||N===void 0||N.optimizeNames(u,h),(C=this.finally)===null||C===void 0||C.optimizeNames(u,h),this}get names(){const u=super.names;return this.catch&&V(u,this.catch.names),this.finally&&V(u,this.finally.names),u}}class T extends S{constructor(u){super(),this.error=u}render(u){return`catch(${this.error})`+super.render(u)}}T.kind="catch";class D extends S{render(u){return"finally"+super.render(u)}}D.kind="finally";class M{constructor(u,h={}){this._values={},this._blockStarts=[],this._constants={},this.opts={...h,_n:h.lines?`
-`:""},this._extScope=u,this._scope=new r.Scope({parent:u}),this._nodes=[new g]}toString(){return this._root.render(this.opts)}name(u){return this._scope.name(u)}scopeName(u){return this._extScope.name(u)}scopeValue(u,h){const N=this._extScope.value(u,h);return(this._values[N.prefix]||(this._values[N.prefix]=new Set)).add(N),N}getScopeValue(u,h){return this._extScope.getValue(u,h)}scopeRefs(u){return this._extScope.scopeRefs(u,this._values)}scopeCode(){return this._extScope.scopeCode(this._values)}_def(u,h,N,C){const j=this._scope.toName(h);return N!==void 0&&C&&(this._constants[j.str]=N),this._leafNode(new o(u,j,N)),j}const(u,h,N){return this._def(r.varKinds.const,u,h,N)}let(u,h,N){return this._def(r.varKinds.let,u,h,N)}var(u,h,N){return this._def(r.varKinds.var,u,h,N)}assign(u,h,N){return this._leafNode(new l(u,h,N))}add(u,h){return this._leafNode(new c(u,e.operators.ADD,h))}code(u){return typeof u=="function"?u():u!==t.nil&&this._leafNode(new v(u)),this}object(...u){const h=["{"];for(const[N,C]of u)h.length>1&&h.push(","),h.push(N),(N!==C||this.opts.es5)&&(h.push(":"),(0,t.addCodeArg)(h,C));return h.push("}"),new t._Code(h)}if(u,h,N){if(this._blockNode(new y(u)),h&&N)this.code(h).else().code(N).endIf();else if(h)this.code(h).endIf();else if(N)throw new Error('CodeGen: "else" body without "then" body');return this}elseIf(u){return this._elseNode(new y(u))}else(){return this._elseNode(new E)}endIf(){return this._endBlockNode(y,E)}_for(u,h){return this._blockNode(u),h&&this.code(h).endFor(),this}for(u,h){return this._for(new I(u),h)}forRange(u,h,N,C,j=this.opts.es5?r.varKinds.var:r.varKinds.let){const J=this._scope.toName(u);return this._for(new A(j,J,h,N),()=>C(J))}forOf(u,h,N,C=r.varKinds.const){const j=this._scope.toName(u);if(this.opts.es5){const J=h instanceof t.Name?h:this.var("_arr",h);return this.forRange("_i",0,(0,t._)`${J}.length`,Y=>{this.var(j,(0,t._)`${J}[${Y}]`),N(j)})}return this._for(new k("of",C,j,h),()=>N(j))}forIn(u,h,N,C=this.opts.es5?r.varKinds.var:r.varKinds.const){if(this.opts.ownProperties)return this.forOf(u,(0,t._)`Object.keys(${h})`,N);const j=this._scope.toName(u);return this._for(new k("in",C,j,h),()=>N(j))}endFor(){return this._endBlockNode(P)}label(u){return this._leafNode(new f(u))}break(u){return this._leafNode(new a(u))}return(u){const h=new x;if(this._blockNode(h),this.code(u),h.nodes.length!==1)throw new Error('CodeGen: "return" should have one node');return this._endBlockNode(x)}try(u,h,N){if(!h&&!N)throw new Error('CodeGen: "try" without "catch" and "finally"');const C=new ae;if(this._blockNode(C),this.code(u),h){const j=this.name("e");this._currNode=C.catch=new T(j),h(j)}return N&&(this._currNode=C.finally=new D,this.code(N)),this._endBlockNode(T,D)}throw(u){return this._leafNode(new d(u))}block(u,h){return this._blockStarts.push(this._nodes.length),u&&this.code(u).endBlock(h),this}endBlock(u){const h=this._blockStarts.pop();if(h===void 0)throw new Error("CodeGen: not in self-balancing block");const N=this._nodes.length-h;if(N<0||u!==void 0&&N!==u)throw new Error(`CodeGen: wrong number of nodes: ${N} vs ${u} expected`);return this._nodes.length=h,this}func(u,h=t.nil,N,C){return this._blockNode(new U(u,h,N)),C&&this.code(C).endFunc(),this}endFunc(){return this._endBlockNode(U)}optimize(u=1){for(;u-- >0;)this._root.optimizeNodes(),this._root.optimizeNames(this._root.names,this._constants)}_leafNode(u){return this._currNode.nodes.push(u),this}_blockNode(u){this._currNode.nodes.push(u),this._nodes.push(u)}_endBlockNode(u,h){const N=this._currNode;if(N instanceof u||h&&N instanceof h)return this._nodes.pop(),this;throw new Error(`CodeGen: not in block "${h?`${u.kind}/${h.kind}`:u.kind}"`)}_elseNode(u){const h=this._currNode;if(!(h instanceof y))throw new Error('CodeGen: "else" without "if"');return this._currNode=h.else=u,this}get _root(){return this._nodes[0]}get _currNode(){const u=this._nodes;return u[u.length-1]}set _currNode(u){const h=this._nodes;h[h.length-1]=u}}e.CodeGen=M;function V(w,u){for(const h in u)w[h]=(w[h]||0)+(u[h]||0);return w}function B(w,u){return u instanceof t._CodeOrName?V(w,u.names):w}function H(w,u,h){if(w instanceof t.Name)return N(w);if(!C(w))return w;return new t._Code(w._items.reduce((j,J)=>(J instanceof t.Name&&(J=N(J)),J instanceof t._Code?j.push(...J._items):j.push(J),j),[]));function N(j){const J=h[j.str];return J===void 0||u[j.str]!==1?j:(delete u[j.str],J)}function C(j){return j instanceof t._Code&&j._items.some(J=>J instanceof t.Name&&u[J.str]===1&&h[J.str]!==void 0)}}function G(w,u){for(const h in u)w[h]=(w[h]||0)-(u[h]||0)}function X(w){return typeof w=="boolean"||typeof w=="number"||w===null?!w:(0,t._)`!${b(w)}`}e.not=X;const R=p(e.operators.AND);function _(...w){return w.reduce(R)}e.and=_;const O=p(e.operators.OR);function $(...w){return w.reduce(O)}e.or=$;function p(w){return(u,h)=>u===t.nil?h:h===t.nil?u:(0,t._)`${b(u)} ${w} ${b(h)}`}function b(w){return w instanceof t.Name?w:(0,t._)`(${w})`}})(W);var L={};Object.defineProperty(L,"__esModule",{value:!0});L.checkStrictMode=L.getErrorPath=L.Type=L.useFunc=L.setEvaluated=L.evaluatedPropsToName=L.mergeEvaluated=L.eachItem=L.unescapeJsonPointer=L.escapeJsonPointer=L.escapeFragment=L.unescapeFragment=L.schemaRefOrVal=L.schemaHasRulesButRef=L.schemaHasRules=L.checkUnknownRules=L.alwaysValidSchema=L.toHash=void 0;const te=W,lh=hr;function uh(e){const t={};for(const r of e)t[r]=!0;return t}L.toHash=uh;function fh(e,t){return typeof t=="boolean"?t:Object.keys(t).length===0?!0:(Za(e,t),!ec(t,e.self.RULES.all))}L.alwaysValidSchema=fh;function Za(e,t=e.schema){const{opts:r,self:n}=e;if(!r.strictSchema||typeof t=="boolean")return;const s=n.RULES.keywords;for(const i in t)s[i]||nc(e,`unknown keyword: "${i}"`)}L.checkUnknownRules=Za;function ec(e,t){if(typeof e=="boolean")return!e;for(const r in e)if(t[r])return!0;return!1}L.schemaHasRules=ec;function dh(e,t){if(typeof e=="boolean")return!e;for(const r in e)if(r!=="$ref"&&t.all[r])return!0;return!1}L.schemaHasRulesButRef=dh;function hh({topSchemaRef:e,schemaPath:t},r,n,s){if(!s){if(typeof r=="number"||typeof r=="boolean")return r;if(typeof r=="string")return(0,te._)`${r}`}return(0,te._)`${e}${t}${(0,te.getProperty)(n)}`}L.schemaRefOrVal=hh;function mh(e){return tc(decodeURIComponent(e))}L.unescapeFragment=mh;function ph(e){return encodeURIComponent(Ts(e))}L.escapeFragment=ph;function Ts(e){return typeof e=="number"?`${e}`:e.replace(/~/g,"~0").replace(/\//g,"~1")}L.escapeJsonPointer=Ts;function tc(e){return e.replace(/~1/g,"/").replace(/~0/g,"~")}L.unescapeJsonPointer=tc;function yh(e,t){if(Array.isArray(e))for(const r of e)t(r);else t(e)}L.eachItem=yh;function to({mergeNames:e,mergeToName:t,mergeValues:r,resultToName:n}){return(s,i,o,l)=>{const c=o===void 0?i:o instanceof te.Name?(i instanceof te.Name?e(s,i,o):t(s,i,o),o):i instanceof te.Name?(t(s,o,i),i):r(i,o);return l===te.Name&&!(c instanceof te.Name)?n(s,c):c}}L.mergeEvaluated={props:to({mergeNames:(e,t,r)=>e.if((0,te._)`${r} !== true && ${t} !== undefined`,()=>{e.if((0,te._)`${t} === true`,()=>e.assign(r,!0),()=>e.assign(r,(0,te._)`${r} || {}`).code((0,te._)`Object.assign(${r}, ${t})`))}),mergeToName:(e,t,r)=>e.if((0,te._)`${r} !== true`,()=>{t===!0?e.assign(r,!0):(e.assign(r,(0,te._)`${r} || {}`),As(e,r,t))}),mergeValues:(e,t)=>e===!0?!0:{...e,...t},resultToName:rc}),items:to({mergeNames:(e,t,r)=>e.if((0,te._)`${r} !== true && ${t} !== undefined`,()=>e.assign(r,(0,te._)`${t} === true ? true : ${r} > ${t} ? ${r} : ${t}`)),mergeToName:(e,t,r)=>e.if((0,te._)`${r} !== true`,()=>e.assign(r,t===!0?!0:(0,te._)`${r} > ${t} ? ${r} : ${t}`)),mergeValues:(e,t)=>e===!0?!0:Math.max(e,t),resultToName:(e,t)=>e.var("items",t)})};function rc(e,t){if(t===!0)return e.var("props",!0);const r=e.var("props",(0,te._)`{}`);return t!==void 0&&As(e,r,t),r}L.evaluatedPropsToName=rc;function As(e,t,r){Object.keys(r).forEach(n=>e.assign((0,te._)`${t}${(0,te.getProperty)(n)}`,!0))}L.setEvaluated=As;const ro={};function $h(e,t){return e.scopeValue("func",{ref:t,code:ro[t.code]||(ro[t.code]=new lh._Code(t.code))})}L.useFunc=$h;var Yn;(function(e){e[e.Num=0]="Num",e[e.Str=1]="Str"})(Yn||(L.Type=Yn={}));function gh(e,t,r){if(e instanceof te.Name){const n=t===Yn.Num;return r?n?(0,te._)`"[" + ${e} + "]"`:(0,te._)`"['" + ${e} + "']"`:n?(0,te._)`"/" + ${e}`:(0,te._)`"/" + ${e}.replace(/~/g, "~0").replace(/\\//g, "~1")`}return r?(0,te.getProperty)(e).toString():"/"+Ts(e)}L.getErrorPath=gh;function nc(e,t,r=e.opts.strictSchema){if(r){if(t=`strict mode: ${t}`,r===!0)throw new Error(t);e.self.logger.warn(t)}}L.checkStrictMode=nc;var Je={};Object.defineProperty(Je,"__esModule",{value:!0});const we=W,vh={data:new we.Name("data"),valCxt:new we.Name("valCxt"),instancePath:new we.Name("instancePath"),parentData:new we.Name("parentData"),parentDataProperty:new we.Name("parentDataProperty"),rootData:new we.Name("rootData"),dynamicAnchors:new we.Name("dynamicAnchors"),vErrors:new we.Name("vErrors"),errors:new we.Name("errors"),this:new we.Name("this"),self:new we.Name("self"),scope:new we.Name("scope"),json:new we.Name("json"),jsonPos:new we.Name("jsonPos"),jsonLen:new we.Name("jsonLen"),jsonPart:new we.Name("jsonPart")};Je.default=vh;(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.extendErrors=e.resetErrorsCount=e.reportExtraError=e.reportError=e.keyword$DataError=e.keywordError=void 0;const t=W,r=L,n=Je;e.keywordError={message:({keyword:E})=>(0,t.str)`must pass "${E}" keyword validation`},e.keyword$DataError={message:({keyword:E,schemaType:y})=>y?(0,t.str)`"${E}" keyword must be ${y} ($data)`:(0,t.str)`"${E}" keyword is invalid ($data)`};function s(E,y=e.keywordError,P,I){const{it:A}=E,{gen:k,compositeRule:U,allErrors:x}=A,ae=d(E,y,P);I??(U||x)?c(k,ae):f(A,(0,t._)`[${ae}]`)}e.reportError=s;function i(E,y=e.keywordError,P){const{it:I}=E,{gen:A,compositeRule:k,allErrors:U}=I,x=d(E,y,P);c(A,x),k||U||f(I,n.default.vErrors)}e.reportExtraError=i;function o(E,y){E.assign(n.default.errors,y),E.if((0,t._)`${n.default.vErrors} !== null`,()=>E.if(y,()=>E.assign((0,t._)`${n.default.vErrors}.length`,y),()=>E.assign(n.default.vErrors,null)))}e.resetErrorsCount=o;function l({gen:E,keyword:y,schemaValue:P,data:I,errsCount:A,it:k}){if(A===void 0)throw new Error("ajv implementation error");const U=E.name("err");E.forRange("i",A,n.default.errors,x=>{E.const(U,(0,t._)`${n.default.vErrors}[${x}]`),E.if((0,t._)`${U}.instancePath === undefined`,()=>E.assign((0,t._)`${U}.instancePath`,(0,t.strConcat)(n.default.instancePath,k.errorPath))),E.assign((0,t._)`${U}.schemaPath`,(0,t.str)`${k.errSchemaPath}/${y}`),k.opts.verbose&&(E.assign((0,t._)`${U}.schema`,P),E.assign((0,t._)`${U}.data`,I))})}e.extendErrors=l;function c(E,y){const P=E.const("err",y);E.if((0,t._)`${n.default.vErrors} === null`,()=>E.assign(n.default.vErrors,(0,t._)`[${P}]`),(0,t._)`${n.default.vErrors}.push(${P})`),E.code((0,t._)`${n.default.errors}++`)}function f(E,y){const{gen:P,validateName:I,schemaEnv:A}=E;A.$async?P.throw((0,t._)`new ${E.ValidationError}(${y})`):(P.assign((0,t._)`${I}.errors`,y),P.return(!1))}const a={keyword:new t.Name("keyword"),schemaPath:new t.Name("schemaPath"),params:new t.Name("params"),propertyName:new t.Name("propertyName"),message:new t.Name("message"),schema:new t.Name("schema"),parentSchema:new t.Name("parentSchema")};function d(E,y,P){const{createErrors:I}=E.it;return I===!1?(0,t._)`{}`:v(E,y,P)}function v(E,y,P={}){const{gen:I,it:A}=E,k=[m(A,P),S(E,P)];return g(E,y,k),I.object(...k)}function m({errorPath:E},{instancePath:y}){const P=y?(0,t.str)`${E}${(0,r.getErrorPath)(y,r.Type.Str)}`:E;return[n.default.instancePath,(0,t.strConcat)(n.default.instancePath,P)]}function S({keyword:E,it:{errSchemaPath:y}},{schemaPath:P,parentSchema:I}){let A=I?y:(0,t.str)`${y}/${E}`;return P&&(A=(0,t.str)`${A}${(0,r.getErrorPath)(P,r.Type.Str)}`),[a.schemaPath,A]}function g(E,{params:y,message:P},I){const{keyword:A,data:k,schemaValue:U,it:x}=E,{opts:ae,propertyName:T,topSchemaRef:D,schemaPath:M}=x;I.push([a.keyword,A],[a.params,typeof y=="function"?y(E):y||(0,t._)`{}`]),ae.messages&&I.push([a.message,typeof P=="function"?P(E):P]),ae.verbose&&I.push([a.schema,U],[a.parentSchema,(0,t._)`${D}${M}`],[n.default.data,k]),T&&I.push([a.propertyName,T])}})(yr);Object.defineProperty(Ut,"__esModule",{value:!0});Ut.boolOrEmptySchema=Ut.topBoolOrEmptySchema=void 0;const wh=yr,_h=W,Eh=Je,Sh={message:"boolean schema is false"};function bh(e){const{gen:t,schema:r,validateName:n}=e;r===!1?sc(e,!1):typeof r=="object"&&r.$async===!0?t.return(Eh.default.data):(t.assign((0,_h._)`${n}.errors`,null),t.return(!0))}Ut.topBoolOrEmptySchema=bh;function Ph(e,t){const{gen:r,schema:n}=e;n===!1?(r.var(t,!1),sc(e)):r.var(t,!0)}Ut.boolOrEmptySchema=Ph;function sc(e,t){const{gen:r,data:n}=e,s={gen:r,keyword:"false schema",data:n,schema:!1,schemaCode:!1,schemaValue:!1,params:{},it:e};(0,wh.reportError)(s,Sh,void 0,t)}var fe={},wt={};Object.defineProperty(wt,"__esModule",{value:!0});wt.getRules=wt.isJSONType=void 0;const Oh=["string","number","integer","boolean","null","object","array"],Nh=new Set(Oh);function Ih(e){return typeof e=="string"&&Nh.has(e)}wt.isJSONType=Ih;function Rh(){const e={number:{type:"number",rules:[]},string:{type:"string",rules:[]},array:{type:"array",rules:[]},object:{type:"object",rules:[]}};return{types:{...e,integer:!0,boolean:!0,null:!0},rules:[{rules:[]},e.number,e.string,e.array,e.object],post:{rules:[]},all:{},keywords:{}}}wt.getRules=Rh;var Ye={};Object.defineProperty(Ye,"__esModule",{value:!0});Ye.shouldUseRule=Ye.shouldUseGroup=Ye.schemaHasRulesForType=void 0;function Th({schema:e,self:t},r){const n=t.RULES.types[r];return n&&n!==!0&&ic(e,n)}Ye.schemaHasRulesForType=Th;function ic(e,t){return t.rules.some(r=>oc(e,r))}Ye.shouldUseGroup=ic;function oc(e,t){var r;return e[t.keyword]!==void 0||((r=t.definition.implements)===null||r===void 0?void 0:r.some(n=>e[n]!==void 0))}Ye.shouldUseRule=oc;Object.defineProperty(fe,"__esModule",{value:!0});fe.reportTypeError=fe.checkDataTypes=fe.checkDataType=fe.coerceAndCheckDataType=fe.getJSONTypes=fe.getSchemaTypes=fe.DataType=void 0;const Ah=wt,kh=Ye,jh=yr,q=W,ac=L;var jt;(function(e){e[e.Correct=0]="Correct",e[e.Wrong=1]="Wrong"})(jt||(fe.DataType=jt={}));function Dh(e){const t=cc(e.type);if(t.includes("null")){if(e.nullable===!1)throw new Error("type: null contradicts nullable: false")}else{if(!t.length&&e.nullable!==void 0)throw new Error('"nullable" cannot be used without "type"');e.nullable===!0&&t.push("null")}return t}fe.getSchemaTypes=Dh;function cc(e){const t=Array.isArray(e)?e:e?[e]:[];if(t.every(Ah.isJSONType))return t;throw new Error("type must be JSONType or JSONType[]: "+t.join(","))}fe.getJSONTypes=cc;function Ch(e,t){const{gen:r,data:n,opts:s}=e,i=Lh(t,s.coerceTypes),o=t.length>0&&!(i.length===0&&t.length===1&&(0,kh.schemaHasRulesForType)(e,t[0]));if(o){const l=ks(t,n,s.strictNumbers,jt.Wrong);r.if(l,()=>{i.length?Fh(e,t,i):js(e)})}return o}fe.coerceAndCheckDataType=Ch;const lc=new Set(["string","number","integer","boolean","null"]);function Lh(e,t){return t?e.filter(r=>lc.has(r)||t==="array"&&r==="array"):[]}function Fh(e,t,r){const{gen:n,data:s,opts:i}=e,o=n.let("dataType",(0,q._)`typeof ${s}`),l=n.let("coerced",(0,q._)`undefined`);i.coerceTypes==="array"&&n.if((0,q._)`${o} == 'object' && Array.isArray(${s}) && ${s}.length == 1`,()=>n.assign(s,(0,q._)`${s}[0]`).assign(o,(0,q._)`typeof ${s}`).if(ks(t,s,i.strictNumbers),()=>n.assign(l,s))),n.if((0,q._)`${l} !== undefined`);for(const f of r)(lc.has(f)||f==="array"&&i.coerceTypes==="array")&&c(f);n.else(),js(e),n.endIf(),n.if((0,q._)`${l} !== undefined`,()=>{n.assign(s,l),Mh(e,l)});function c(f){switch(f){case"string":n.elseIf((0,q._)`${o} == "number" || ${o} == "boolean"`).assign(l,(0,q._)`"" + ${s}`).elseIf((0,q._)`${s} === null`).assign(l,(0,q._)`""`);return;case"number":n.elseIf((0,q._)`${o} == "boolean" || ${s} === null
-              || (${o} == "string" && ${s} && ${s} == +${s})`).assign(l,(0,q._)`+${s}`);return;case"integer":n.elseIf((0,q._)`${o} === "boolean" || ${s} === null
-              || (${o} === "string" && ${s} && ${s} == +${s} && !(${s} % 1))`).assign(l,(0,q._)`+${s}`);return;case"boolean":n.elseIf((0,q._)`${s} === "false" || ${s} === 0 || ${s} === null`).assign(l,!1).elseIf((0,q._)`${s} === "true" || ${s} === 1`).assign(l,!0);return;case"null":n.elseIf((0,q._)`${s} === "" || ${s} === 0 || ${s} === false`),n.assign(l,null);return;case"array":n.elseIf((0,q._)`${o} === "string" || ${o} === "number"
-              || ${o} === "boolean" || ${s} === null`).assign(l,(0,q._)`[${s}]`)}}}function Mh({gen:e,parentData:t,parentDataProperty:r},n){e.if((0,q._)`${t} !== undefined`,()=>e.assign((0,q._)`${t}[${r}]`,n))}function Qn(e,t,r,n=jt.Correct){const s=n===jt.Correct?q.operators.EQ:q.operators.NEQ;let i;switch(e){case"null":return(0,q._)`${t} ${s} null`;case"array":i=(0,q._)`Array.isArray(${t})`;break;case"object":i=(0,q._)`${t} && typeof ${t} == "object" && !Array.isArray(${t})`;break;case"integer":i=o((0,q._)`!(${t} % 1) && !isNaN(${t})`);break;case"number":i=o();break;default:return(0,q._)`typeof ${t} ${s} ${e}`}return n===jt.Correct?i:(0,q.not)(i);function o(l=q.nil){return(0,q.and)((0,q._)`typeof ${t} == "number"`,l,r?(0,q._)`isFinite(${t})`:q.nil)}}fe.checkDataType=Qn;function ks(e,t,r,n){if(e.length===1)return Qn(e[0],t,r,n);let s;const i=(0,ac.toHash)(e);if(i.array&&i.object){const o=(0,q._)`typeof ${t} != "object"`;s=i.null?o:(0,q._)`!${t} || ${o}`,delete i.null,delete i.array,delete i.object}else s=q.nil;i.number&&delete i.integer;for(const o in i)s=(0,q.and)(s,Qn(o,t,r,n));return s}fe.checkDataTypes=ks;const Uh={message:({schema:e})=>`must be ${e}`,params:({schema:e,schemaValue:t})=>typeof e=="string"?(0,q._)`{type: ${e}}`:(0,q._)`{type: ${t}}`};function js(e){const t=Vh(e);(0,jh.reportError)(t,Uh)}fe.reportTypeError=js;function Vh(e){const{gen:t,data:r,schema:n}=e,s=(0,ac.schemaRefOrVal)(e,n,"type");return{gen:t,keyword:"type",data:r,schema:n.type,schemaCode:s,schemaValue:s,parentSchema:n,params:{},it:e}}var sn={};Object.defineProperty(sn,"__esModule",{value:!0});sn.assignDefaults=void 0;const Nt=W,zh=L;function qh(e,t){const{properties:r,items:n}=e.schema;if(t==="object"&&r)for(const s in r)no(e,s,r[s].default);else t==="array"&&Array.isArray(n)&&n.forEach((s,i)=>no(e,i,s.default))}sn.assignDefaults=qh;function no(e,t,r){const{gen:n,compositeRule:s,data:i,opts:o}=e;if(r===void 0)return;const l=(0,Nt._)`${i}${(0,Nt.getProperty)(t)}`;if(s){(0,zh.checkStrictMode)(e,`default is ignored for: ${l}`);return}let c=(0,Nt._)`${l} === undefined`;o.useDefaults==="empty"&&(c=(0,Nt._)`${c} || ${l} === null || ${l} === ""`),n.if(c,(0,Nt._)`${l} = ${(0,Nt.stringify)(r)}`)}var He={},K={};Object.defineProperty(K,"__esModule",{value:!0});K.validateUnion=K.validateArray=K.usePattern=K.callValidateCode=K.schemaProperties=K.allSchemaProperties=K.noPropertyInData=K.propertyInData=K.isOwnProperty=K.hasPropFunc=K.reportMissingProp=K.checkMissingProp=K.checkReportMissingProp=void 0;const ne=W,Ds=L,et=Je,xh=L;function Gh(e,t){const{gen:r,data:n,it:s}=e;r.if(Ls(r,n,t,s.opts.ownProperties),()=>{e.setParams({missingProperty:(0,ne._)`${t}`},!0),e.error()})}K.checkReportMissingProp=Gh;function Wh({gen:e,data:t,it:{opts:r}},n,s){return(0,ne.or)(...n.map(i=>(0,ne.and)(Ls(e,t,i,r.ownProperties),(0,ne._)`${s} = ${i}`)))}K.checkMissingProp=Wh;function Hh(e,t){e.setParams({missingProperty:t},!0),e.error()}K.reportMissingProp=Hh;function uc(e){return e.scopeValue("func",{ref:Object.prototype.hasOwnProperty,code:(0,ne._)`Object.prototype.hasOwnProperty`})}K.hasPropFunc=uc;function Cs(e,t,r){return(0,ne._)`${uc(e)}.call(${t}, ${r})`}K.isOwnProperty=Cs;function Kh(e,t,r,n){const s=(0,ne._)`${t}${(0,ne.getProperty)(r)} !== undefined`;return n?(0,ne._)`${s} && ${Cs(e,t,r)}`:s}K.propertyInData=Kh;function Ls(e,t,r,n){const s=(0,ne._)`${t}${(0,ne.getProperty)(r)} === undefined`;return n?(0,ne.or)(s,(0,ne.not)(Cs(e,t,r))):s}K.noPropertyInData=Ls;function fc(e){return e?Object.keys(e).filter(t=>t!=="__proto__"):[]}K.allSchemaProperties=fc;function Bh(e,t){return fc(t).filter(r=>!(0,Ds.alwaysValidSchema)(e,t[r]))}K.schemaProperties=Bh;function Jh({schemaCode:e,data:t,it:{gen:r,topSchemaRef:n,schemaPath:s,errorPath:i},it:o},l,c,f){const a=f?(0,ne._)`${e}, ${t}, ${n}${s}`:t,d=[[et.default.instancePath,(0,ne.strConcat)(et.default.instancePath,i)],[et.default.parentData,o.parentData],[et.default.parentDataProperty,o.parentDataProperty],[et.default.rootData,et.default.rootData]];o.opts.dynamicRef&&d.push([et.default.dynamicAnchors,et.default.dynamicAnchors]);const v=(0,ne._)`${a}, ${r.object(...d)}`;return c!==ne.nil?(0,ne._)`${l}.call(${c}, ${v})`:(0,ne._)`${l}(${v})`}K.callValidateCode=Jh;const Xh=(0,ne._)`new RegExp`;function Yh({gen:e,it:{opts:t}},r){const n=t.unicodeRegExp?"u":"",{regExp:s}=t.code,i=s(r,n);return e.scopeValue("pattern",{key:i.toString(),ref:i,code:(0,ne._)`${s.code==="new RegExp"?Xh:(0,xh.useFunc)(e,s)}(${r}, ${n})`})}K.usePattern=Yh;function Qh(e){const{gen:t,data:r,keyword:n,it:s}=e,i=t.name("valid");if(s.allErrors){const l=t.let("valid",!0);return o(()=>t.assign(l,!1)),l}return t.var(i,!0),o(()=>t.break()),i;function o(l){const c=t.const("len",(0,ne._)`${r}.length`);t.forRange("i",0,c,f=>{e.subschema({keyword:n,dataProp:f,dataPropType:Ds.Type.Num},i),t.if((0,ne.not)(i),l)})}}K.validateArray=Qh;function Zh(e){const{gen:t,schema:r,keyword:n,it:s}=e;if(!Array.isArray(r))throw new Error("ajv implementation error");if(r.some(c=>(0,Ds.alwaysValidSchema)(s,c))&&!s.opts.unevaluated)return;const o=t.let("valid",!1),l=t.name("_valid");t.block(()=>r.forEach((c,f)=>{const a=e.subschema({keyword:n,schemaProp:f,compositeRule:!0},l);t.assign(o,(0,ne._)`${o} || ${l}`),e.mergeValidEvaluated(a,l)||t.if((0,ne.not)(o))})),e.result(o,()=>e.reset(),()=>e.error(!0))}K.validateUnion=Zh;Object.defineProperty(He,"__esModule",{value:!0});He.validateKeywordUsage=He.validSchemaType=He.funcKeywordCode=He.macroKeywordCode=void 0;const Pe=W,mt=Je,em=K,tm=yr;function rm(e,t){const{gen:r,keyword:n,schema:s,parentSchema:i,it:o}=e,l=t.macro.call(o.self,s,i,o),c=dc(r,n,l);o.opts.validateSchema!==!1&&o.self.validateSchema(l,!0);const f=r.name("valid");e.subschema({schema:l,schemaPath:Pe.nil,errSchemaPath:`${o.errSchemaPath}/${n}`,topSchemaRef:c,compositeRule:!0},f),e.pass(f,()=>e.error(!0))}He.macroKeywordCode=rm;function nm(e,t){var r;const{gen:n,keyword:s,schema:i,parentSchema:o,$data:l,it:c}=e;im(c,t);const f=!l&&t.compile?t.compile.call(c.self,i,o,c):t.validate,a=dc(n,s,f),d=n.let("valid");e.block$data(d,v),e.ok((r=t.valid)!==null&&r!==void 0?r:d);function v(){if(t.errors===!1)g(),t.modifying&&so(e),E(()=>e.error());else{const y=t.async?m():S();t.modifying&&so(e),E(()=>sm(e,y))}}function m(){const y=n.let("ruleErrs",null);return n.try(()=>g((0,Pe._)`await `),P=>n.assign(d,!1).if((0,Pe._)`${P} instanceof ${c.ValidationError}`,()=>n.assign(y,(0,Pe._)`${P}.errors`),()=>n.throw(P))),y}function S(){const y=(0,Pe._)`${a}.errors`;return n.assign(y,null),g(Pe.nil),y}function g(y=t.async?(0,Pe._)`await `:Pe.nil){const P=c.opts.passContext?mt.default.this:mt.default.self,I=!("compile"in t&&!l||t.schema===!1);n.assign(d,(0,Pe._)`${y}${(0,em.callValidateCode)(e,a,P,I)}`,t.modifying)}function E(y){var P;n.if((0,Pe.not)((P=t.valid)!==null&&P!==void 0?P:d),y)}}He.funcKeywordCode=nm;function so(e){const{gen:t,data:r,it:n}=e;t.if(n.parentData,()=>t.assign(r,(0,Pe._)`${n.parentData}[${n.parentDataProperty}]`))}function sm(e,t){const{gen:r}=e;r.if((0,Pe._)`Array.isArray(${t})`,()=>{r.assign(mt.default.vErrors,(0,Pe._)`${mt.default.vErrors} === null ? ${t} : ${mt.default.vErrors}.concat(${t})`).assign(mt.default.errors,(0,Pe._)`${mt.default.vErrors}.length`),(0,tm.extendErrors)(e)},()=>e.error())}function im({schemaEnv:e},t){if(t.async&&!e.$async)throw new Error("async keyword in sync schema")}function dc(e,t,r){if(r===void 0)throw new Error(`keyword "${t}" failed to compile`);return e.scopeValue("keyword",typeof r=="function"?{ref:r}:{ref:r,code:(0,Pe.stringify)(r)})}function om(e,t,r=!1){return!t.length||t.some(n=>n==="array"?Array.isArray(e):n==="object"?e&&typeof e=="object"&&!Array.isArray(e):typeof e==n||r&&typeof e>"u")}He.validSchemaType=om;function am({schema:e,opts:t,self:r,errSchemaPath:n},s,i){if(Array.isArray(s.keyword)?!s.keyword.includes(i):s.keyword!==i)throw new Error("ajv implementation error");const o=s.dependencies;if(o!=null&&o.some(l=>!Object.prototype.hasOwnProperty.call(e,l)))throw new Error(`parent schema must have dependencies of ${i}: ${o.join(",")}`);if(s.validateSchema&&!s.validateSchema(e[i])){const c=`keyword "${i}" value is invalid at path "${n}": `+r.errorsText(s.validateSchema.errors);if(t.validateSchema==="log")r.logger.error(c);else throw new Error(c)}}He.validateKeywordUsage=am;var ut={};Object.defineProperty(ut,"__esModule",{value:!0});ut.extendSubschemaMode=ut.extendSubschemaData=ut.getSubschema=void 0;const Ge=W,hc=L;function cm(e,{keyword:t,schemaProp:r,schema:n,schemaPath:s,errSchemaPath:i,topSchemaRef:o}){if(t!==void 0&&n!==void 0)throw new Error('both "keyword" and "schema" passed, only one allowed');if(t!==void 0){const l=e.schema[t];return r===void 0?{schema:l,schemaPath:(0,Ge._)`${e.schemaPath}${(0,Ge.getProperty)(t)}`,errSchemaPath:`${e.errSchemaPath}/${t}`}:{schema:l[r],schemaPath:(0,Ge._)`${e.schemaPath}${(0,Ge.getProperty)(t)}${(0,Ge.getProperty)(r)}`,errSchemaPath:`${e.errSchemaPath}/${t}/${(0,hc.escapeFragment)(r)}`}}if(n!==void 0){if(s===void 0||i===void 0||o===void 0)throw new Error('"schemaPath", "errSchemaPath" and "topSchemaRef" are required with "schema"');return{schema:n,schemaPath:s,topSchemaRef:o,errSchemaPath:i}}throw new Error('either "keyword" or "schema" must be passed')}ut.getSubschema=cm;function lm(e,t,{dataProp:r,dataPropType:n,data:s,dataTypes:i,propertyName:o}){if(s!==void 0&&r!==void 0)throw new Error('both "data" and "dataProp" passed, only one allowed');const{gen:l}=t;if(r!==void 0){const{errorPath:f,dataPathArr:a,opts:d}=t,v=l.let("data",(0,Ge._)`${t.data}${(0,Ge.getProperty)(r)}`,!0);c(v),e.errorPath=(0,Ge.str)`${f}${(0,hc.getErrorPath)(r,n,d.jsPropertySyntax)}`,e.parentDataProperty=(0,Ge._)`${r}`,e.dataPathArr=[...a,e.parentDataProperty]}if(s!==void 0){const f=s instanceof Ge.Name?s:l.let("data",s,!0);c(f),o!==void 0&&(e.propertyName=o)}i&&(e.dataTypes=i);function c(f){e.data=f,e.dataLevel=t.dataLevel+1,e.dataTypes=[],t.definedProperties=new Set,e.parentData=t.data,e.dataNames=[...t.dataNames,f]}}ut.extendSubschemaData=lm;function um(e,{jtdDiscriminator:t,jtdMetadata:r,compositeRule:n,createErrors:s,allErrors:i}){n!==void 0&&(e.compositeRule=n),s!==void 0&&(e.createErrors=s),i!==void 0&&(e.allErrors=i),e.jtdDiscriminator=t,e.jtdMetadata=r}ut.extendSubschemaMode=um;var ge={},mc=function e(t,r){if(t===r)return!0;if(t&&r&&typeof t=="object"&&typeof r=="object"){if(t.constructor!==r.constructor)return!1;var n,s,i;if(Array.isArray(t)){if(n=t.length,n!=r.length)return!1;for(s=n;s--!==0;)if(!e(t[s],r[s]))return!1;return!0}if(t.constructor===RegExp)return t.source===r.source&&t.flags===r.flags;if(t.valueOf!==Object.prototype.valueOf)return t.valueOf()===r.valueOf();if(t.toString!==Object.prototype.toString)return t.toString()===r.toString();if(i=Object.keys(t),n=i.length,n!==Object.keys(r).length)return!1;for(s=n;s--!==0;)if(!Object.prototype.hasOwnProperty.call(r,i[s]))return!1;for(s=n;s--!==0;){var o=i[s];if(!e(t[o],r[o]))return!1}return!0}return t!==t&&r!==r},pc={exports:{}},lt=pc.exports=function(e,t,r){typeof t=="function"&&(r=t,t={}),r=t.cb||r;var n=typeof r=="function"?r:r.pre||function(){},s=r.post||function(){};Mr(t,n,s,e,"",e)};lt.keywords={additionalItems:!0,items:!0,contains:!0,additionalProperties:!0,propertyNames:!0,not:!0,if:!0,then:!0,else:!0};lt.arrayKeywords={items:!0,allOf:!0,anyOf:!0,oneOf:!0};lt.propsKeywords={$defs:!0,definitions:!0,properties:!0,patternProperties:!0,dependencies:!0};lt.skipKeywords={default:!0,enum:!0,const:!0,required:!0,maximum:!0,minimum:!0,exclusiveMaximum:!0,exclusiveMinimum:!0,multipleOf:!0,maxLength:!0,minLength:!0,pattern:!0,format:!0,maxItems:!0,minItems:!0,uniqueItems:!0,maxProperties:!0,minProperties:!0};function Mr(e,t,r,n,s,i,o,l,c,f){if(n&&typeof n=="object"&&!Array.isArray(n)){t(n,s,i,o,l,c,f);for(var a in n){var d=n[a];if(Array.isArray(d)){if(a in lt.arrayKeywords)for(var v=0;v<d.length;v++)Mr(e,t,r,d[v],s+"/"+a+"/"+v,i,s,a,n,v)}else if(a in lt.propsKeywords){if(d&&typeof d=="object")for(var m in d)Mr(e,t,r,d[m],s+"/"+a+"/"+fm(m),i,s,a,n,m)}else(a in lt.keywords||e.allKeys&&!(a in lt.skipKeywords))&&Mr(e,t,r,d,s+"/"+a,i,s,a,n)}r(n,s,i,o,l,c,f)}}function fm(e){return e.replace(/~/g,"~0").replace(/\//g,"~1")}var dm=pc.exports;Object.defineProperty(ge,"__esModule",{value:!0});ge.getSchemaRefs=ge.resolveUrl=ge.normalizeId=ge._getFullPath=ge.getFullPath=ge.inlineRef=void 0;const hm=L,mm=mc,pm=dm,ym=new Set(["type","format","pattern","maxLength","minLength","maxProperties","minProperties","maxItems","minItems","maximum","minimum","uniqueItems","multipleOf","required","enum","const"]);function $m(e,t=!0){return typeof e=="boolean"?!0:t===!0?!Zn(e):t?yc(e)<=t:!1}ge.inlineRef=$m;const gm=new Set(["$ref","$recursiveRef","$recursiveAnchor","$dynamicRef","$dynamicAnchor"]);function Zn(e){for(const t in e){if(gm.has(t))return!0;const r=e[t];if(Array.isArray(r)&&r.some(Zn)||typeof r=="object"&&Zn(r))return!0}return!1}function yc(e){let t=0;for(const r in e){if(r==="$ref")return 1/0;if(t++,!ym.has(r)&&(typeof e[r]=="object"&&(0,hm.eachItem)(e[r],n=>t+=yc(n)),t===1/0))return 1/0}return t}function $c(e,t="",r){r!==!1&&(t=Dt(t));const n=e.parse(t);return gc(e,n)}ge.getFullPath=$c;function gc(e,t){return e.serialize(t).split("#")[0]+"#"}ge._getFullPath=gc;const vm=/#\/?$/;function Dt(e){return e?e.replace(vm,""):""}ge.normalizeId=Dt;function wm(e,t,r){return r=Dt(r),e.resolve(t,r)}ge.resolveUrl=wm;const _m=/^[a-z_][-a-z0-9._]*$/i;function Em(e,t){if(typeof e=="boolean")return{};const{schemaId:r,uriResolver:n}=this.opts,s=Dt(e[r]||t),i={"":s},o=$c(n,s,!1),l={},c=new Set;return pm(e,{allKeys:!0},(d,v,m,S)=>{if(S===void 0)return;const g=o+v;let E=i[S];typeof d[r]=="string"&&(E=y.call(this,d[r])),P.call(this,d.$anchor),P.call(this,d.$dynamicAnchor),i[v]=E;function y(I){const A=this.opts.uriResolver.resolve;if(I=Dt(E?A(E,I):I),c.has(I))throw a(I);c.add(I);let k=this.refs[I];return typeof k=="string"&&(k=this.refs[k]),typeof k=="object"?f(d,k.schema,I):I!==Dt(g)&&(I[0]==="#"?(f(d,l[I],I),l[I]=d):this.refs[I]=g),I}function P(I){if(typeof I=="string"){if(!_m.test(I))throw new Error(`invalid anchor "${I}"`);y.call(this,`#${I}`)}}}),l;function f(d,v,m){if(v!==void 0&&!mm(d,v))throw a(m)}function a(d){return new Error(`reference "${d}" resolves to more than one schema`)}}ge.getSchemaRefs=Em;Object.defineProperty(Ue,"__esModule",{value:!0});Ue.getData=Ue.KeywordCxt=Ue.validateFunctionCode=void 0;const vc=Ut,io=fe,Fs=Ye,Wr=fe,Sm=sn,tr=He,Dn=ut,F=W,z=Je,bm=ge,Qe=L,Jt=yr;function Pm(e){if(Ec(e)&&(Sc(e),_c(e))){Im(e);return}wc(e,()=>(0,vc.topBoolOrEmptySchema)(e))}Ue.validateFunctionCode=Pm;function wc({gen:e,validateName:t,schema:r,schemaEnv:n,opts:s},i){s.code.es5?e.func(t,(0,F._)`${z.default.data}, ${z.default.valCxt}`,n.$async,()=>{e.code((0,F._)`"use strict"; ${oo(r,s)}`),Nm(e,s),e.code(i)}):e.func(t,(0,F._)`${z.default.data}, ${Om(s)}`,n.$async,()=>e.code(oo(r,s)).code(i))}function Om(e){return(0,F._)`{${z.default.instancePath}="", ${z.default.parentData}, ${z.default.parentDataProperty}, ${z.default.rootData}=${z.default.data}${e.dynamicRef?(0,F._)`, ${z.default.dynamicAnchors}={}`:F.nil}}={}`}function Nm(e,t){e.if(z.default.valCxt,()=>{e.var(z.default.instancePath,(0,F._)`${z.default.valCxt}.${z.default.instancePath}`),e.var(z.default.parentData,(0,F._)`${z.default.valCxt}.${z.default.parentData}`),e.var(z.default.parentDataProperty,(0,F._)`${z.default.valCxt}.${z.default.parentDataProperty}`),e.var(z.default.rootData,(0,F._)`${z.default.valCxt}.${z.default.rootData}`),t.dynamicRef&&e.var(z.default.dynamicAnchors,(0,F._)`${z.default.valCxt}.${z.default.dynamicAnchors}`)},()=>{e.var(z.default.instancePath,(0,F._)`""`),e.var(z.default.parentData,(0,F._)`undefined`),e.var(z.default.parentDataProperty,(0,F._)`undefined`),e.var(z.default.rootData,z.default.data),t.dynamicRef&&e.var(z.default.dynamicAnchors,(0,F._)`{}`)})}function Im(e){const{schema:t,opts:r,gen:n}=e;wc(e,()=>{r.$comment&&t.$comment&&Pc(e),jm(e),n.let(z.default.vErrors,null),n.let(z.default.errors,0),r.unevaluated&&Rm(e),bc(e),Lm(e)})}function Rm(e){const{gen:t,validateName:r}=e;e.evaluated=t.const("evaluated",(0,F._)`${r}.evaluated`),t.if((0,F._)`${e.evaluated}.dynamicProps`,()=>t.assign((0,F._)`${e.evaluated}.props`,(0,F._)`undefined`)),t.if((0,F._)`${e.evaluated}.dynamicItems`,()=>t.assign((0,F._)`${e.evaluated}.items`,(0,F._)`undefined`))}function oo(e,t){const r=typeof e=="object"&&e[t.schemaId];return r&&(t.code.source||t.code.process)?(0,F._)`/*# sourceURL=${r} */`:F.nil}function Tm(e,t){if(Ec(e)&&(Sc(e),_c(e))){Am(e,t);return}(0,vc.boolOrEmptySchema)(e,t)}function _c({schema:e,self:t}){if(typeof e=="boolean")return!e;for(const r in e)if(t.RULES.all[r])return!0;return!1}function Ec(e){return typeof e.schema!="boolean"}function Am(e,t){const{schema:r,gen:n,opts:s}=e;s.$comment&&r.$comment&&Pc(e),Dm(e),Cm(e);const i=n.const("_errs",z.default.errors);bc(e,i),n.var(t,(0,F._)`${i} === ${z.default.errors}`)}function Sc(e){(0,Qe.checkUnknownRules)(e),km(e)}function bc(e,t){if(e.opts.jtd)return ao(e,[],!1,t);const r=(0,io.getSchemaTypes)(e.schema),n=(0,io.coerceAndCheckDataType)(e,r);ao(e,r,!n,t)}function km(e){const{schema:t,errSchemaPath:r,opts:n,self:s}=e;t.$ref&&n.ignoreKeywordsWithRef&&(0,Qe.schemaHasRulesButRef)(t,s.RULES)&&s.logger.warn(`$ref: keywords ignored in schema at path "${r}"`)}function jm(e){const{schema:t,opts:r}=e;t.default!==void 0&&r.useDefaults&&r.strictSchema&&(0,Qe.checkStrictMode)(e,"default is ignored in the schema root")}function Dm(e){const t=e.schema[e.opts.schemaId];t&&(e.baseId=(0,bm.resolveUrl)(e.opts.uriResolver,e.baseId,t))}function Cm(e){if(e.schema.$async&&!e.schemaEnv.$async)throw new Error("async schema in sync schema")}function Pc({gen:e,schemaEnv:t,schema:r,errSchemaPath:n,opts:s}){const i=r.$comment;if(s.$comment===!0)e.code((0,F._)`${z.default.self}.logger.log(${i})`);else if(typeof s.$comment=="function"){const o=(0,F.str)`${n}/$comment`,l=e.scopeValue("root",{ref:t.root});e.code((0,F._)`${z.default.self}.opts.$comment(${i}, ${o}, ${l}.schema)`)}}function Lm(e){const{gen:t,schemaEnv:r,validateName:n,ValidationError:s,opts:i}=e;r.$async?t.if((0,F._)`${z.default.errors} === 0`,()=>t.return(z.default.data),()=>t.throw((0,F._)`new ${s}(${z.default.vErrors})`)):(t.assign((0,F._)`${n}.errors`,z.default.vErrors),i.unevaluated&&Fm(e),t.return((0,F._)`${z.default.errors} === 0`))}function Fm({gen:e,evaluated:t,props:r,items:n}){r instanceof F.Name&&e.assign((0,F._)`${t}.props`,r),n instanceof F.Name&&e.assign((0,F._)`${t}.items`,n)}function ao(e,t,r,n){const{gen:s,schema:i,data:o,allErrors:l,opts:c,self:f}=e,{RULES:a}=f;if(i.$ref&&(c.ignoreKeywordsWithRef||!(0,Qe.schemaHasRulesButRef)(i,a))){s.block(()=>Ic(e,"$ref",a.all.$ref.definition));return}c.jtd||Mm(e,t),s.block(()=>{for(const v of a.rules)d(v);d(a.post)});function d(v){(0,Fs.shouldUseGroup)(i,v)&&(v.type?(s.if((0,Wr.checkDataType)(v.type,o,c.strictNumbers)),co(e,v),t.length===1&&t[0]===v.type&&r&&(s.else(),(0,Wr.reportTypeError)(e)),s.endIf()):co(e,v),l||s.if((0,F._)`${z.default.errors} === ${n||0}`))}}function co(e,t){const{gen:r,schema:n,opts:{useDefaults:s}}=e;s&&(0,Sm.assignDefaults)(e,t.type),r.block(()=>{for(const i of t.rules)(0,Fs.shouldUseRule)(n,i)&&Ic(e,i.keyword,i.definition,t.type)})}function Mm(e,t){e.schemaEnv.meta||!e.opts.strictTypes||(Um(e,t),e.opts.allowUnionTypes||Vm(e,t),zm(e,e.dataTypes))}function Um(e,t){if(t.length){if(!e.dataTypes.length){e.dataTypes=t;return}t.forEach(r=>{Oc(e.dataTypes,r)||Ms(e,`type "${r}" not allowed by context "${e.dataTypes.join(",")}"`)}),xm(e,t)}}function Vm(e,t){t.length>1&&!(t.length===2&&t.includes("null"))&&Ms(e,"use allowUnionTypes to allow union type keyword")}function zm(e,t){const r=e.self.RULES.all;for(const n in r){const s=r[n];if(typeof s=="object"&&(0,Fs.shouldUseRule)(e.schema,s)){const{type:i}=s.definition;i.length&&!i.some(o=>qm(t,o))&&Ms(e,`missing type "${i.join(",")}" for keyword "${n}"`)}}}function qm(e,t){return e.includes(t)||t==="number"&&e.includes("integer")}function Oc(e,t){return e.includes(t)||t==="integer"&&e.includes("number")}function xm(e,t){const r=[];for(const n of e.dataTypes)Oc(t,n)?r.push(n):t.includes("integer")&&n==="number"&&r.push("integer");e.dataTypes=r}function Ms(e,t){const r=e.schemaEnv.baseId+e.errSchemaPath;t+=` at "${r}" (strictTypes)`,(0,Qe.checkStrictMode)(e,t,e.opts.strictTypes)}class Nc{constructor(t,r,n){if((0,tr.validateKeywordUsage)(t,r,n),this.gen=t.gen,this.allErrors=t.allErrors,this.keyword=n,this.data=t.data,this.schema=t.schema[n],this.$data=r.$data&&t.opts.$data&&this.schema&&this.schema.$data,this.schemaValue=(0,Qe.schemaRefOrVal)(t,this.schema,n,this.$data),this.schemaType=r.schemaType,this.parentSchema=t.schema,this.params={},this.it=t,this.def=r,this.$data)this.schemaCode=t.gen.const("vSchema",Rc(this.$data,t));else if(this.schemaCode=this.schemaValue,!(0,tr.validSchemaType)(this.schema,r.schemaType,r.allowUndefined))throw new Error(`${n} value must be ${JSON.stringify(r.schemaType)}`);("code"in r?r.trackErrors:r.errors!==!1)&&(this.errsCount=t.gen.const("_errs",z.default.errors))}result(t,r,n){this.failResult((0,F.not)(t),r,n)}failResult(t,r,n){this.gen.if(t),n?n():this.error(),r?(this.gen.else(),r(),this.allErrors&&this.gen.endIf()):this.allErrors?this.gen.endIf():this.gen.else()}pass(t,r){this.failResult((0,F.not)(t),void 0,r)}fail(t){if(t===void 0){this.error(),this.allErrors||this.gen.if(!1);return}this.gen.if(t),this.error(),this.allErrors?this.gen.endIf():this.gen.else()}fail$data(t){if(!this.$data)return this.fail(t);const{schemaCode:r}=this;this.fail((0,F._)`${r} !== undefined && (${(0,F.or)(this.invalid$data(),t)})`)}error(t,r,n){if(r){this.setParams(r),this._error(t,n),this.setParams({});return}this._error(t,n)}_error(t,r){(t?Jt.reportExtraError:Jt.reportError)(this,this.def.error,r)}$dataError(){(0,Jt.reportError)(this,this.def.$dataError||Jt.keyword$DataError)}reset(){if(this.errsCount===void 0)throw new Error('add "trackErrors" to keyword definition');(0,Jt.resetErrorsCount)(this.gen,this.errsCount)}ok(t){this.allErrors||this.gen.if(t)}setParams(t,r){r?Object.assign(this.params,t):this.params=t}block$data(t,r,n=F.nil){this.gen.block(()=>{this.check$data(t,n),r()})}check$data(t=F.nil,r=F.nil){if(!this.$data)return;const{gen:n,schemaCode:s,schemaType:i,def:o}=this;n.if((0,F.or)((0,F._)`${s} === undefined`,r)),t!==F.nil&&n.assign(t,!0),(i.length||o.validateSchema)&&(n.elseIf(this.invalid$data()),this.$dataError(),t!==F.nil&&n.assign(t,!1)),n.else()}invalid$data(){const{gen:t,schemaCode:r,schemaType:n,def:s,it:i}=this;return(0,F.or)(o(),l());function o(){if(n.length){if(!(r instanceof F.Name))throw new Error("ajv implementation error");const c=Array.isArray(n)?n:[n];return(0,F._)`${(0,Wr.checkDataTypes)(c,r,i.opts.strictNumbers,Wr.DataType.Wrong)}`}return F.nil}function l(){if(s.validateSchema){const c=t.scopeValue("validate$data",{ref:s.validateSchema});return(0,F._)`!${c}(${r})`}return F.nil}}subschema(t,r){const n=(0,Dn.getSubschema)(this.it,t);(0,Dn.extendSubschemaData)(n,this.it,t),(0,Dn.extendSubschemaMode)(n,t);const s={...this.it,...n,items:void 0,props:void 0};return Tm(s,r),s}mergeEvaluated(t,r){const{it:n,gen:s}=this;n.opts.unevaluated&&(n.props!==!0&&t.props!==void 0&&(n.props=Qe.mergeEvaluated.props(s,t.props,n.props,r)),n.items!==!0&&t.items!==void 0&&(n.items=Qe.mergeEvaluated.items(s,t.items,n.items,r)))}mergeValidEvaluated(t,r){const{it:n,gen:s}=this;if(n.opts.unevaluated&&(n.props!==!0||n.items!==!0))return s.if(r,()=>this.mergeEvaluated(t,F.Name)),!0}}Ue.KeywordCxt=Nc;function Ic(e,t,r,n){const s=new Nc(e,r,t);"code"in r?r.code(s,n):s.$data&&r.validate?(0,tr.funcKeywordCode)(s,r):"macro"in r?(0,tr.macroKeywordCode)(s,r):(r.compile||r.validate)&&(0,tr.funcKeywordCode)(s,r)}const Gm=/^\/(?:[^~]|~0|~1)*$/,Wm=/^([0-9]+)(#|\/(?:[^~]|~0|~1)*)?$/;function Rc(e,{dataLevel:t,dataNames:r,dataPathArr:n}){let s,i;if(e==="")return z.default.rootData;if(e[0]==="/"){if(!Gm.test(e))throw new Error(`Invalid JSON-pointer: ${e}`);s=e,i=z.default.rootData}else{const f=Wm.exec(e);if(!f)throw new Error(`Invalid JSON-pointer: ${e}`);const a=+f[1];if(s=f[2],s==="#"){if(a>=t)throw new Error(c("property/index",a));return n[t-a]}if(a>t)throw new Error(c("data",a));if(i=r[t-a],!s)return i}let o=i;const l=s.split("/");for(const f of l)f&&(i=(0,F._)`${i}${(0,F.getProperty)((0,Qe.unescapeJsonPointer)(f))}`,o=(0,F._)`${o} && ${i}`);return o;function c(f,a){return`Cannot access ${f} ${a} levels up, current level is ${t}`}}Ue.getData=Rc;var $r={};Object.defineProperty($r,"__esModule",{value:!0});class Hm extends Error{constructor(t){super("validation failed"),this.errors=t,this.ajv=this.validation=!0}}$r.default=Hm;var Gt={};Object.defineProperty(Gt,"__esModule",{value:!0});const Cn=ge;class Km extends Error{constructor(t,r,n,s){super(s||`can't resolve reference ${n} from id ${r}`),this.missingRef=(0,Cn.resolveUrl)(t,r,n),this.missingSchema=(0,Cn.normalizeId)((0,Cn.getFullPath)(t,this.missingRef))}}Gt.default=Km;var ke={};Object.defineProperty(ke,"__esModule",{value:!0});ke.resolveSchema=ke.getCompilingSchema=ke.resolveRef=ke.compileSchema=ke.SchemaEnv=void 0;const Le=W,Bm=$r,ht=Je,Me=ge,lo=L,Jm=Ue;class on{constructor(t){var r;this.refs={},this.dynamicAnchors={};let n;typeof t.schema=="object"&&(n=t.schema),this.schema=t.schema,this.schemaId=t.schemaId,this.root=t.root||this,this.baseId=(r=t.baseId)!==null&&r!==void 0?r:(0,Me.normalizeId)(n==null?void 0:n[t.schemaId||"$id"]),this.schemaPath=t.schemaPath,this.localRefs=t.localRefs,this.meta=t.meta,this.$async=n==null?void 0:n.$async,this.refs={}}}ke.SchemaEnv=on;function Us(e){const t=Tc.call(this,e);if(t)return t;const r=(0,Me.getFullPath)(this.opts.uriResolver,e.root.baseId),{es5:n,lines:s}=this.opts.code,{ownProperties:i}=this.opts,o=new Le.CodeGen(this.scope,{es5:n,lines:s,ownProperties:i});let l;e.$async&&(l=o.scopeValue("Error",{ref:Bm.default,code:(0,Le._)`require("ajv/dist/runtime/validation_error").default`}));const c=o.scopeName("validate");e.validateName=c;const f={gen:o,allErrors:this.opts.allErrors,data:ht.default.data,parentData:ht.default.parentData,parentDataProperty:ht.default.parentDataProperty,dataNames:[ht.default.data],dataPathArr:[Le.nil],dataLevel:0,dataTypes:[],definedProperties:new Set,topSchemaRef:o.scopeValue("schema",this.opts.code.source===!0?{ref:e.schema,code:(0,Le.stringify)(e.schema)}:{ref:e.schema}),validateName:c,ValidationError:l,schema:e.schema,schemaEnv:e,rootId:r,baseId:e.baseId||r,schemaPath:Le.nil,errSchemaPath:e.schemaPath||(this.opts.jtd?"":"#"),errorPath:(0,Le._)`""`,opts:this.opts,self:this};let a;try{this._compilations.add(e),(0,Jm.validateFunctionCode)(f),o.optimize(this.opts.code.optimize);const d=o.toString();a=`${o.scopeRefs(ht.default.scope)}return ${d}`,this.opts.code.process&&(a=this.opts.code.process(a,e));const m=new Function(`${ht.default.self}`,`${ht.default.scope}`,a)(this,this.scope.get());if(this.scope.value(c,{ref:m}),m.errors=null,m.schema=e.schema,m.schemaEnv=e,e.$async&&(m.$async=!0),this.opts.code.source===!0&&(m.source={validateName:c,validateCode:d,scopeValues:o._values}),this.opts.unevaluated){const{props:S,items:g}=f;m.evaluated={props:S instanceof Le.Name?void 0:S,items:g instanceof Le.Name?void 0:g,dynamicProps:S instanceof Le.Name,dynamicItems:g instanceof Le.Name},m.source&&(m.source.evaluated=(0,Le.stringify)(m.evaluated))}return e.validate=m,e}catch(d){throw delete e.validate,delete e.validateName,a&&this.logger.error("Error compiling schema, function code:",a),d}finally{this._compilations.delete(e)}}ke.compileSchema=Us;function Xm(e,t,r){var n;r=(0,Me.resolveUrl)(this.opts.uriResolver,t,r);const s=e.refs[r];if(s)return s;let i=Zm.call(this,e,r);if(i===void 0){const o=(n=e.localRefs)===null||n===void 0?void 0:n[r],{schemaId:l}=this.opts;o&&(i=new on({schema:o,schemaId:l,root:e,baseId:t}))}if(i!==void 0)return e.refs[r]=Ym.call(this,i)}ke.resolveRef=Xm;function Ym(e){return(0,Me.inlineRef)(e.schema,this.opts.inlineRefs)?e.schema:e.validate?e:Us.call(this,e)}function Tc(e){for(const t of this._compilations)if(Qm(t,e))return t}ke.getCompilingSchema=Tc;function Qm(e,t){return e.schema===t.schema&&e.root===t.root&&e.baseId===t.baseId}function Zm(e,t){let r;for(;typeof(r=this.refs[t])=="string";)t=r;return r||this.schemas[t]||an.call(this,e,t)}function an(e,t){const r=this.opts.uriResolver.parse(t),n=(0,Me._getFullPath)(this.opts.uriResolver,r);let s=(0,Me.getFullPath)(this.opts.uriResolver,e.baseId,void 0);if(Object.keys(e.schema).length>0&&n===s)return Ln.call(this,r,e);const i=(0,Me.normalizeId)(n),o=this.refs[i]||this.schemas[i];if(typeof o=="string"){const l=an.call(this,e,o);return typeof(l==null?void 0:l.schema)!="object"?void 0:Ln.call(this,r,l)}if(typeof(o==null?void 0:o.schema)=="object"){if(o.validate||Us.call(this,o),i===(0,Me.normalizeId)(t)){const{schema:l}=o,{schemaId:c}=this.opts,f=l[c];return f&&(s=(0,Me.resolveUrl)(this.opts.uriResolver,s,f)),new on({schema:l,schemaId:c,root:e,baseId:s})}return Ln.call(this,r,o)}}ke.resolveSchema=an;const ep=new Set(["properties","patternProperties","enum","dependencies","definitions"]);function Ln(e,{baseId:t,schema:r,root:n}){var s;if(((s=e.fragment)===null||s===void 0?void 0:s[0])!=="/")return;for(const l of e.fragment.slice(1).split("/")){if(typeof r=="boolean")return;const c=r[(0,lo.unescapeFragment)(l)];if(c===void 0)return;r=c;const f=typeof r=="object"&&r[this.opts.schemaId];!ep.has(l)&&f&&(t=(0,Me.resolveUrl)(this.opts.uriResolver,t,f))}let i;if(typeof r!="boolean"&&r.$ref&&!(0,lo.schemaHasRulesButRef)(r,this.RULES)){const l=(0,Me.resolveUrl)(this.opts.uriResolver,t,r.$ref);i=an.call(this,n,l)}const{schemaId:o}=this.opts;if(i=i||new on({schema:r,schemaId:o,root:n,baseId:t}),i.schema!==i.root.schema)return i}const tp="https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#",rp="Meta-schema for $data reference (JSON AnySchema extension proposal)",np="object",sp=["$data"],ip={$data:{type:"string",anyOf:[{format:"relative-json-pointer"},{format:"json-pointer"}]}},op=!1,ap={$id:tp,description:rp,type:np,required:sp,properties:ip,additionalProperties:op};var Vs={},cn={exports:{}};const cp=RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu),Ac=RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u),zs=RegExp.prototype.test.bind(/^[\da-f]{2}$/iu),kc=RegExp.prototype.test.bind(/^[\da-z\-._~]$/iu),lp=RegExp.prototype.test.bind(/^[\da-z\-._~!$&'()*+,;=:@/]$/iu);function jc(e){let t="",r=0,n=0;for(n=0;n<e.length;n++)if(r=e[n].charCodeAt(0),r!==48){if(!(r>=48&&r<=57||r>=65&&r<=70||r>=97&&r<=102))return"";t+=e[n];break}for(n+=1;n<e.length;n++){if(r=e[n].charCodeAt(0),!(r>=48&&r<=57||r>=65&&r<=70||r>=97&&r<=102))return"";t+=e[n]}return t}const up=RegExp.prototype.test.bind(/[^!"$&'()*+,\-.;=_`a-z{}~]/u);function uo(e){return e.length=0,!0}function fp(e,t,r){if(e.length){const n=jc(e);if(n!=="")t.push(n);else return r.error=!0,!1;e.length=0}return!0}function dp(e){let t=0;const r={error:!1,address:"",zone:""},n=[],s=[];let i=!1,o=!1,l=fp;for(let c=0;c<e.length;c++){const f=e[c];if(!(f==="["||f==="]"))if(f===":"){if(i===!0&&(o=!0),!l(s,n,r))break;if(++t>7){r.error=!0;break}c>0&&e[c-1]===":"&&(i=!0),n.push(":");continue}else if(f==="%"){if(!l(s,n,r))break;l=uo}else{s.push(f);continue}}return s.length&&(l===uo?r.zone=s.join(""):o?n.push(s.join("")):n.push(jc(s))),r.address=n.join(""),r}function Dc(e){if(hp(e,":")<2)return{host:e,isIPV6:!1};const t=dp(e);if(t.error)return{host:e,isIPV6:!1};{let r=t.address,n=t.address;return t.zone&&(r+="%"+t.zone,n+="%25"+t.zone),{host:r,isIPV6:!0,escapedHost:n}}}function hp(e,t){let r=0;for(let n=0;n<e.length;n++)e[n]===t&&r++;return r}function mp(e){let t=e;const r=[];let n=-1,s=0;for(;s=t.length;){if(s===1){if(t===".")break;if(t==="/"){r.push("/");break}else{r.push(t);break}}else if(s===2){if(t[0]==="."){if(t[1]===".")break;if(t[1]==="/"){t=t.slice(2);continue}}else if(t[0]==="/"&&(t[1]==="."||t[1]==="/")){r.push("/");break}}else if(s===3&&t==="/.."){r.length!==0&&r.pop(),r.push("/");break}if(t[0]==="."){if(t[1]==="."){if(t[2]==="/"){t=t.slice(3);continue}}else if(t[1]==="/"){t=t.slice(2);continue}}else if(t[0]==="/"&&t[1]==="."){if(t[2]==="/"){t=t.slice(2);continue}else if(t[2]==="."&&t[3]==="/"){t=t.slice(3),r.length!==0&&r.pop();continue}}if((n=t.indexOf("/",1))===-1){r.push(t);break}else r.push(t.slice(0,n)),t=t.slice(n)}return r.join("")}const pp={"@":"%40","/":"%2F","?":"%3F","#":"%23",":":"%3A"},yp=/[@/?#:]/g,$p=/[@/?#]/g;function Cc(e,t){const r=t?$p:yp;return r.lastIndex=0,e.replace(r,n=>pp[n])}function gp(e,t=!1){if(e.indexOf("%")===-1)return e;let r="";for(let n=0;n<e.length;n++){if(e[n]==="%"&&n+2<e.length){const s=e.slice(n+1,n+3);if(zs(s)){const i=s.toUpperCase(),o=String.fromCharCode(parseInt(i,16));t&&kc(o)?r+=o:r+="%"+i,n+=2;continue}}r+=e[n]}return r}function vp(e){let t="";for(let r=0;r<e.length;r++){if(e[r]==="%"&&r+2<e.length){const n=e.slice(r+1,r+3);if(zs(n)){const s=n.toUpperCase(),i=String.fromCharCode(parseInt(s,16));i!=="."&&kc(i)?t+=i:t+="%"+s,r+=2;continue}}lp(e[r])?t+=e[r]:t+=escape(e[r])}return t}function wp(e){let t="";for(let r=0;r<e.length;r++){if(e[r]==="%"&&r+2<e.length){const n=e.slice(r+1,r+3);if(zs(n)){t+="%"+n.toUpperCase(),r+=2;continue}}t+=escape(e[r])}return t}function _p(e){const t=[];if(e.userinfo!==void 0&&(t.push(e.userinfo),t.push("@")),e.host!==void 0){let r=unescape(e.host);if(!Ac(r)){const n=Dc(r);n.isIPV6===!0?r=`[${n.escapedHost}]`:r=Cc(r,!1)}t.push(r)}return(typeof e.port=="number"||typeof e.port=="string")&&(t.push(":"),t.push(String(e.port))),t.length?t.join(""):void 0}var Lc={nonSimpleDomain:up,recomposeAuthority:_p,reescapeHostDelimiters:Cc,normalizePercentEncoding:gp,normalizePathEncoding:vp,escapePreservingEscapes:wp,removeDotSegments:mp,isIPv4:Ac,isUUID:cp,normalizeIPv6:Dc};const{isUUID:Ep}=Lc,Sp=/([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;function Fc(e){return e.secure===!0?!0:e.secure===!1?!1:e.scheme?e.scheme.length===3&&(e.scheme[0]==="w"||e.scheme[0]==="W")&&(e.scheme[1]==="s"||e.scheme[1]==="S")&&(e.scheme[2]==="s"||e.scheme[2]==="S"):!1}function Mc(e){return e.host||(e.error=e.error||"HTTP URIs must have a host."),e}function Uc(e){const t=String(e.scheme).toLowerCase()==="https";return(e.port===(t?443:80)||e.port==="")&&(e.port=void 0),e.path||(e.path="/"),e}function bp(e){return e.secure=Fc(e),e.resourceName=(e.path||"/")+(e.query?"?"+e.query:""),e.path=void 0,e.query=void 0,e}function Pp(e){if((e.port===(Fc(e)?443:80)||e.port==="")&&(e.port=void 0),typeof e.secure=="boolean"&&(e.scheme=e.secure?"wss":"ws",e.secure=void 0),e.resourceName){const[t,r]=e.resourceName.split("?");e.path=t&&t!=="/"?t:void 0,e.query=r,e.resourceName=void 0}return e.fragment=void 0,e}function Op(e,t){if(!e.path)return e.error="URN can not be parsed",e;const r=e.path.match(Sp);if(r){const n=t.scheme||e.scheme||"urn";e.nid=r[1].toLowerCase(),e.nss=r[2];const s=`${n}:${t.nid||e.nid}`,i=qs(s);e.path=void 0,i&&(e=i.parse(e,t))}else e.error=e.error||"URN can not be parsed.";return e}function Np(e,t){if(e.nid===void 0)throw new Error("URN without nid cannot be serialized");const r=t.scheme||e.scheme||"urn",n=e.nid.toLowerCase(),s=`${r}:${t.nid||n}`,i=qs(s);i&&(e=i.serialize(e,t));const o=e,l=e.nss;return o.path=`${n||t.nid}:${l}`,t.skipEscape=!0,o}function Ip(e,t){const r=e;return r.uuid=r.nss,r.nss=void 0,!t.tolerant&&(!r.uuid||!Ep(r.uuid))&&(r.error=r.error||"UUID is not valid."),r}function Rp(e){const t=e;return t.nss=(e.uuid||"").toLowerCase(),t}const Vc={scheme:"http",domainHost:!0,parse:Mc,serialize:Uc},Tp={scheme:"https",domainHost:Vc.domainHost,parse:Mc,serialize:Uc},Ur={scheme:"ws",domainHost:!0,parse:bp,serialize:Pp},Ap={scheme:"wss",domainHost:Ur.domainHost,parse:Ur.parse,serialize:Ur.serialize},kp={scheme:"urn",parse:Op,serialize:Np,skipNormalize:!0},jp={scheme:"urn:uuid",parse:Ip,serialize:Rp,skipNormalize:!0},Hr={http:Vc,https:Tp,ws:Ur,wss:Ap,urn:kp,"urn:uuid":jp};Object.setPrototypeOf(Hr,null);function qs(e){return e&&(Hr[e]||Hr[e.toLowerCase()])||void 0}var Dp={SCHEMES:Hr,getSchemeHandler:qs};const{normalizeIPv6:Cp,removeDotSegments:Yt,recomposeAuthority:Lp,normalizePercentEncoding:Fp,normalizePathEncoding:Mp,escapePreservingEscapes:Up,reescapeHostDelimiters:Vp,isIPv4:zp,nonSimpleDomain:qp}=Lc,{SCHEMES:xp,getSchemeHandler:zc}=Dp;function Gp(e,t){return typeof e=="string"?e=Jp(e,t):typeof e=="object"&&(e=Vt(_t(e,t),t)),e}function Wp(e,t,r){const n=r?Object.assign({scheme:"null"},r):{scheme:"null"},s=qc(Vt(e,n),Vt(t,n),n,!0);return n.skipEscape=!0,_t(s,n)}function qc(e,t,r,n){const s={};return n||(e=Vt(_t(e,r),r),t=Vt(_t(t,r),r)),r=r||{},!r.tolerant&&t.scheme?(s.scheme=t.scheme,s.userinfo=t.userinfo,s.host=t.host,s.port=t.port,s.path=Yt(t.path||""),s.query=t.query):(t.userinfo!==void 0||t.host!==void 0||t.port!==void 0?(s.userinfo=t.userinfo,s.host=t.host,s.port=t.port,s.path=Yt(t.path||""),s.query=t.query):(t.path?(t.path[0]==="/"?s.path=Yt(t.path):((e.userinfo!==void 0||e.host!==void 0||e.port!==void 0)&&!e.path?s.path="/"+t.path:e.path?s.path=e.path.slice(0,e.path.lastIndexOf("/")+1)+t.path:s.path=t.path,s.path=Yt(s.path)),s.query=t.query):(s.path=e.path,t.query!==void 0?s.query=t.query:s.query=e.query),s.userinfo=e.userinfo,s.host=e.host,s.port=e.port),s.scheme=e.scheme),s.fragment=t.fragment,s}function Hp(e,t,r){const n=fo(e,r),s=fo(t,r);return n!==void 0&&s!==void 0&&n.toLowerCase()===s.toLowerCase()}function _t(e,t){const r={host:e.host,scheme:e.scheme,userinfo:e.userinfo,port:e.port,path:e.path,query:e.query,nid:e.nid,nss:e.nss,uuid:e.uuid,fragment:e.fragment,reference:e.reference,resourceName:e.resourceName,secure:e.secure,error:""},n=Object.assign({},t),s=[],i=zc(n.scheme||r.scheme);i&&i.serialize&&i.serialize(r,n),r.path!==void 0&&(n.skipEscape?r.path=Fp(r.path):(r.path=Up(r.path),r.scheme!==void 0&&(r.path=r.path.split("%3A").join(":")))),n.reference!=="suffix"&&r.scheme&&s.push(r.scheme,":");const o=Lp(r);if(o!==void 0&&(n.reference!=="suffix"&&s.push("//"),s.push(o),r.path&&r.path[0]!=="/"&&s.push("/")),r.path!==void 0){let l=r.path;!n.absolutePath&&(!i||!i.absolutePath)&&(l=Yt(l)),o===void 0&&l[0]==="/"&&l[1]==="/"&&(l="/%2F"+l.slice(2)),s.push(l)}return r.query!==void 0&&s.push("?",r.query),r.fragment!==void 0&&s.push("#",r.fragment),s.join("")}const Kp=/^(?:([^#/:?]+):)?(?:\/\/((?:([^#/?@]*)@)?(\[[^#/?\]]+\]|[^#/:?]*)(?::(\d*))?))?([^#?]*)(?:\?([^#]*))?(?:#((?:.|[\n\r])*))?/u;function Bp(e,t){if(t[2]!==void 0&&e.path&&e.path[0]!=="/")return'URI path must start with "/" when authority is present.';if(typeof e.port=="number"&&(e.port<0||e.port>65535))return"URI port is malformed."}function xc(e,t){const r=Object.assign({},t),n={scheme:void 0,userinfo:void 0,host:"",port:void 0,path:"",query:void 0,fragment:void 0};let s=!1,i=!1;r.reference==="suffix"&&(r.scheme?e=r.scheme+":"+e:e="//"+e);const o=e.match(Kp);if(o){n.scheme=o[1],n.userinfo=o[3],n.host=o[4],n.port=parseInt(o[5],10),n.path=o[6]||"",n.query=o[7],n.fragment=o[8],isNaN(n.port)&&(n.port=o[5]);const l=Bp(n,o);if(l!==void 0&&(n.error=n.error||l,s=!0),n.host)if(zp(n.host)===!1){const a=Cp(n.host);n.host=a.host.toLowerCase(),i=a.isIPV6}else i=!0;n.scheme===void 0&&n.userinfo===void 0&&n.host===void 0&&n.port===void 0&&n.query===void 0&&!n.path?n.reference="same-document":n.scheme===void 0?n.reference="relative":n.fragment===void 0?n.reference="absolute":n.reference="uri",r.reference&&r.reference!=="suffix"&&r.reference!==n.reference&&(n.error=n.error||"URI is not a "+r.reference+" reference.");const c=zc(r.scheme||n.scheme);if(!r.unicodeSupport&&(!c||!c.unicodeSupport)&&n.host&&(r.domainHost||c&&c.domainHost)&&i===!1&&qp(n.host))try{n.host=URL.domainToASCII(n.host.toLowerCase())}catch(f){n.error=n.error||"Host's domain name can not be converted to ASCII: "+f}if((!c||c&&!c.skipNormalize)&&(e.indexOf("%")!==-1&&(n.scheme!==void 0&&(n.scheme=unescape(n.scheme)),n.host!==void 0&&(n.host=Vp(unescape(n.host),i))),n.path&&(n.path=Mp(n.path)),n.fragment))try{n.fragment=encodeURI(decodeURIComponent(n.fragment))}catch{n.error=n.error||"URI malformed"}c&&c.parse&&c.parse(n,r)}else n.error=n.error||"URI can not be parsed.";return{parsed:n,malformedAuthorityOrPort:s}}function Vt(e,t){return xc(e,t).parsed}function Jp(e,t){return Gc(e,t).normalized}function Gc(e,t){const{parsed:r,malformedAuthorityOrPort:n}=xc(e,t);return{normalized:n?e:_t(r,t),malformedAuthorityOrPort:n}}function fo(e,t){if(typeof e=="string"){const{normalized:r,malformedAuthorityOrPort:n}=Gc(e,t);return n?void 0:r}if(typeof e=="object")return _t(e,t)}const xs={SCHEMES:xp,normalize:Gp,resolve:Wp,resolveComponent:qc,equal:Hp,serialize:_t,parse:Vt};cn.exports=xs;cn.exports.default=xs;cn.exports.fastUri=xs;var Xp=cn.exports;Object.defineProperty(Vs,"__esModule",{value:!0});const Wc=Xp;Wc.code='require("ajv/dist/runtime/uri").default';Vs.default=Wc;(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.CodeGen=e.Name=e.nil=e.stringify=e.str=e._=e.KeywordCxt=void 0;var t=Ue;Object.defineProperty(e,"KeywordCxt",{enumerable:!0,get:function(){return t.KeywordCxt}});var r=W;Object.defineProperty(e,"_",{enumerable:!0,get:function(){return r._}}),Object.defineProperty(e,"str",{enumerable:!0,get:function(){return r.str}}),Object.defineProperty(e,"stringify",{enumerable:!0,get:function(){return r.stringify}}),Object.defineProperty(e,"nil",{enumerable:!0,get:function(){return r.nil}}),Object.defineProperty(e,"Name",{enumerable:!0,get:function(){return r.Name}}),Object.defineProperty(e,"CodeGen",{enumerable:!0,get:function(){return r.CodeGen}});const n=$r,s=Gt,i=wt,o=ke,l=W,c=ge,f=fe,a=L,d=ap,v=Vs,m=($,p)=>new RegExp($,p);m.code="new RegExp";const S=["removeAdditional","useDefaults","coerceTypes"],g=new Set(["validate","serialize","parse","wrapper","root","schema","keyword","pattern","formats","validate$data","func","obj","Error"]),E={errorDataPath:"",format:"`validateFormats: false` can be used instead.",nullable:'"nullable" keyword is supported by default.',jsonPointers:"Deprecated jsPropertySyntax can be used instead.",extendRefs:"Deprecated ignoreKeywordsWithRef can be used instead.",missingRefs:"Pass empty schema with $id that should be ignored to ajv.addSchema.",processCode:"Use option `code: {process: (code, schemaEnv: object) => string}`",sourceCode:"Use option `code: {source: true}`",strictDefaults:"It is default now, see option `strict`.",strictKeywords:"It is default now, see option `strict`.",uniqueItems:'"uniqueItems" keyword is always validated.',unknownFormats:"Disable strict mode or pass `true` to `ajv.addFormat` (or `formats` option).",cache:"Map is used as cache, schema object as key.",serialize:"Map is used as cache, schema object as key.",ajvErrors:"It is default now."},y={ignoreKeywordsWithRef:"",jsPropertySyntax:"",unicode:'"minLength"/"maxLength" account for unicode characters by default.'},P=200;function I($){var p,b,w,u,h,N,C,j,J,Y,he,Pt,yn,$n,gn,vn,wn,_n,En,Sn,bn,Pn,On,Nn,In;const Kt=$.strict,Rn=(p=$.code)===null||p===void 0?void 0:p.optimize,Ai=Rn===!0||Rn===void 0?1:Rn||0,ki=(w=(b=$.code)===null||b===void 0?void 0:b.regExp)!==null&&w!==void 0?w:m,dl=(u=$.uriResolver)!==null&&u!==void 0?u:v.default;return{strictSchema:(N=(h=$.strictSchema)!==null&&h!==void 0?h:Kt)!==null&&N!==void 0?N:!0,strictNumbers:(j=(C=$.strictNumbers)!==null&&C!==void 0?C:Kt)!==null&&j!==void 0?j:!0,strictTypes:(Y=(J=$.strictTypes)!==null&&J!==void 0?J:Kt)!==null&&Y!==void 0?Y:"log",strictTuples:(Pt=(he=$.strictTuples)!==null&&he!==void 0?he:Kt)!==null&&Pt!==void 0?Pt:"log",strictRequired:($n=(yn=$.strictRequired)!==null&&yn!==void 0?yn:Kt)!==null&&$n!==void 0?$n:!1,code:$.code?{...$.code,optimize:Ai,regExp:ki}:{optimize:Ai,regExp:ki},loopRequired:(gn=$.loopRequired)!==null&&gn!==void 0?gn:P,loopEnum:(vn=$.loopEnum)!==null&&vn!==void 0?vn:P,meta:(wn=$.meta)!==null&&wn!==void 0?wn:!0,messages:(_n=$.messages)!==null&&_n!==void 0?_n:!0,inlineRefs:(En=$.inlineRefs)!==null&&En!==void 0?En:!0,schemaId:(Sn=$.schemaId)!==null&&Sn!==void 0?Sn:"$id",addUsedSchema:(bn=$.addUsedSchema)!==null&&bn!==void 0?bn:!0,validateSchema:(Pn=$.validateSchema)!==null&&Pn!==void 0?Pn:!0,validateFormats:(On=$.validateFormats)!==null&&On!==void 0?On:!0,unicodeRegExp:(Nn=$.unicodeRegExp)!==null&&Nn!==void 0?Nn:!0,int32range:(In=$.int32range)!==null&&In!==void 0?In:!0,uriResolver:dl}}class A{constructor(p={}){this.schemas={},this.refs={},this.formats=Object.create(null),this._compilations=new Set,this._loading={},this._cache=new Map,p=this.opts={...p,...I(p)};const{es5:b,lines:w}=this.opts.code;this.scope=new l.ValueScope({scope:{},prefixes:g,es5:b,lines:w}),this.logger=V(p.logger);const u=p.validateFormats;p.validateFormats=!1,this.RULES=(0,i.getRules)(),k.call(this,E,p,"NOT SUPPORTED"),k.call(this,y,p,"DEPRECATED","warn"),this._metaOpts=D.call(this),p.formats&&ae.call(this),this._addVocabularies(),this._addDefaultMetaSchema(),p.keywords&&T.call(this,p.keywords),typeof p.meta=="object"&&this.addMetaSchema(p.meta),x.call(this),p.validateFormats=u}_addVocabularies(){this.addKeyword("$async")}_addDefaultMetaSchema(){const{$data:p,meta:b,schemaId:w}=this.opts;let u=d;w==="id"&&(u={...d},u.id=u.$id,delete u.$id),b&&p&&this.addMetaSchema(u,u[w],!1)}defaultMeta(){const{meta:p,schemaId:b}=this.opts;return this.opts.defaultMeta=typeof p=="object"?p[b]||p:void 0}validate(p,b){let w;if(typeof p=="string"){if(w=this.getSchema(p),!w)throw new Error(`no schema with key or ref "${p}"`)}else w=this.compile(p);const u=w(b);return"$async"in w||(this.errors=w.errors),u}compile(p,b){const w=this._addSchema(p,b);return w.validate||this._compileSchemaEnv(w)}compileAsync(p,b){if(typeof this.opts.loadSchema!="function")throw new Error("options.loadSchema should be a function");const{loadSchema:w}=this.opts;return u.call(this,p,b);async function u(Y,he){await h.call(this,Y.$schema);const Pt=this._addSchema(Y,he);return Pt.validate||N.call(this,Pt)}async function h(Y){Y&&!this.getSchema(Y)&&await u.call(this,{$ref:Y},!0)}async function N(Y){try{return this._compileSchemaEnv(Y)}catch(he){if(!(he instanceof s.default))throw he;return C.call(this,he),await j.call(this,he.missingSchema),N.call(this,Y)}}function C({missingSchema:Y,missingRef:he}){if(this.refs[Y])throw new Error(`AnySchema ${Y} is loaded but ${he} cannot be resolved`)}async function j(Y){const he=await J.call(this,Y);this.refs[Y]||await h.call(this,he.$schema),this.refs[Y]||this.addSchema(he,Y,b)}async function J(Y){const he=this._loading[Y];if(he)return he;try{return await(this._loading[Y]=w(Y))}finally{delete this._loading[Y]}}}addSchema(p,b,w,u=this.opts.validateSchema){if(Array.isArray(p)){for(const N of p)this.addSchema(N,void 0,w,u);return this}let h;if(typeof p=="object"){const{schemaId:N}=this.opts;if(h=p[N],h!==void 0&&typeof h!="string")throw new Error(`schema ${N} must be string`)}return b=(0,c.normalizeId)(b||h),this._checkUnique(b),this.schemas[b]=this._addSchema(p,w,b,u,!0),this}addMetaSchema(p,b,w=this.opts.validateSchema){return this.addSchema(p,b,!0,w),this}validateSchema(p,b){if(typeof p=="boolean")return!0;let w;if(w=p.$schema,w!==void 0&&typeof w!="string")throw new Error("$schema must be a string");if(w=w||this.opts.defaultMeta||this.defaultMeta(),!w)return this.logger.warn("meta-schema not available"),this.errors=null,!0;const u=this.validate(w,p);if(!u&&b){const h="schema is invalid: "+this.errorsText();if(this.opts.validateSchema==="log")this.logger.error(h);else throw new Error(h)}return u}getSchema(p){let b;for(;typeof(b=U.call(this,p))=="string";)p=b;if(b===void 0){const{schemaId:w}=this.opts,u=new o.SchemaEnv({schema:{},schemaId:w});if(b=o.resolveSchema.call(this,u,p),!b)return;this.refs[p]=b}return b.validate||this._compileSchemaEnv(b)}removeSchema(p){if(p instanceof RegExp)return this._removeAllSchemas(this.schemas,p),this._removeAllSchemas(this.refs,p),this;switch(typeof p){case"undefined":return this._removeAllSchemas(this.schemas),this._removeAllSchemas(this.refs),this._cache.clear(),this;case"string":{const b=U.call(this,p);return typeof b=="object"&&this._cache.delete(b.schema),delete this.schemas[p],delete this.refs[p],this}case"object":{const b=p;this._cache.delete(b);let w=p[this.opts.schemaId];return w&&(w=(0,c.normalizeId)(w),delete this.schemas[w],delete this.refs[w]),this}default:throw new Error("ajv.removeSchema: invalid parameter")}}addVocabulary(p){for(const b of p)this.addKeyword(b);return this}addKeyword(p,b){let w;if(typeof p=="string")w=p,typeof b=="object"&&(this.logger.warn("these parameters are deprecated, see docs for addKeyword"),b.keyword=w);else if(typeof p=="object"&&b===void 0){if(b=p,w=b.keyword,Array.isArray(w)&&!w.length)throw new Error("addKeywords: keyword must be string or non-empty array")}else throw new Error("invalid addKeywords parameters");if(H.call(this,w,b),!b)return(0,a.eachItem)(w,h=>G.call(this,h)),this;R.call(this,b);const u={...b,type:(0,f.getJSONTypes)(b.type),schemaType:(0,f.getJSONTypes)(b.schemaType)};return(0,a.eachItem)(w,u.type.length===0?h=>G.call(this,h,u):h=>u.type.forEach(N=>G.call(this,h,u,N))),this}getKeyword(p){const b=this.RULES.all[p];return typeof b=="object"?b.definition:!!b}removeKeyword(p){const{RULES:b}=this;delete b.keywords[p],delete b.all[p];for(const w of b.rules){const u=w.rules.findIndex(h=>h.keyword===p);u>=0&&w.rules.splice(u,1)}return this}addFormat(p,b){return typeof b=="string"&&(b=new RegExp(b)),this.formats[p]=b,this}errorsText(p=this.errors,{separator:b=", ",dataVar:w="data"}={}){return!p||p.length===0?"No errors":p.map(u=>`${w}${u.instancePath} ${u.message}`).reduce((u,h)=>u+b+h)}$dataMetaSchema(p,b){const w=this.RULES.all;p=JSON.parse(JSON.stringify(p));for(const u of b){const h=u.split("/").slice(1);let N=p;for(const C of h)N=N[C];for(const C in w){const j=w[C];if(typeof j!="object")continue;const{$data:J}=j.definition,Y=N[C];J&&Y&&(N[C]=O(Y))}}return p}_removeAllSchemas(p,b){for(const w in p){const u=p[w];(!b||b.test(w))&&(typeof u=="string"?delete p[w]:u&&!u.meta&&(this._cache.delete(u.schema),delete p[w]))}}_addSchema(p,b,w,u=this.opts.validateSchema,h=this.opts.addUsedSchema){let N;const{schemaId:C}=this.opts;if(typeof p=="object")N=p[C];else{if(this.opts.jtd)throw new Error("schema must be object");if(typeof p!="boolean")throw new Error("schema must be object or boolean")}let j=this._cache.get(p);if(j!==void 0)return j;w=(0,c.normalizeId)(N||w);const J=c.getSchemaRefs.call(this,p,w);return j=new o.SchemaEnv({schema:p,schemaId:C,meta:b,baseId:w,localRefs:J}),this._cache.set(j.schema,j),h&&!w.startsWith("#")&&(w&&this._checkUnique(w),this.refs[w]=j),u&&this.validateSchema(p,!0),j}_checkUnique(p){if(this.schemas[p]||this.refs[p])throw new Error(`schema with key or id "${p}" already exists`)}_compileSchemaEnv(p){if(p.meta?this._compileMetaSchema(p):o.compileSchema.call(this,p),!p.validate)throw new Error("ajv implementation error");return p.validate}_compileMetaSchema(p){const b=this.opts;this.opts=this._metaOpts;try{o.compileSchema.call(this,p)}finally{this.opts=b}}}A.ValidationError=n.default,A.MissingRefError=s.default,e.default=A;function k($,p,b,w="error"){for(const u in $){const h=u;h in p&&this.logger[w](`${b}: option ${u}. ${$[h]}`)}}function U($){return $=(0,c.normalizeId)($),this.schemas[$]||this.refs[$]}function x(){const $=this.opts.schemas;if($)if(Array.isArray($))this.addSchema($);else for(const p in $)this.addSchema($[p],p)}function ae(){for(const $ in this.opts.formats){const p=this.opts.formats[$];p&&this.addFormat($,p)}}function T($){if(Array.isArray($)){this.addVocabulary($);return}this.logger.warn("keywords option as map is deprecated, pass array");for(const p in $){const b=$[p];b.keyword||(b.keyword=p),this.addKeyword(b)}}function D(){const $={...this.opts};for(const p of S)delete $[p];return $}const M={log(){},warn(){},error(){}};function V($){if($===!1)return M;if($===void 0)return console;if($.log&&$.warn&&$.error)return $;throw new Error("logger must implement log, warn and error methods")}const B=/^[a-z_$][a-z0-9_$:-]*$/i;function H($,p){const{RULES:b}=this;if((0,a.eachItem)($,w=>{if(b.keywords[w])throw new Error(`Keyword ${w} is already defined`);if(!B.test(w))throw new Error(`Keyword ${w} has invalid name`)}),!!p&&p.$data&&!("code"in p||"validate"in p))throw new Error('$data keyword must have "code" or "validate" function')}function G($,p,b){var w;const u=p==null?void 0:p.post;if(b&&u)throw new Error('keyword with "post" flag cannot have "type"');const{RULES:h}=this;let N=u?h.post:h.rules.find(({type:j})=>j===b);if(N||(N={type:b,rules:[]},h.rules.push(N)),h.keywords[$]=!0,!p)return;const C={keyword:$,definition:{...p,type:(0,f.getJSONTypes)(p.type),schemaType:(0,f.getJSONTypes)(p.schemaType)}};p.before?X.call(this,N,C,p.before):N.rules.push(C),h.all[$]=C,(w=p.implements)===null||w===void 0||w.forEach(j=>this.addKeyword(j))}function X($,p,b){const w=$.rules.findIndex(u=>u.keyword===b);w>=0?$.rules.splice(w,0,p):($.rules.push(p),this.logger.warn(`rule ${b} is not defined`))}function R($){let{metaSchema:p}=$;p!==void 0&&($.$data&&this.opts.$data&&(p=O(p)),$.validateSchema=this.compile(p,!0))}const _={$ref:"https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#"};function O($){return{anyOf:[$,_]}}})(Qa);var Gs={},Ws={},Hs={};Object.defineProperty(Hs,"__esModule",{value:!0});const Yp={keyword:"id",code(){throw new Error('NOT SUPPORTED: keyword "id", use "$id" for schema ID')}};Hs.default=Yp;var Et={};Object.defineProperty(Et,"__esModule",{value:!0});Et.callRef=Et.getValidate=void 0;const Qp=Gt,ho=K,Te=W,It=Je,mo=ke,Or=L,Zp={keyword:"$ref",schemaType:"string",code(e){const{gen:t,schema:r,it:n}=e,{baseId:s,schemaEnv:i,validateName:o,opts:l,self:c}=n,{root:f}=i;if((r==="#"||r==="#/")&&s===f.baseId)return d();const a=mo.resolveRef.call(c,f,s,r);if(a===void 0)throw new Qp.default(n.opts.uriResolver,s,r);if(a instanceof mo.SchemaEnv)return v(a);return m(a);function d(){if(i===f)return Vr(e,o,i,i.$async);const S=t.scopeValue("root",{ref:f});return Vr(e,(0,Te._)`${S}.validate`,f,f.$async)}function v(S){const g=Hc(e,S);Vr(e,g,S,S.$async)}function m(S){const g=t.scopeValue("schema",l.code.source===!0?{ref:S,code:(0,Te.stringify)(S)}:{ref:S}),E=t.name("valid"),y=e.subschema({schema:S,dataTypes:[],schemaPath:Te.nil,topSchemaRef:g,errSchemaPath:r},E);e.mergeEvaluated(y),e.ok(E)}}};function Hc(e,t){const{gen:r}=e;return t.validate?r.scopeValue("validate",{ref:t.validate}):(0,Te._)`${r.scopeValue("wrapper",{ref:t})}.validate`}Et.getValidate=Hc;function Vr(e,t,r,n){const{gen:s,it:i}=e,{allErrors:o,schemaEnv:l,opts:c}=i,f=c.passContext?It.default.this:Te.nil;n?a():d();function a(){if(!l.$async)throw new Error("async schema referenced by sync schema");const S=s.let("valid");s.try(()=>{s.code((0,Te._)`await ${(0,ho.callValidateCode)(e,t,f)}`),m(t),o||s.assign(S,!0)},g=>{s.if((0,Te._)`!(${g} instanceof ${i.ValidationError})`,()=>s.throw(g)),v(g),o||s.assign(S,!1)}),e.ok(S)}function d(){e.result((0,ho.callValidateCode)(e,t,f),()=>m(t),()=>v(t))}function v(S){const g=(0,Te._)`${S}.errors`;s.assign(It.default.vErrors,(0,Te._)`${It.default.vErrors} === null ? ${g} : ${It.default.vErrors}.concat(${g})`),s.assign(It.default.errors,(0,Te._)`${It.default.vErrors}.length`)}function m(S){var g;if(!i.opts.unevaluated)return;const E=(g=r==null?void 0:r.validate)===null||g===void 0?void 0:g.evaluated;if(i.props!==!0)if(E&&!E.dynamicProps)E.props!==void 0&&(i.props=Or.mergeEvaluated.props(s,E.props,i.props));else{const y=s.var("props",(0,Te._)`${S}.evaluated.props`);i.props=Or.mergeEvaluated.props(s,y,i.props,Te.Name)}if(i.items!==!0)if(E&&!E.dynamicItems)E.items!==void 0&&(i.items=Or.mergeEvaluated.items(s,E.items,i.items));else{const y=s.var("items",(0,Te._)`${S}.evaluated.items`);i.items=Or.mergeEvaluated.items(s,y,i.items,Te.Name)}}}Et.callRef=Vr;Et.default=Zp;Object.defineProperty(Ws,"__esModule",{value:!0});const ey=Hs,ty=Et,ry=["$schema","$id","$defs","$vocabulary",{keyword:"$comment"},"definitions",ey.default,ty.default];Ws.default=ry;var Ks={},Bs={};Object.defineProperty(Bs,"__esModule",{value:!0});const Kr=W,tt=Kr.operators,Br={maximum:{okStr:"<=",ok:tt.LTE,fail:tt.GT},minimum:{okStr:">=",ok:tt.GTE,fail:tt.LT},exclusiveMaximum:{okStr:"<",ok:tt.LT,fail:tt.GTE},exclusiveMinimum:{okStr:">",ok:tt.GT,fail:tt.LTE}},ny={message:({keyword:e,schemaCode:t})=>(0,Kr.str)`must be ${Br[e].okStr} ${t}`,params:({keyword:e,schemaCode:t})=>(0,Kr._)`{comparison: ${Br[e].okStr}, limit: ${t}}`},sy={keyword:Object.keys(Br),type:"number",schemaType:"number",$data:!0,error:ny,code(e){const{keyword:t,data:r,schemaCode:n}=e;e.fail$data((0,Kr._)`${r} ${Br[t].fail} ${n} || isNaN(${r})`)}};Bs.default=sy;var Js={};Object.defineProperty(Js,"__esModule",{value:!0});const rr=W,iy={message:({schemaCode:e})=>(0,rr.str)`must be multiple of ${e}`,params:({schemaCode:e})=>(0,rr._)`{multipleOf: ${e}}`},oy={keyword:"multipleOf",type:"number",schemaType:"number",$data:!0,error:iy,code(e){const{gen:t,data:r,schemaCode:n,it:s}=e,i=s.opts.multipleOfPrecision,o=t.let("res"),l=i?(0,rr._)`Math.abs(Math.round(${o}) - ${o}) > 1e-${i}`:(0,rr._)`${o} !== parseInt(${o})`;e.fail$data((0,rr._)`(${n} === 0 || (${o} = ${r}/${n}, ${l}))`)}};Js.default=oy;var Xs={},Ys={};Object.defineProperty(Ys,"__esModule",{value:!0});function Kc(e){const t=e.length;let r=0,n=0,s;for(;n<t;)r++,s=e.charCodeAt(n++),s>=55296&&s<=56319&&n<t&&(s=e.charCodeAt(n),(s&64512)===56320&&n++);return r}Ys.default=Kc;Kc.code='require("ajv/dist/runtime/ucs2length").default';Object.defineProperty(Xs,"__esModule",{value:!0});const pt=W,ay=L,cy=Ys,ly={message({keyword:e,schemaCode:t}){const r=e==="maxLength"?"more":"fewer";return(0,pt.str)`must NOT have ${r} than ${t} characters`},params:({schemaCode:e})=>(0,pt._)`{limit: ${e}}`},uy={keyword:["maxLength","minLength"],type:"string",schemaType:"number",$data:!0,error:ly,code(e){const{keyword:t,data:r,schemaCode:n,it:s}=e,i=t==="maxLength"?pt.operators.GT:pt.operators.LT,o=s.opts.unicode===!1?(0,pt._)`${r}.length`:(0,pt._)`${(0,ay.useFunc)(e.gen,cy.default)}(${r})`;e.fail$data((0,pt._)`${o} ${i} ${n}`)}};Xs.default=uy;var Qs={};Object.defineProperty(Qs,"__esModule",{value:!0});const fy=K,dy=L,At=W,hy={message:({schemaCode:e})=>(0,At.str)`must match pattern "${e}"`,params:({schemaCode:e})=>(0,At._)`{pattern: ${e}}`},my={keyword:"pattern",type:"string",schemaType:"string",$data:!0,error:hy,code(e){const{gen:t,data:r,$data:n,schema:s,schemaCode:i,it:o}=e,l=o.opts.unicodeRegExp?"u":"";if(n){const{regExp:c}=o.opts.code,f=c.code==="new RegExp"?(0,At._)`new RegExp`:(0,dy.useFunc)(t,c),a=t.let("valid");t.try(()=>t.assign(a,(0,At._)`${f}(${i}, ${l}).test(${r})`),()=>t.assign(a,!1)),e.fail$data((0,At._)`!${a}`)}else{const c=(0,fy.usePattern)(e,s);e.fail$data((0,At._)`!${c}.test(${r})`)}}};Qs.default=my;var Zs={};Object.defineProperty(Zs,"__esModule",{value:!0});const nr=W,py={message({keyword:e,schemaCode:t}){const r=e==="maxProperties"?"more":"fewer";return(0,nr.str)`must NOT have ${r} than ${t} properties`},params:({schemaCode:e})=>(0,nr._)`{limit: ${e}}`},yy={keyword:["maxProperties","minProperties"],type:"object",schemaType:"number",$data:!0,error:py,code(e){const{keyword:t,data:r,schemaCode:n}=e,s=t==="maxProperties"?nr.operators.GT:nr.operators.LT;e.fail$data((0,nr._)`Object.keys(${r}).length ${s} ${n}`)}};Zs.default=yy;var ei={};Object.defineProperty(ei,"__esModule",{value:!0});const Xt=K,sr=W,$y=L,gy={message:({params:{missingProperty:e}})=>(0,sr.str)`must have required property '${e}'`,params:({params:{missingProperty:e}})=>(0,sr._)`{missingProperty: ${e}}`},vy={keyword:"required",type:"object",schemaType:"array",$data:!0,error:gy,code(e){const{gen:t,schema:r,schemaCode:n,data:s,$data:i,it:o}=e,{opts:l}=o;if(!i&&r.length===0)return;const c=r.length>=l.loopRequired;if(o.allErrors?f():a(),l.strictRequired){const m=e.parentSchema.properties,{definedProperties:S}=e.it;for(const g of r)if((m==null?void 0:m[g])===void 0&&!S.has(g)){const E=o.schemaEnv.baseId+o.errSchemaPath,y=`required property "${g}" is not defined at "${E}" (strictRequired)`;(0,$y.checkStrictMode)(o,y,o.opts.strictRequired)}}function f(){if(c||i)e.block$data(sr.nil,d);else for(const m of r)(0,Xt.checkReportMissingProp)(e,m)}function a(){const m=t.let("missing");if(c||i){const S=t.let("valid",!0);e.block$data(S,()=>v(m,S)),e.ok(S)}else t.if((0,Xt.checkMissingProp)(e,r,m)),(0,Xt.reportMissingProp)(e,m),t.else()}function d(){t.forOf("prop",n,m=>{e.setParams({missingProperty:m}),t.if((0,Xt.noPropertyInData)(t,s,m,l.ownProperties),()=>e.error())})}function v(m,S){e.setParams({missingProperty:m}),t.forOf(m,n,()=>{t.assign(S,(0,Xt.propertyInData)(t,s,m,l.ownProperties)),t.if((0,sr.not)(S),()=>{e.error(),t.break()})},sr.nil)}}};ei.default=vy;var ti={};Object.defineProperty(ti,"__esModule",{value:!0});const ir=W,wy={message({keyword:e,schemaCode:t}){const r=e==="maxItems"?"more":"fewer";return(0,ir.str)`must NOT have ${r} than ${t} items`},params:({schemaCode:e})=>(0,ir._)`{limit: ${e}}`},_y={keyword:["maxItems","minItems"],type:"array",schemaType:"number",$data:!0,error:wy,code(e){const{keyword:t,data:r,schemaCode:n}=e,s=t==="maxItems"?ir.operators.GT:ir.operators.LT;e.fail$data((0,ir._)`${r}.length ${s} ${n}`)}};ti.default=_y;var ri={},gr={};Object.defineProperty(gr,"__esModule",{value:!0});const Bc=mc;Bc.code='require("ajv/dist/runtime/equal").default';gr.default=Bc;Object.defineProperty(ri,"__esModule",{value:!0});const Fn=fe,ye=W,Ey=L,Sy=gr,by={message:({params:{i:e,j:t}})=>(0,ye.str)`must NOT have duplicate items (items ## ${t} and ${e} are identical)`,params:({params:{i:e,j:t}})=>(0,ye._)`{i: ${e}, j: ${t}}`},Py={keyword:"uniqueItems",type:"array",schemaType:"boolean",$data:!0,error:by,code(e){const{gen:t,data:r,$data:n,schema:s,parentSchema:i,schemaCode:o,it:l}=e;if(!n&&!s)return;const c=t.let("valid"),f=i.items?(0,Fn.getSchemaTypes)(i.items):[];e.block$data(c,a,(0,ye._)`${o} === false`),e.ok(c);function a(){const S=t.let("i",(0,ye._)`${r}.length`),g=t.let("j");e.setParams({i:S,j:g}),t.assign(c,!0),t.if((0,ye._)`${S} > 1`,()=>(d()?v:m)(S,g))}function d(){return f.length>0&&!f.some(S=>S==="object"||S==="array")}function v(S,g){const E=t.name("item"),y=(0,Fn.checkDataTypes)(f,E,l.opts.strictNumbers,Fn.DataType.Wrong),P=t.const("indices",(0,ye._)`{}`);t.for((0,ye._)`;${S}--;`,()=>{t.let(E,(0,ye._)`${r}[${S}]`),t.if(y,(0,ye._)`continue`),f.length>1&&t.if((0,ye._)`typeof ${E} == "string"`,(0,ye._)`${E} += "_"`),t.if((0,ye._)`typeof ${P}[${E}] == "number"`,()=>{t.assign(g,(0,ye._)`${P}[${E}]`),e.error(),t.assign(c,!1).break()}).code((0,ye._)`${P}[${E}] = ${S}`)})}function m(S,g){const E=(0,Ey.useFunc)(t,Sy.default),y=t.name("outer");t.label(y).for((0,ye._)`;${S}--;`,()=>t.for((0,ye._)`${g} = ${S}; ${g}--;`,()=>t.if((0,ye._)`${E}(${r}[${S}], ${r}[${g}])`,()=>{e.error(),t.assign(c,!1).break(y)})))}}};ri.default=Py;var ni={};Object.defineProperty(ni,"__esModule",{value:!0});const es=W,Oy=L,Ny=gr,Iy={message:"must be equal to constant",params:({schemaCode:e})=>(0,es._)`{allowedValue: ${e}}`},Ry={keyword:"const",$data:!0,error:Iy,code(e){const{gen:t,data:r,$data:n,schemaCode:s,schema:i}=e;n||i&&typeof i=="object"?e.fail$data((0,es._)`!${(0,Oy.useFunc)(t,Ny.default)}(${r}, ${s})`):e.fail((0,es._)`${i} !== ${r}`)}};ni.default=Ry;var si={};Object.defineProperty(si,"__esModule",{value:!0});const Qt=W,Ty=L,Ay=gr,ky={message:"must be equal to one of the allowed values",params:({schemaCode:e})=>(0,Qt._)`{allowedValues: ${e}}`},jy={keyword:"enum",schemaType:"array",$data:!0,error:ky,code(e){const{gen:t,data:r,$data:n,schema:s,schemaCode:i,it:o}=e;if(!n&&s.length===0)throw new Error("enum must have non-empty array");const l=s.length>=o.opts.loopEnum;let c;const f=()=>c??(c=(0,Ty.useFunc)(t,Ay.default));let a;if(l||n)a=t.let("valid"),e.block$data(a,d);else{if(!Array.isArray(s))throw new Error("ajv implementation error");const m=t.const("vSchema",i);a=(0,Qt.or)(...s.map((S,g)=>v(m,g)))}e.pass(a);function d(){t.assign(a,!1),t.forOf("v",i,m=>t.if((0,Qt._)`${f()}(${r}, ${m})`,()=>t.assign(a,!0).break()))}function v(m,S){const g=s[S];return typeof g=="object"&&g!==null?(0,Qt._)`${f()}(${r}, ${m}[${S}])`:(0,Qt._)`${r} === ${g}`}}};si.default=jy;Object.defineProperty(Ks,"__esModule",{value:!0});const Dy=Bs,Cy=Js,Ly=Xs,Fy=Qs,My=Zs,Uy=ei,Vy=ti,zy=ri,qy=ni,xy=si,Gy=[Dy.default,Cy.default,Ly.default,Fy.default,My.default,Uy.default,Vy.default,zy.default,{keyword:"type",schemaType:["string","array"]},{keyword:"nullable",schemaType:"boolean"},qy.default,xy.default];Ks.default=Gy;var ii={},Wt={};Object.defineProperty(Wt,"__esModule",{value:!0});Wt.validateAdditionalItems=void 0;const yt=W,ts=L,Wy={message:({params:{len:e}})=>(0,yt.str)`must NOT have more than ${e} items`,params:({params:{len:e}})=>(0,yt._)`{limit: ${e}}`},Hy={keyword:"additionalItems",type:"array",schemaType:["boolean","object"],before:"uniqueItems",error:Wy,code(e){const{parentSchema:t,it:r}=e,{items:n}=t;if(!Array.isArray(n)){(0,ts.checkStrictMode)(r,'"additionalItems" is ignored when "items" is not an array of schemas');return}Jc(e,n)}};function Jc(e,t){const{gen:r,schema:n,data:s,keyword:i,it:o}=e;o.items=!0;const l=r.const("len",(0,yt._)`${s}.length`);if(n===!1)e.setParams({len:t.length}),e.pass((0,yt._)`${l} <= ${t.length}`);else if(typeof n=="object"&&!(0,ts.alwaysValidSchema)(o,n)){const f=r.var("valid",(0,yt._)`${l} <= ${t.length}`);r.if((0,yt.not)(f),()=>c(f)),e.ok(f)}function c(f){r.forRange("i",t.length,l,a=>{e.subschema({keyword:i,dataProp:a,dataPropType:ts.Type.Num},f),o.allErrors||r.if((0,yt.not)(f),()=>r.break())})}}Wt.validateAdditionalItems=Jc;Wt.default=Hy;var oi={},Ht={};Object.defineProperty(Ht,"__esModule",{value:!0});Ht.validateTuple=void 0;const po=W,zr=L,Ky=K,By={keyword:"items",type:"array",schemaType:["object","array","boolean"],before:"uniqueItems",code(e){const{schema:t,it:r}=e;if(Array.isArray(t))return Xc(e,"additionalItems",t);r.items=!0,!(0,zr.alwaysValidSchema)(r,t)&&e.ok((0,Ky.validateArray)(e))}};function Xc(e,t,r=e.schema){const{gen:n,parentSchema:s,data:i,keyword:o,it:l}=e;a(s),l.opts.unevaluated&&r.length&&l.items!==!0&&(l.items=zr.mergeEvaluated.items(n,r.length,l.items));const c=n.name("valid"),f=n.const("len",(0,po._)`${i}.length`);r.forEach((d,v)=>{(0,zr.alwaysValidSchema)(l,d)||(n.if((0,po._)`${f} > ${v}`,()=>e.subschema({keyword:o,schemaProp:v,dataProp:v},c)),e.ok(c))});function a(d){const{opts:v,errSchemaPath:m}=l,S=r.length,g=S===d.minItems&&(S===d.maxItems||d[t]===!1);if(v.strictTuples&&!g){const E=`"${o}" is ${S}-tuple, but minItems or maxItems/${t} are not specified or different at path "${m}"`;(0,zr.checkStrictMode)(l,E,v.strictTuples)}}}Ht.validateTuple=Xc;Ht.default=By;Object.defineProperty(oi,"__esModule",{value:!0});const Jy=Ht,Xy={keyword:"prefixItems",type:"array",schemaType:["array"],before:"uniqueItems",code:e=>(0,Jy.validateTuple)(e,"items")};oi.default=Xy;var ai={};Object.defineProperty(ai,"__esModule",{value:!0});const yo=W,Yy=L,Qy=K,Zy=Wt,e$={message:({params:{len:e}})=>(0,yo.str)`must NOT have more than ${e} items`,params:({params:{len:e}})=>(0,yo._)`{limit: ${e}}`},t$={keyword:"items",type:"array",schemaType:["object","boolean"],before:"uniqueItems",error:e$,code(e){const{schema:t,parentSchema:r,it:n}=e,{prefixItems:s}=r;n.items=!0,!(0,Yy.alwaysValidSchema)(n,t)&&(s?(0,Zy.validateAdditionalItems)(e,s):e.ok((0,Qy.validateArray)(e)))}};ai.default=t$;var ci={};Object.defineProperty(ci,"__esModule",{value:!0});const Ce=W,Nr=L,r$={message:({params:{min:e,max:t}})=>t===void 0?(0,Ce.str)`must contain at least ${e} valid item(s)`:(0,Ce.str)`must contain at least ${e} and no more than ${t} valid item(s)`,params:({params:{min:e,max:t}})=>t===void 0?(0,Ce._)`{minContains: ${e}}`:(0,Ce._)`{minContains: ${e}, maxContains: ${t}}`},n$={keyword:"contains",type:"array",schemaType:["object","boolean"],before:"uniqueItems",trackErrors:!0,error:r$,code(e){const{gen:t,schema:r,parentSchema:n,data:s,it:i}=e;let o,l;const{minContains:c,maxContains:f}=n;i.opts.next?(o=c===void 0?1:c,l=f):o=1;const a=t.const("len",(0,Ce._)`${s}.length`);if(e.setParams({min:o,max:l}),l===void 0&&o===0){(0,Nr.checkStrictMode)(i,'"minContains" == 0 without "maxContains": "contains" keyword ignored');return}if(l!==void 0&&o>l){(0,Nr.checkStrictMode)(i,'"minContains" > "maxContains" is always invalid'),e.fail();return}if((0,Nr.alwaysValidSchema)(i,r)){let g=(0,Ce._)`${a} >= ${o}`;l!==void 0&&(g=(0,Ce._)`${g} && ${a} <= ${l}`),e.pass(g);return}i.items=!0;const d=t.name("valid");l===void 0&&o===1?m(d,()=>t.if(d,()=>t.break())):o===0?(t.let(d,!0),l!==void 0&&t.if((0,Ce._)`${s}.length > 0`,v)):(t.let(d,!1),v()),e.result(d,()=>e.reset());function v(){const g=t.name("_valid"),E=t.let("count",0);m(g,()=>t.if(g,()=>S(E)))}function m(g,E){t.forRange("i",0,a,y=>{e.subschema({keyword:"contains",dataProp:y,dataPropType:Nr.Type.Num,compositeRule:!0},g),E()})}function S(g){t.code((0,Ce._)`${g}++`),l===void 0?t.if((0,Ce._)`${g} >= ${o}`,()=>t.assign(d,!0).break()):(t.if((0,Ce._)`${g} > ${l}`,()=>t.assign(d,!1).break()),o===1?t.assign(d,!0):t.if((0,Ce._)`${g} >= ${o}`,()=>t.assign(d,!0)))}}};ci.default=n$;var Yc={};(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.validateSchemaDeps=e.validatePropertyDeps=e.error=void 0;const t=W,r=L,n=K;e.error={message:({params:{property:c,depsCount:f,deps:a}})=>{const d=f===1?"property":"properties";return(0,t.str)`must have ${d} ${a} when property ${c} is present`},params:({params:{property:c,depsCount:f,deps:a,missingProperty:d}})=>(0,t._)`{property: ${c},
-    missingProperty: ${d},
-    depsCount: ${f},
-    deps: ${a}}`};const s={keyword:"dependencies",type:"object",schemaType:"object",error:e.error,code(c){const[f,a]=i(c);o(c,f),l(c,a)}};function i({schema:c}){const f={},a={};for(const d in c){if(d==="__proto__")continue;const v=Array.isArray(c[d])?f:a;v[d]=c[d]}return[f,a]}function o(c,f=c.schema){const{gen:a,data:d,it:v}=c;if(Object.keys(f).length===0)return;const m=a.let("missing");for(const S in f){const g=f[S];if(g.length===0)continue;const E=(0,n.propertyInData)(a,d,S,v.opts.ownProperties);c.setParams({property:S,depsCount:g.length,deps:g.join(", ")}),v.allErrors?a.if(E,()=>{for(const y of g)(0,n.checkReportMissingProp)(c,y)}):(a.if((0,t._)`${E} && (${(0,n.checkMissingProp)(c,g,m)})`),(0,n.reportMissingProp)(c,m),a.else())}}e.validatePropertyDeps=o;function l(c,f=c.schema){const{gen:a,data:d,keyword:v,it:m}=c,S=a.name("valid");for(const g in f)(0,r.alwaysValidSchema)(m,f[g])||(a.if((0,n.propertyInData)(a,d,g,m.opts.ownProperties),()=>{const E=c.subschema({keyword:v,schemaProp:g},S);c.mergeValidEvaluated(E,S)},()=>a.var(S,!0)),c.ok(S))}e.validateSchemaDeps=l,e.default=s})(Yc);var li={};Object.defineProperty(li,"__esModule",{value:!0});const Qc=W,s$=L,i$={message:"property name must be valid",params:({params:e})=>(0,Qc._)`{propertyName: ${e.propertyName}}`},o$={keyword:"propertyNames",type:"object",schemaType:["object","boolean"],error:i$,code(e){const{gen:t,schema:r,data:n,it:s}=e;if((0,s$.alwaysValidSchema)(s,r))return;const i=t.name("valid");t.forIn("key",n,o=>{e.setParams({propertyName:o}),e.subschema({keyword:"propertyNames",data:o,dataTypes:["string"],propertyName:o,compositeRule:!0},i),t.if((0,Qc.not)(i),()=>{e.error(!0),s.allErrors||t.break()})}),e.ok(i)}};li.default=o$;var ln={};Object.defineProperty(ln,"__esModule",{value:!0});const Ir=K,Fe=W,a$=Je,Rr=L,c$={message:"must NOT have additional properties",params:({params:e})=>(0,Fe._)`{additionalProperty: ${e.additionalProperty}}`},l$={keyword:"additionalProperties",type:["object"],schemaType:["boolean","object"],allowUndefined:!0,trackErrors:!0,error:c$,code(e){const{gen:t,schema:r,parentSchema:n,data:s,errsCount:i,it:o}=e;if(!i)throw new Error("ajv implementation error");const{allErrors:l,opts:c}=o;if(o.props=!0,c.removeAdditional!=="all"&&(0,Rr.alwaysValidSchema)(o,r))return;const f=(0,Ir.allSchemaProperties)(n.properties),a=(0,Ir.allSchemaProperties)(n.patternProperties);d(),e.ok((0,Fe._)`${i} === ${a$.default.errors}`);function d(){t.forIn("key",s,E=>{!f.length&&!a.length?S(E):t.if(v(E),()=>S(E))})}function v(E){let y;if(f.length>8){const P=(0,Rr.schemaRefOrVal)(o,n.properties,"properties");y=(0,Ir.isOwnProperty)(t,P,E)}else f.length?y=(0,Fe.or)(...f.map(P=>(0,Fe._)`${E} === ${P}`)):y=Fe.nil;return a.length&&(y=(0,Fe.or)(y,...a.map(P=>(0,Fe._)`${(0,Ir.usePattern)(e,P)}.test(${E})`))),(0,Fe.not)(y)}function m(E){t.code((0,Fe._)`delete ${s}[${E}]`)}function S(E){if(c.removeAdditional==="all"||c.removeAdditional&&r===!1){m(E);return}if(r===!1){e.setParams({additionalProperty:E}),e.error(),l||t.break();return}if(typeof r=="object"&&!(0,Rr.alwaysValidSchema)(o,r)){const y=t.name("valid");c.removeAdditional==="failing"?(g(E,y,!1),t.if((0,Fe.not)(y),()=>{e.reset(),m(E)})):(g(E,y),l||t.if((0,Fe.not)(y),()=>t.break()))}}function g(E,y,P){const I={keyword:"additionalProperties",dataProp:E,dataPropType:Rr.Type.Str};P===!1&&Object.assign(I,{compositeRule:!0,createErrors:!1,allErrors:!1}),e.subschema(I,y)}}};ln.default=l$;var ui={};Object.defineProperty(ui,"__esModule",{value:!0});const u$=Ue,$o=K,Mn=L,go=ln,f$={keyword:"properties",type:"object",schemaType:"object",code(e){const{gen:t,schema:r,parentSchema:n,data:s,it:i}=e;i.opts.removeAdditional==="all"&&n.additionalProperties===void 0&&go.default.code(new u$.KeywordCxt(i,go.default,"additionalProperties"));const o=(0,$o.allSchemaProperties)(r);for(const d of o)i.definedProperties.add(d);i.opts.unevaluated&&o.length&&i.props!==!0&&(i.props=Mn.mergeEvaluated.props(t,(0,Mn.toHash)(o),i.props));const l=o.filter(d=>!(0,Mn.alwaysValidSchema)(i,r[d]));if(l.length===0)return;const c=t.name("valid");for(const d of l)f(d)?a(d):(t.if((0,$o.propertyInData)(t,s,d,i.opts.ownProperties)),a(d),i.allErrors||t.else().var(c,!0),t.endIf()),e.it.definedProperties.add(d),e.ok(c);function f(d){return i.opts.useDefaults&&!i.compositeRule&&r[d].default!==void 0}function a(d){e.subschema({keyword:"properties",schemaProp:d,dataProp:d},c)}}};ui.default=f$;var fi={};Object.defineProperty(fi,"__esModule",{value:!0});const vo=K,Tr=W,wo=L,_o=L,d$={keyword:"patternProperties",type:"object",schemaType:"object",code(e){const{gen:t,schema:r,data:n,parentSchema:s,it:i}=e,{opts:o}=i,l=(0,vo.allSchemaProperties)(r),c=l.filter(g=>(0,wo.alwaysValidSchema)(i,r[g]));if(l.length===0||c.length===l.length&&(!i.opts.unevaluated||i.props===!0))return;const f=o.strictSchema&&!o.allowMatchingProperties&&s.properties,a=t.name("valid");i.props!==!0&&!(i.props instanceof Tr.Name)&&(i.props=(0,_o.evaluatedPropsToName)(t,i.props));const{props:d}=i;v();function v(){for(const g of l)f&&m(g),i.allErrors?S(g):(t.var(a,!0),S(g),t.if(a))}function m(g){for(const E in f)new RegExp(g).test(E)&&(0,wo.checkStrictMode)(i,`property ${E} matches pattern ${g} (use allowMatchingProperties)`)}function S(g){t.forIn("key",n,E=>{t.if((0,Tr._)`${(0,vo.usePattern)(e,g)}.test(${E})`,()=>{const y=c.includes(g);y||e.subschema({keyword:"patternProperties",schemaProp:g,dataProp:E,dataPropType:_o.Type.Str},a),i.opts.unevaluated&&d!==!0?t.assign((0,Tr._)`${d}[${E}]`,!0):!y&&!i.allErrors&&t.if((0,Tr.not)(a),()=>t.break())})})}}};fi.default=d$;var di={};Object.defineProperty(di,"__esModule",{value:!0});const h$=L,m$={keyword:"not",schemaType:["object","boolean"],trackErrors:!0,code(e){const{gen:t,schema:r,it:n}=e;if((0,h$.alwaysValidSchema)(n,r)){e.fail();return}const s=t.name("valid");e.subschema({keyword:"not",compositeRule:!0,createErrors:!1,allErrors:!1},s),e.failResult(s,()=>e.reset(),()=>e.error())},error:{message:"must NOT be valid"}};di.default=m$;var hi={};Object.defineProperty(hi,"__esModule",{value:!0});const p$=K,y$={keyword:"anyOf",schemaType:"array",trackErrors:!0,code:p$.validateUnion,error:{message:"must match a schema in anyOf"}};hi.default=y$;var mi={};Object.defineProperty(mi,"__esModule",{value:!0});const qr=W,$$=L,g$={message:"must match exactly one schema in oneOf",params:({params:e})=>(0,qr._)`{passingSchemas: ${e.passing}}`},v$={keyword:"oneOf",schemaType:"array",trackErrors:!0,error:g$,code(e){const{gen:t,schema:r,parentSchema:n,it:s}=e;if(!Array.isArray(r))throw new Error("ajv implementation error");if(s.opts.discriminator&&n.discriminator)return;const i=r,o=t.let("valid",!1),l=t.let("passing",null),c=t.name("_valid");e.setParams({passing:l}),t.block(f),e.result(o,()=>e.reset(),()=>e.error(!0));function f(){i.forEach((a,d)=>{let v;(0,$$.alwaysValidSchema)(s,a)?t.var(c,!0):v=e.subschema({keyword:"oneOf",schemaProp:d,compositeRule:!0},c),d>0&&t.if((0,qr._)`${c} && ${o}`).assign(o,!1).assign(l,(0,qr._)`[${l}, ${d}]`).else(),t.if(c,()=>{t.assign(o,!0),t.assign(l,d),v&&e.mergeEvaluated(v,qr.Name)})})}}};mi.default=v$;var pi={};Object.defineProperty(pi,"__esModule",{value:!0});const w$=L,_$={keyword:"allOf",schemaType:"array",code(e){const{gen:t,schema:r,it:n}=e;if(!Array.isArray(r))throw new Error("ajv implementation error");const s=t.name("valid");r.forEach((i,o)=>{if((0,w$.alwaysValidSchema)(n,i))return;const l=e.subschema({keyword:"allOf",schemaProp:o},s);e.ok(s),e.mergeEvaluated(l)})}};pi.default=_$;var yi={};Object.defineProperty(yi,"__esModule",{value:!0});const Jr=W,Zc=L,E$={message:({params:e})=>(0,Jr.str)`must match "${e.ifClause}" schema`,params:({params:e})=>(0,Jr._)`{failingKeyword: ${e.ifClause}}`},S$={keyword:"if",schemaType:["object","boolean"],trackErrors:!0,error:E$,code(e){const{gen:t,parentSchema:r,it:n}=e;r.then===void 0&&r.else===void 0&&(0,Zc.checkStrictMode)(n,'"if" without "then" and "else" is ignored');const s=Eo(n,"then"),i=Eo(n,"else");if(!s&&!i)return;const o=t.let("valid",!0),l=t.name("_valid");if(c(),e.reset(),s&&i){const a=t.let("ifClause");e.setParams({ifClause:a}),t.if(l,f("then",a),f("else",a))}else s?t.if(l,f("then")):t.if((0,Jr.not)(l),f("else"));e.pass(o,()=>e.error(!0));function c(){const a=e.subschema({keyword:"if",compositeRule:!0,createErrors:!1,allErrors:!1},l);e.mergeEvaluated(a)}function f(a,d){return()=>{const v=e.subschema({keyword:a},l);t.assign(o,l),e.mergeValidEvaluated(v,o),d?t.assign(d,(0,Jr._)`${a}`):e.setParams({ifClause:a})}}}};function Eo(e,t){const r=e.schema[t];return r!==void 0&&!(0,Zc.alwaysValidSchema)(e,r)}yi.default=S$;var $i={};Object.defineProperty($i,"__esModule",{value:!0});const b$=L,P$={keyword:["then","else"],schemaType:["object","boolean"],code({keyword:e,parentSchema:t,it:r}){t.if===void 0&&(0,b$.checkStrictMode)(r,`"${e}" without "if" is ignored`)}};$i.default=P$;Object.defineProperty(ii,"__esModule",{value:!0});const O$=Wt,N$=oi,I$=Ht,R$=ai,T$=ci,A$=Yc,k$=li,j$=ln,D$=ui,C$=fi,L$=di,F$=hi,M$=mi,U$=pi,V$=yi,z$=$i;function q$(e=!1){const t=[L$.default,F$.default,M$.default,U$.default,V$.default,z$.default,k$.default,j$.default,A$.default,D$.default,C$.default];return e?t.push(N$.default,R$.default):t.push(O$.default,I$.default),t.push(T$.default),t}ii.default=q$;var gi={},vi={};Object.defineProperty(vi,"__esModule",{value:!0});const ce=W,x$={message:({schemaCode:e})=>(0,ce.str)`must match format "${e}"`,params:({schemaCode:e})=>(0,ce._)`{format: ${e}}`},G$={keyword:"format",type:["number","string"],schemaType:"string",$data:!0,error:x$,code(e,t){const{gen:r,data:n,$data:s,schema:i,schemaCode:o,it:l}=e,{opts:c,errSchemaPath:f,schemaEnv:a,self:d}=l;if(!c.validateFormats)return;s?v():m();function v(){const S=r.scopeValue("formats",{ref:d.formats,code:c.code.formats}),g=r.const("fDef",(0,ce._)`${S}[${o}]`),E=r.let("fType"),y=r.let("format");r.if((0,ce._)`typeof ${g} == "object" && !(${g} instanceof RegExp)`,()=>r.assign(E,(0,ce._)`${g}.type || "string"`).assign(y,(0,ce._)`${g}.validate`),()=>r.assign(E,(0,ce._)`"string"`).assign(y,g)),e.fail$data((0,ce.or)(P(),I()));function P(){return c.strictSchema===!1?ce.nil:(0,ce._)`${o} && !${y}`}function I(){const A=a.$async?(0,ce._)`(${g}.async ? await ${y}(${n}) : ${y}(${n}))`:(0,ce._)`${y}(${n})`,k=(0,ce._)`(typeof ${y} == "function" ? ${A} : ${y}.test(${n}))`;return(0,ce._)`${y} && ${y} !== true && ${E} === ${t} && !${k}`}}function m(){const S=d.formats[i];if(!S){P();return}if(S===!0)return;const[g,E,y]=I(S);g===t&&e.pass(A());function P(){if(c.strictSchema===!1){d.logger.warn(k());return}throw new Error(k());function k(){return`unknown format "${i}" ignored in schema at path "${f}"`}}function I(k){const U=k instanceof RegExp?(0,ce.regexpCode)(k):c.code.formats?(0,ce._)`${c.code.formats}${(0,ce.getProperty)(i)}`:void 0,x=r.scopeValue("formats",{key:i,ref:k,code:U});return typeof k=="object"&&!(k instanceof RegExp)?[k.type||"string",k.validate,(0,ce._)`${x}.validate`]:["string",k,x]}function A(){if(typeof S=="object"&&!(S instanceof RegExp)&&S.async){if(!a.$async)throw new Error("async format in sync schema");return(0,ce._)`await ${y}(${n})`}return typeof E=="function"?(0,ce._)`${y}(${n})`:(0,ce._)`${y}.test(${n})`}}}};vi.default=G$;Object.defineProperty(gi,"__esModule",{value:!0});const W$=vi,H$=[W$.default];gi.default=H$;var zt={};Object.defineProperty(zt,"__esModule",{value:!0});zt.contentVocabulary=zt.metadataVocabulary=void 0;zt.metadataVocabulary=["title","description","default","deprecated","readOnly","writeOnly","examples"];zt.contentVocabulary=["contentMediaType","contentEncoding","contentSchema"];Object.defineProperty(Gs,"__esModule",{value:!0});const K$=Ws,B$=Ks,J$=ii,X$=gi,So=zt,Y$=[K$.default,B$.default,(0,J$.default)(),X$.default,So.metadataVocabulary,So.contentVocabulary];Gs.default=Y$;var wi={},un={};Object.defineProperty(un,"__esModule",{value:!0});un.DiscrError=void 0;var bo;(function(e){e.Tag="tag",e.Mapping="mapping"})(bo||(un.DiscrError=bo={}));Object.defineProperty(wi,"__esModule",{value:!0});const Rt=W,rs=un,Po=ke,Q$=Gt,Z$=L,e0={message:({params:{discrError:e,tagName:t}})=>e===rs.DiscrError.Tag?`tag "${t}" must be string`:`value of tag "${t}" must be in oneOf`,params:({params:{discrError:e,tag:t,tagName:r}})=>(0,Rt._)`{error: ${e}, tag: ${r}, tagValue: ${t}}`},t0={keyword:"discriminator",type:"object",schemaType:"object",error:e0,code(e){const{gen:t,data:r,schema:n,parentSchema:s,it:i}=e,{oneOf:o}=s;if(!i.opts.discriminator)throw new Error("discriminator: requires discriminator option");const l=n.propertyName;if(typeof l!="string")throw new Error("discriminator: requires propertyName");if(n.mapping)throw new Error("discriminator: mapping is not supported");if(!o)throw new Error("discriminator: requires oneOf keyword");const c=t.let("valid",!1),f=t.const("tag",(0,Rt._)`${r}${(0,Rt.getProperty)(l)}`);t.if((0,Rt._)`typeof ${f} == "string"`,()=>a(),()=>e.error(!1,{discrError:rs.DiscrError.Tag,tag:f,tagName:l})),e.ok(c);function a(){const m=v();t.if(!1);for(const S in m)t.elseIf((0,Rt._)`${f} === ${S}`),t.assign(c,d(m[S]));t.else(),e.error(!1,{discrError:rs.DiscrError.Mapping,tag:f,tagName:l}),t.endIf()}function d(m){const S=t.name("valid"),g=e.subschema({keyword:"oneOf",schemaProp:m},S);return e.mergeEvaluated(g,Rt.Name),S}function v(){var m;const S={},g=y(s);let E=!0;for(let A=0;A<o.length;A++){let k=o[A];if(k!=null&&k.$ref&&!(0,Z$.schemaHasRulesButRef)(k,i.self.RULES)){const x=k.$ref;if(k=Po.resolveRef.call(i.self,i.schemaEnv.root,i.baseId,x),k instanceof Po.SchemaEnv&&(k=k.schema),k===void 0)throw new Q$.default(i.opts.uriResolver,i.baseId,x)}const U=(m=k==null?void 0:k.properties)===null||m===void 0?void 0:m[l];if(typeof U!="object")throw new Error(`discriminator: oneOf subschemas (or referenced schemas) must have "properties/${l}"`);E=E&&(g||y(k)),P(U,A)}if(!E)throw new Error(`discriminator: "${l}" must be required`);return S;function y({required:A}){return Array.isArray(A)&&A.includes(l)}function P(A,k){if(A.const)I(A.const,k);else if(A.enum)for(const U of A.enum)I(U,k);else throw new Error(`discriminator: "properties/${l}" must have "const" or "enum"`)}function I(A,k){if(typeof A!="string"||A in S)throw new Error(`discriminator: "${l}" values must be unique strings`);S[A]=k}}}};wi.default=t0;const r0="http://json-schema.org/draft-07/schema#",n0="http://json-schema.org/draft-07/schema#",s0="Core schema meta-schema",i0={schemaArray:{type:"array",minItems:1,items:{$ref:"#"}},nonNegativeInteger:{type:"integer",minimum:0},nonNegativeIntegerDefault0:{allOf:[{$ref:"#/definitions/nonNegativeInteger"},{default:0}]},simpleTypes:{enum:["array","boolean","integer","null","number","object","string"]},stringArray:{type:"array",items:{type:"string"},uniqueItems:!0,default:[]}},o0=["object","boolean"],a0={$id:{type:"string",format:"uri-reference"},$schema:{type:"string",format:"uri"},$ref:{type:"string",format:"uri-reference"},$comment:{type:"string"},title:{type:"string"},description:{type:"string"},default:!0,readOnly:{type:"boolean",default:!1},examples:{type:"array",items:!0},multipleOf:{type:"number",exclusiveMinimum:0},maximum:{type:"number"},exclusiveMaximum:{type:"number"},minimum:{type:"number"},exclusiveMinimum:{type:"number"},maxLength:{$ref:"#/definitions/nonNegativeInteger"},minLength:{$ref:"#/definitions/nonNegativeIntegerDefault0"},pattern:{type:"string",format:"regex"},additionalItems:{$ref:"#"},items:{anyOf:[{$ref:"#"},{$ref:"#/definitions/schemaArray"}],default:!0},maxItems:{$ref:"#/definitions/nonNegativeInteger"},minItems:{$ref:"#/definitions/nonNegativeIntegerDefault0"},uniqueItems:{type:"boolean",default:!1},contains:{$ref:"#"},maxProperties:{$ref:"#/definitions/nonNegativeInteger"},minProperties:{$ref:"#/definitions/nonNegativeIntegerDefault0"},required:{$ref:"#/definitions/stringArray"},additionalProperties:{$ref:"#"},definitions:{type:"object",additionalProperties:{$ref:"#"},default:{}},properties:{type:"object",additionalProperties:{$ref:"#"},default:{}},patternProperties:{type:"object",additionalProperties:{$ref:"#"},propertyNames:{format:"regex"},default:{}},dependencies:{type:"object",additionalProperties:{anyOf:[{$ref:"#"},{$ref:"#/definitions/stringArray"}]}},propertyNames:{$ref:"#"},const:!0,enum:{type:"array",items:!0,minItems:1,uniqueItems:!0},type:{anyOf:[{$ref:"#/definitions/simpleTypes"},{type:"array",items:{$ref:"#/definitions/simpleTypes"},minItems:1,uniqueItems:!0}]},format:{type:"string"},contentMediaType:{type:"string"},contentEncoding:{type:"string"},if:{$ref:"#"},then:{$ref:"#"},else:{$ref:"#"},allOf:{$ref:"#/definitions/schemaArray"},anyOf:{$ref:"#/definitions/schemaArray"},oneOf:{$ref:"#/definitions/schemaArray"},not:{$ref:"#"}},c0={$schema:r0,$id:n0,title:s0,definitions:i0,type:o0,properties:a0,default:!0};(function(e,t){Object.defineProperty(t,"__esModule",{value:!0}),t.MissingRefError=t.ValidationError=t.CodeGen=t.Name=t.nil=t.stringify=t.str=t._=t.KeywordCxt=t.Ajv=void 0;const r=Qa,n=Gs,s=wi,i=c0,o=["/properties"],l="http://json-schema.org/draft-07/schema";class c extends r.default{_addVocabularies(){super._addVocabularies(),n.default.forEach(S=>this.addVocabulary(S)),this.opts.discriminator&&this.addKeyword(s.default)}_addDefaultMetaSchema(){if(super._addDefaultMetaSchema(),!this.opts.meta)return;const S=this.opts.$data?this.$dataMetaSchema(i,o):i;this.addMetaSchema(S,l,!1),this.refs["http://json-schema.org/schema"]=l}defaultMeta(){return this.opts.defaultMeta=super.defaultMeta()||(this.getSchema(l)?l:void 0)}}t.Ajv=c,e.exports=t=c,e.exports.Ajv=c,Object.defineProperty(t,"__esModule",{value:!0}),t.default=c;var f=Ue;Object.defineProperty(t,"KeywordCxt",{enumerable:!0,get:function(){return f.KeywordCxt}});var a=W;Object.defineProperty(t,"_",{enumerable:!0,get:function(){return a._}}),Object.defineProperty(t,"str",{enumerable:!0,get:function(){return a.str}}),Object.defineProperty(t,"stringify",{enumerable:!0,get:function(){return a.stringify}}),Object.defineProperty(t,"nil",{enumerable:!0,get:function(){return a.nil}}),Object.defineProperty(t,"Name",{enumerable:!0,get:function(){return a.Name}}),Object.defineProperty(t,"CodeGen",{enumerable:!0,get:function(){return a.CodeGen}});var d=$r;Object.defineProperty(t,"ValidationError",{enumerable:!0,get:function(){return d.default}});var v=Gt;Object.defineProperty(t,"MissingRefError",{enumerable:!0,get:function(){return v.default}})})(Jn,Jn.exports);var el=Jn.exports,ns={exports:{}},tl={};(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.formatNames=e.fastFormats=e.fullFormats=void 0;function t(T,D){return{validate:T,compare:D}}e.fullFormats={date:t(i,o),time:t(c,f),"date-time":t(d,v),duration:/^P(?!$)((\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?|(\d+W)?)$/,uri:g,"uri-reference":/^(?:[a-z][a-z0-9+\-.]*:)?(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'"()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?(?:\?(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i,"uri-template":/^(?:(?:[^\x00-\x20"'<>%\\^`{|}]|%[0-9a-f]{2})|\{[+#./;?&=,!@|]?(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?(?:,(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?)*\})*$/i,url:/^(?:https?|ftp):\/\/(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u{00a1}-\u{ffff}]+-)*[a-z0-9\u{00a1}-\u{ffff}]+)(?:\.(?:[a-z0-9\u{00a1}-\u{ffff}]+-)*[a-z0-9\u{00a1}-\u{ffff}]+)*(?:\.(?:[a-z\u{00a1}-\u{ffff}]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/iu,email:/^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,hostname:/^(?=.{1,253}\.?$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*\.?$/i,ipv4:/^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/,ipv6:/^((([0-9a-f]{1,4}:){7}([0-9a-f]{1,4}|:))|(([0-9a-f]{1,4}:){6}(:[0-9a-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){5}(((:[0-9a-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){4}(((:[0-9a-f]{1,4}){1,3})|((:[0-9a-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){3}(((:[0-9a-f]{1,4}){1,4})|((:[0-9a-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){2}(((:[0-9a-f]{1,4}){1,5})|((:[0-9a-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){1}(((:[0-9a-f]{1,4}){1,6})|((:[0-9a-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9a-f]{1,4}){1,7})|((:[0-9a-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/i,regex:ae,uuid:/^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i,"json-pointer":/^(?:\/(?:[^~/]|~0|~1)*)*$/,"json-pointer-uri-fragment":/^#(?:\/(?:[a-z0-9_\-.!$&'()*+,;:=@]|%[0-9a-f]{2}|~0|~1)*)*$/i,"relative-json-pointer":/^(?:0|[1-9][0-9]*)(?:#|(?:\/(?:[^~/]|~0|~1)*)*)$/,byte:y,int32:{type:"number",validate:A},int64:{type:"number",validate:k},float:{type:"number",validate:U},double:{type:"number",validate:U},password:!0,binary:!0},e.fastFormats={...e.fullFormats,date:t(/^\d\d\d\d-[0-1]\d-[0-3]\d$/,o),time:t(/^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)?$/i,f),"date-time":t(/^\d\d\d\d-[0-1]\d-[0-3]\d[t\s](?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i,v),uri:/^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/)?[^\s]*$/i,"uri-reference":/^(?:(?:[a-z][a-z0-9+\-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i,email:/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i},e.formatNames=Object.keys(e.fullFormats);function r(T){return T%4===0&&(T%100!==0||T%400===0)}const n=/^(\d\d\d\d)-(\d\d)-(\d\d)$/,s=[0,31,28,31,30,31,30,31,31,30,31,30,31];function i(T){const D=n.exec(T);if(!D)return!1;const M=+D[1],V=+D[2],B=+D[3];return V>=1&&V<=12&&B>=1&&B<=(V===2&&r(M)?29:s[V])}function o(T,D){if(T&&D)return T>D?1:T<D?-1:0}const l=/^(\d\d):(\d\d):(\d\d)(\.\d+)?(z|[+-]\d\d(?::?\d\d)?)?$/i;function c(T,D){const M=l.exec(T);if(!M)return!1;const V=+M[1],B=+M[2],H=+M[3],G=M[5];return(V<=23&&B<=59&&H<=59||V===23&&B===59&&H===60)&&(!D||G!=="")}function f(T,D){if(!(T&&D))return;const M=l.exec(T),V=l.exec(D);if(M&&V)return T=M[1]+M[2]+M[3]+(M[4]||""),D=V[1]+V[2]+V[3]+(V[4]||""),T>D?1:T<D?-1:0}const a=/t|\s/i;function d(T){const D=T.split(a);return D.length===2&&i(D[0])&&c(D[1],!0)}function v(T,D){if(!(T&&D))return;const[M,V]=T.split(a),[B,H]=D.split(a),G=o(M,B);if(G!==void 0)return G||f(V,H)}const m=/\/|:/,S=/^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;function g(T){return m.test(T)&&S.test(T)}const E=/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/gm;function y(T){return E.lastIndex=0,E.test(T)}const P=-2147483648,I=2**31-1;function A(T){return Number.isInteger(T)&&T<=I&&T>=P}function k(T){return Number.isInteger(T)}function U(){return!0}const x=/[^\\]\\Z/;function ae(T){if(x.test(T))return!1;try{return new RegExp(T),!0}catch{return!1}}})(tl);var rl={};(function(e){Object.defineProperty(e,"__esModule",{value:!0}),e.formatLimitDefinition=void 0;const t=el,r=W,n=r.operators,s={formatMaximum:{okStr:"<=",ok:n.LTE,fail:n.GT},formatMinimum:{okStr:">=",ok:n.GTE,fail:n.LT},formatExclusiveMaximum:{okStr:"<",ok:n.LT,fail:n.GTE},formatExclusiveMinimum:{okStr:">",ok:n.GT,fail:n.LTE}},i={message:({keyword:l,schemaCode:c})=>r.str`should be ${s[l].okStr} ${c}`,params:({keyword:l,schemaCode:c})=>r._`{comparison: ${s[l].okStr}, limit: ${c}}`};e.formatLimitDefinition={keyword:Object.keys(s),type:"string",schemaType:"string",$data:!0,error:i,code(l){const{gen:c,data:f,schemaCode:a,keyword:d,it:v}=l,{opts:m,self:S}=v;if(!m.validateFormats)return;const g=new t.KeywordCxt(v,S.RULES.all.format.definition,"format");g.$data?E():y();function E(){const I=c.scopeValue("formats",{ref:S.formats,code:m.code.formats}),A=c.const("fmt",r._`${I}[${g.schemaCode}]`);l.fail$data(r.or(r._`typeof ${A} != "object"`,r._`${A} instanceof RegExp`,r._`typeof ${A}.compare != "function"`,P(A)))}function y(){const I=g.schema,A=S.formats[I];if(!A||A===!0)return;if(typeof A!="object"||A instanceof RegExp||typeof A.compare!="function")throw new Error(`"${d}": format "${I}" does not define "compare" function`);const k=c.scopeValue("formats",{key:I,ref:A,code:m.code.formats?r._`${m.code.formats}${r.getProperty(I)}`:void 0});l.fail$data(P(k))}function P(I){return r._`${I}.compare(${f}, ${a}) ${s[d].fail} 0`}},dependencies:["format"]};const o=l=>(l.addKeyword(e.formatLimitDefinition),l);e.default=o})(rl);(function(e,t){Object.defineProperty(t,"__esModule",{value:!0});const r=tl,n=rl,s=W,i=new s.Name("fullFormats"),o=new s.Name("fastFormats"),l=(f,a={keywords:!0})=>{if(Array.isArray(a))return c(f,a,r.fullFormats,i),f;const[d,v]=a.mode==="fast"?[r.fastFormats,o]:[r.fullFormats,i],m=a.formats||r.formatNames;return c(f,m,d,v),a.keywords&&n.default(f),f};l.get=(f,a="full")=>{const v=(a==="fast"?r.fastFormats:r.fullFormats)[f];if(!v)throw new Error(`Unknown format "${f}"`);return v};function c(f,a,d,v){var m,S;(m=(S=f.opts.code).formats)!==null&&m!==void 0||(S.formats=s._`require("ajv-formats/dist/formats").${v}`);for(const g of a)f.addFormat(g,d[g])}e.exports=t=l,Object.defineProperty(t,"__esModule",{value:!0}),t.default=l})(ns,ns.exports);var l0=ns.exports;const u0=(e,t,r,n)=>{if(r==="length"||r==="prototype"||r==="arguments"||r==="caller")return;const s=Object.getOwnPropertyDescriptor(e,r),i=Object.getOwnPropertyDescriptor(t,r);!f0(s,i)&&n||Object.defineProperty(e,r,i)},f0=function(e,t){return e===void 0||e.configurable||e.writable===t.writable&&e.enumerable===t.enumerable&&e.configurable===t.configurable&&(e.writable||e.value===t.value)},d0=(e,t)=>{const r=Object.getPrototypeOf(t);r!==Object.getPrototypeOf(e)&&Object.setPrototypeOf(e,r)},h0=(e,t)=>`/* Wrapped ${e}*/
-${t}`,m0=Object.getOwnPropertyDescriptor(Function.prototype,"toString"),p0=Object.getOwnPropertyDescriptor(Function.prototype.toString,"name"),y0=(e,t,r)=>{const n=r===""?"":`with ${r.trim()}() `,s=h0.bind(null,n,t.toString());Object.defineProperty(s,"name",p0),Object.defineProperty(e,"toString",{...m0,value:s})},$0=(e,t,{ignoreNonConfigurable:r=!1}={})=>{const{name:n}=e;for(const s of Reflect.ownKeys(t))u0(e,t,s,r);return d0(e,t),y0(e,t,n),e};var g0=$0;const v0=g0;var w0=(e,t={})=>{if(typeof e!="function")throw new TypeError(`Expected the first argument to be a function, got \`${typeof e}\``);const{wait:r=0,before:n=!1,after:s=!0}=t;if(!n&&!s)throw new Error("Both `before` and `after` are false, function wouldn't be called.");let i,o;const l=function(...c){const f=this,a=()=>{i=void 0,s&&(o=e.apply(f,c))},d=n&&!i;return clearTimeout(i),i=setTimeout(a,r),d&&(o=e.apply(f,c)),o};return v0(l,e),l.cancel=()=>{i&&(clearTimeout(i),i=void 0)},l},ss={exports:{}};const _0="2.0.0",nl=256,E0=Number.MAX_SAFE_INTEGER||9007199254740991,S0=16,b0=nl-6,P0=["major","premajor","minor","preminor","patch","prepatch","prerelease"];var vr={MAX_LENGTH:nl,MAX_SAFE_COMPONENT_LENGTH:S0,MAX_SAFE_BUILD_LENGTH:b0,MAX_SAFE_INTEGER:E0,RELEASE_TYPES:P0,SEMVER_SPEC_VERSION:_0,FLAG_INCLUDE_PRERELEASE:1,FLAG_LOOSE:2};const O0=typeof process=="object"&&process.env&&process.env.NODE_DEBUG&&/\bsemver\b/i.test(process.env.NODE_DEBUG)?(...e)=>console.error("SEMVER",...e):()=>{};var fn=O0;(function(e,t){const{MAX_SAFE_COMPONENT_LENGTH:r,MAX_SAFE_BUILD_LENGTH:n,MAX_LENGTH:s}=vr,i=fn;t=e.exports={};const o=t.re=[],l=t.safeRe=[],c=t.src=[],f=t.safeSrc=[],a=t.t={};let d=0;const v="[a-zA-Z0-9-]",m=[["\\s",1],["\\d",s],[v,n]],S=E=>{for(const[y,P]of m)E=E.split(`${y}*`).join(`${y}{0,${P}}`).split(`${y}+`).join(`${y}{1,${P}}`);return E},g=(E,y,P)=>{const I=S(y),A=d++;i(E,A,y),a[E]=A,c[A]=y,f[A]=I,o[A]=new RegExp(y,P?"g":void 0),l[A]=new RegExp(I,P?"g":void 0)};g("NUMERICIDENTIFIER","0|[1-9]\\d*"),g("NUMERICIDENTIFIERLOOSE","\\d+"),g("NONNUMERICIDENTIFIER",`\\d*[a-zA-Z-]${v}*`),g("MAINVERSION",`(${c[a.NUMERICIDENTIFIER]})\\.(${c[a.NUMERICIDENTIFIER]})\\.(${c[a.NUMERICIDENTIFIER]})`),g("MAINVERSIONLOOSE",`(${c[a.NUMERICIDENTIFIERLOOSE]})\\.(${c[a.NUMERICIDENTIFIERLOOSE]})\\.(${c[a.NUMERICIDENTIFIERLOOSE]})`),g("PRERELEASEIDENTIFIER",`(?:${c[a.NONNUMERICIDENTIFIER]}|${c[a.NUMERICIDENTIFIER]})`),g("PRERELEASEIDENTIFIERLOOSE",`(?:${c[a.NONNUMERICIDENTIFIER]}|${c[a.NUMERICIDENTIFIERLOOSE]})`),g("PRERELEASE",`(?:-(${c[a.PRERELEASEIDENTIFIER]}(?:\\.${c[a.PRERELEASEIDENTIFIER]})*))`),g("PRERELEASELOOSE",`(?:-?(${c[a.PRERELEASEIDENTIFIERLOOSE]}(?:\\.${c[a.PRERELEASEIDENTIFIERLOOSE]})*))`),g("BUILDIDENTIFIER",`${v}+`),g("BUILD",`(?:\\+(${c[a.BUILDIDENTIFIER]}(?:\\.${c[a.BUILDIDENTIFIER]})*))`),g("FULLPLAIN",`v?${c[a.MAINVERSION]}${c[a.PRERELEASE]}?${c[a.BUILD]}?`),g("FULL",`^${c[a.FULLPLAIN]}$`),g("LOOSEPLAIN",`[v=\\s]*${c[a.MAINVERSIONLOOSE]}${c[a.PRERELEASELOOSE]}?${c[a.BUILD]}?`),g("LOOSE",`^${c[a.LOOSEPLAIN]}$`),g("GTLT","((?:<|>)?=?)"),g("XRANGEIDENTIFIERLOOSE",`${c[a.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`),g("XRANGEIDENTIFIER",`${c[a.NUMERICIDENTIFIER]}|x|X|\\*`),g("XRANGEPLAIN",`[v=\\s]*(${c[a.XRANGEIDENTIFIER]})(?:\\.(${c[a.XRANGEIDENTIFIER]})(?:\\.(${c[a.XRANGEIDENTIFIER]})(?:${c[a.PRERELEASE]})?${c[a.BUILD]}?)?)?`),g("XRANGEPLAINLOOSE",`[v=\\s]*(${c[a.XRANGEIDENTIFIERLOOSE]})(?:\\.(${c[a.XRANGEIDENTIFIERLOOSE]})(?:\\.(${c[a.XRANGEIDENTIFIERLOOSE]})(?:${c[a.PRERELEASELOOSE]})?${c[a.BUILD]}?)?)?`),g("XRANGE",`^${c[a.GTLT]}\\s*${c[a.XRANGEPLAIN]}$`),g("XRANGELOOSE",`^${c[a.GTLT]}\\s*${c[a.XRANGEPLAINLOOSE]}$`),g("COERCEPLAIN",`(^|[^\\d])(\\d{1,${r}})(?:\\.(\\d{1,${r}}))?(?:\\.(\\d{1,${r}}))?`),g("COERCE",`${c[a.COERCEPLAIN]}(?:$|[^\\d])`),g("COERCEFULL",c[a.COERCEPLAIN]+`(?:${c[a.PRERELEASE]})?(?:${c[a.BUILD]})?(?:$|[^\\d])`),g("COERCERTL",c[a.COERCE],!0),g("COERCERTLFULL",c[a.COERCEFULL],!0),g("LONETILDE","(?:~>?)"),g("TILDETRIM",`(\\s*)${c[a.LONETILDE]}\\s+`,!0),t.tildeTrimReplace="$1~",g("TILDE",`^${c[a.LONETILDE]}${c[a.XRANGEPLAIN]}$`),g("TILDELOOSE",`^${c[a.LONETILDE]}${c[a.XRANGEPLAINLOOSE]}$`),g("LONECARET","(?:\\^)"),g("CARETTRIM",`(\\s*)${c[a.LONECARET]}\\s+`,!0),t.caretTrimReplace="$1^",g("CARET",`^${c[a.LONECARET]}${c[a.XRANGEPLAIN]}$`),g("CARETLOOSE",`^${c[a.LONECARET]}${c[a.XRANGEPLAINLOOSE]}$`),g("COMPARATORLOOSE",`^${c[a.GTLT]}\\s*(${c[a.LOOSEPLAIN]})$|^$`),g("COMPARATOR",`^${c[a.GTLT]}\\s*(${c[a.FULLPLAIN]})$|^$`),g("COMPARATORTRIM",`(\\s*)${c[a.GTLT]}\\s*(${c[a.LOOSEPLAIN]}|${c[a.XRANGEPLAIN]})`,!0),t.comparatorTrimReplace="$1$2$3",g("HYPHENRANGE",`^\\s*(${c[a.XRANGEPLAIN]})\\s+-\\s+(${c[a.XRANGEPLAIN]})\\s*$`),g("HYPHENRANGELOOSE",`^\\s*(${c[a.XRANGEPLAINLOOSE]})\\s+-\\s+(${c[a.XRANGEPLAINLOOSE]})\\s*$`),g("STAR","(<|>)?=?\\s*\\*"),g("GTE0","^\\s*>=\\s*0\\.0\\.0\\s*$"),g("GTE0PRE","^\\s*>=\\s*0\\.0\\.0-0\\s*$")})(ss,ss.exports);var wr=ss.exports;const N0=Object.freeze({loose:!0}),I0=Object.freeze({}),R0=e=>e?typeof e!="object"?N0:e:I0;var _i=R0;const Oo=/^[0-9]+$/,sl=(e,t)=>{if(typeof e=="number"&&typeof t=="number")return e===t?0:e<t?-1:1;const r=Oo.test(e),n=Oo.test(t);return r&&n&&(e=+e,t=+t),e===t?0:r&&!n?-1:n&&!r?1:e<t?-1:1},T0=(e,t)=>sl(t,e);var il={compareIdentifiers:sl,rcompareIdentifiers:T0};const Ar=fn,{MAX_LENGTH:No,MAX_SAFE_INTEGER:kr}=vr,{safeRe:jr,t:Dr}=wr,A0=_i,{compareIdentifiers:is}=il,k0=(e,t)=>{const r=t.split(".");if(r.length>e.length)return!1;for(let n=0;n<r.length;n++)if(is(e[n],r[n])!==0)return!1;return!0};let j0=class xe{constructor(t,r){if(r=A0(r),t instanceof xe){if(t.loose===!!r.loose&&t.includePrerelease===!!r.includePrerelease)return t;t=t.version}else if(typeof t!="string")throw new TypeError(`Invalid version. Must be a string. Got type "${typeof t}".`);if(t.length>No)throw new TypeError(`version is longer than ${No} characters`);Ar("SemVer",t,r),this.options=r,this.loose=!!r.loose,this.includePrerelease=!!r.includePrerelease;const n=t.trim().match(r.loose?jr[Dr.LOOSE]:jr[Dr.FULL]);if(!n)throw new TypeError(`Invalid Version: ${t}`);if(this.raw=t,this.major=+n[1],this.minor=+n[2],this.patch=+n[3],this.major>kr||this.major<0)throw new TypeError("Invalid major version");if(this.minor>kr||this.minor<0)throw new TypeError("Invalid minor version");if(this.patch>kr||this.patch<0)throw new TypeError("Invalid patch version");n[4]?this.prerelease=n[4].split(".").map(s=>{if(/^[0-9]+$/.test(s)){const i=+s;if(i>=0&&i<kr)return i}return s}):this.prerelease=[],this.build=n[5]?n[5].split("."):[],this.format()}format(){return this.version=`${this.major}.${this.minor}.${this.patch}`,this.prerelease.length&&(this.version+=`-${this.prerelease.join(".")}`),this.version}toString(){return this.version}compare(t){if(Ar("SemVer.compare",this.version,this.options,t),!(t instanceof xe)){if(typeof t=="string"&&t===this.version)return 0;t=new xe(t,this.options)}return t.version===this.version?0:this.compareMain(t)||this.comparePre(t)}compareMain(t){return t instanceof xe||(t=new xe(t,this.options)),this.major<t.major?-1:this.major>t.major?1:this.minor<t.minor?-1:this.minor>t.minor?1:this.patch<t.patch?-1:this.patch>t.patch?1:0}comparePre(t){if(t instanceof xe||(t=new xe(t,this.options)),this.prerelease.length&&!t.prerelease.length)return-1;if(!this.prerelease.length&&t.prerelease.length)return 1;if(!this.prerelease.length&&!t.prerelease.length)return 0;let r=0;do{const n=this.prerelease[r],s=t.prerelease[r];if(Ar("prerelease compare",r,n,s),n===void 0&&s===void 0)return 0;if(s===void 0)return 1;if(n===void 0)return-1;if(n===s)continue;return is(n,s)}while(++r)}compareBuild(t){t instanceof xe||(t=new xe(t,this.options));let r=0;do{const n=this.build[r],s=t.build[r];if(Ar("build compare",r,n,s),n===void 0&&s===void 0)return 0;if(s===void 0)return 1;if(n===void 0)return-1;if(n===s)continue;return is(n,s)}while(++r)}inc(t,r,n){if(t.startsWith("pre")){if(!r&&n===!1)throw new Error("invalid increment argument: identifier is empty");if(r){const s=`-${r}`.match(this.options.loose?jr[Dr.PRERELEASELOOSE]:jr[Dr.PRERELEASE]);if(!s||s[1]!==r)throw new Error(`invalid identifier: ${r}`)}}switch(t){case"premajor":this.prerelease.length=0,this.patch=0,this.minor=0,this.major++,this.inc("pre",r,n);break;case"preminor":this.prerelease.length=0,this.patch=0,this.minor++,this.inc("pre",r,n);break;case"prepatch":this.prerelease.length=0,this.inc("patch",r,n),this.inc("pre",r,n);break;case"prerelease":this.prerelease.length===0&&this.inc("patch",r,n),this.inc("pre",r,n);break;case"release":if(this.prerelease.length===0)throw new Error(`version ${this.raw} is not a prerelease`);this.prerelease.length=0;break;case"major":(this.minor!==0||this.patch!==0||this.prerelease.length===0)&&this.major++,this.minor=0,this.patch=0,this.prerelease=[];break;case"minor":(this.patch!==0||this.prerelease.length===0)&&this.minor++,this.patch=0,this.prerelease=[];break;case"patch":this.prerelease.length===0&&this.patch++,this.prerelease=[];break;case"pre":{const s=Number(n)?1:0;if(this.prerelease.length===0)this.prerelease=[s];else{let i=this.prerelease.length;for(;--i>=0;)typeof this.prerelease[i]=="number"&&(this.prerelease[i]++,i=-2);if(i===-1){if(r===this.prerelease.join(".")&&n===!1)throw new Error("invalid increment argument: identifier already exists");this.prerelease.push(s)}}if(r){let i=[r,s];if(n===!1&&(i=[r]),k0(this.prerelease,r)){const o=this.prerelease[r.split(".").length];isNaN(o)&&(this.prerelease=i)}else this.prerelease=i}break}default:throw new Error(`invalid increment argument: ${t}`)}return this.raw=this.format(),this.build.length&&(this.raw+=`+${this.build.join(".")}`),this}};var Ee=j0;const Io=Ee,D0=(e,t,r=!1)=>{if(e instanceof Io)return e;try{return new Io(e,t)}catch(n){if(!r)return null;throw n}};var bt=D0;const C0=bt,L0=(e,t)=>{const r=C0(e,t);return r?r.version:null};var F0=L0;const M0=bt,U0=(e,t)=>{const r=M0(e.trim().replace(/^[=v]+/,""),t);return r?r.version:null};var V0=U0;const Ro=Ee,z0=(e,t,r,n,s)=>{typeof r=="string"&&(s=n,n=r,r=void 0);try{return new Ro(e instanceof Ro?e.version:e,r).inc(t,n,s).version}catch{return null}};var q0=z0;const To=bt,x0=(e,t)=>{const r=To(e,null,!0),n=To(t,null,!0),s=r.compare(n);if(s===0)return null;const i=s>0,o=i?r:n,l=i?n:r,c=!!o.prerelease.length;if(!!l.prerelease.length&&!c){if(!l.patch&&!l.minor)return"major";if(l.compareMain(o)===0)return l.minor&&!l.patch?"minor":"patch"}const a=c?"pre":"";return r.major!==n.major?a+"major":r.minor!==n.minor?a+"minor":r.patch!==n.patch?a+"patch":"prerelease"};var G0=x0;const W0=Ee,H0=(e,t)=>new W0(e,t).major;var K0=H0;const B0=Ee,J0=(e,t)=>new B0(e,t).minor;var X0=J0;const Y0=Ee,Q0=(e,t)=>new Y0(e,t).patch;var Z0=Q0;const eg=bt,tg=(e,t)=>{const r=eg(e,t);return r&&r.prerelease.length?r.prerelease:null};var rg=tg;const Ao=Ee,ng=(e,t,r)=>new Ao(e,r).compare(new Ao(t,r));var Ve=ng;const sg=Ve,ig=(e,t,r)=>sg(t,e,r);var og=ig;const ag=Ve,cg=(e,t)=>ag(e,t,!0);var lg=cg;const ko=Ee,ug=(e,t,r)=>{const n=new ko(e,r),s=new ko(t,r);return n.compare(s)||n.compareBuild(s)};var Ei=ug;const fg=Ei,dg=(e,t)=>e.sort((r,n)=>fg(r,n,t));var hg=dg;const mg=Ei,pg=(e,t)=>e.sort((r,n)=>mg(n,r,t));var yg=pg;const $g=Ve,gg=(e,t,r)=>$g(e,t,r)>0;var dn=gg;const vg=Ve,wg=(e,t,r)=>vg(e,t,r)<0;var Si=wg;const _g=Ve,Eg=(e,t,r)=>_g(e,t,r)===0;var ol=Eg;const Sg=Ve,bg=(e,t,r)=>Sg(e,t,r)!==0;var al=bg;const Pg=Ve,Og=(e,t,r)=>Pg(e,t,r)>=0;var bi=Og;const Ng=Ve,Ig=(e,t,r)=>Ng(e,t,r)<=0;var Pi=Ig;const Rg=ol,Tg=al,Ag=dn,kg=bi,jg=Si,Dg=Pi,Cg=(e,t,r,n)=>{switch(t){case"===":return typeof e=="object"&&(e=e.version),typeof r=="object"&&(r=r.version),e===r;case"!==":return typeof e=="object"&&(e=e.version),typeof r=="object"&&(r=r.version),e!==r;case"":case"=":case"==":return Rg(e,r,n);case"!=":return Tg(e,r,n);case">":return Ag(e,r,n);case">=":return kg(e,r,n);case"<":return jg(e,r,n);case"<=":return Dg(e,r,n);default:throw new TypeError(`Invalid operator: ${t}`)}};var cl=Cg;const Lg=Ee,Fg=bt,{safeRe:Cr,t:Lr}=wr,Mg=(e,t)=>{if(e instanceof Lg)return e;if(typeof e=="number"&&(e=String(e)),typeof e!="string")return null;t=t||{};let r=null;if(!t.rtl)r=e.match(t.includePrerelease?Cr[Lr.COERCEFULL]:Cr[Lr.COERCE]);else{const c=t.includePrerelease?Cr[Lr.COERCERTLFULL]:Cr[Lr.COERCERTL];let f;for(;(f=c.exec(e))&&(!r||r.index+r[0].length!==e.length);)(!r||f.index+f[0].length!==r.index+r[0].length)&&(r=f),c.lastIndex=f.index+f[1].length+f[2].length;c.lastIndex=-1}if(r===null)return null;const n=r[2],s=r[3]||"0",i=r[4]||"0",o=t.includePrerelease&&r[5]?`-${r[5]}`:"",l=t.includePrerelease&&r[6]?`+${r[6]}`:"";return Fg(`${n}.${s}.${i}${o}${l}`,t)};var Ug=Mg;const Vg=bt,zg=vr,qg=Ee,xg=(e,t,r)=>{if(!zg.RELEASE_TYPES.includes(t))return null;const n=Gg(e,r);return n&&Wg(n,t)},Gg=(e,t)=>{const r=e instanceof qg?e.version:e;return Vg(r,t)},Wg=(e,t)=>{if(Hg(t))return e.version;switch(e.prerelease=[],t){case"major":e.minor=0,e.patch=0;break;case"minor":e.patch=0;break}return e.format()},Hg=e=>e.startsWith("pre");var Kg=xg;class Bg{constructor(){this.max=1e3,this.map=new Map}get(t){const r=this.map.get(t);if(r!==void 0)return this.map.delete(t),this.map.set(t,r),r}delete(t){return this.map.delete(t)}set(t,r){if(!this.delete(t)&&r!==void 0){if(this.map.size>=this.max){const s=this.map.keys().next().value;this.delete(s)}this.map.set(t,r)}return this}}var Jg=Bg,Un,jo;function ze(){if(jo)return Un;jo=1;const e=/\s+/g;class t{constructor(_,O){if(O=s(O),_ instanceof t)return _.loose===!!O.loose&&_.includePrerelease===!!O.includePrerelease?_:new t(_.raw,O);if(_ instanceof i)return this.raw=_.value,this.set=[[_]],this.formatted=void 0,this;if(this.options=O,this.loose=!!O.loose,this.includePrerelease=!!O.includePrerelease,this.raw=_.trim().replace(e," "),this.set=this.raw.split("||").map($=>this.parseRange($.trim())).filter($=>$.length),!this.set.length)throw new TypeError(`Invalid SemVer Range: ${this.raw}`);if(this.set.length>1){const $=this.set[0];if(this.set=this.set.filter(p=>!y(p[0])),this.set.length===0)this.set=[$];else if(this.set.length>1){for(const p of this.set)if(p.length===1&&P(p[0])){this.set=[p];break}}}this.formatted=void 0}get range(){if(this.formatted===void 0){this.formatted="";for(let _=0;_<this.set.length;_++){_>0&&(this.formatted+="||");const O=this.set[_];for(let $=0;$<O.length;$++)$>0&&(this.formatted+=" "),this.formatted+=O[$].toString().trim()}}return this.formatted}format(){return this.range}toString(){return this.range}parseRange(_){_=_.replace(E,"");const $=((this.options.includePrerelease&&S)|(this.options.loose&&g))+":"+_,p=n.get($);if(p)return p;const b=this.options.loose,w=b?c[a.HYPHENRANGELOOSE]:c[a.HYPHENRANGE];_=_.replace(w,G(this.options.includePrerelease)),o("hyphen replace",_),_=_.replace(c[a.COMPARATORTRIM],d),o("comparator trim",_),_=_.replace(c[a.TILDETRIM],v),o("tilde trim",_),_=_.replace(c[a.CARETTRIM],m),o("caret trim",_);let u=_.split(" ").map(j=>A(j,this.options)).join(" ").split(/\s+/).map(j=>H(j,this.options));b&&(u=u.filter(j=>(o("loose invalid filter",j,this.options),!!j.match(c[a.COMPARATORLOOSE])))),o("range list",u);const h=new Map,N=u.map(j=>new i(j,this.options));for(const j of N){if(y(j))return[j];h.set(j.value,j)}h.size>1&&h.has("")&&h.delete("");const C=[...h.values()];return n.set($,C),C}intersects(_,O){if(!(_ instanceof t))throw new TypeError("a Range is required");return this.set.some($=>I($,O)&&_.set.some(p=>I(p,O)&&$.every(b=>p.every(w=>b.intersects(w,O)))))}test(_){if(!_)return!1;if(typeof _=="string")try{_=new l(_,this.options)}catch{return!1}for(let O=0;O<this.set.length;O++)if(X(this.set[O],_,this.options))return!0;return!1}}Un=t;const r=Jg,n=new r,s=_i,i=hn(),o=fn,l=Ee,{safeRe:c,src:f,t:a,comparatorTrimReplace:d,tildeTrimReplace:v,caretTrimReplace:m}=wr,{FLAG_INCLUDE_PRERELEASE:S,FLAG_LOOSE:g}=vr,E=new RegExp(f[a.BUILD],"g"),y=R=>R.value==="<0.0.0-0",P=R=>R.value==="",I=(R,_)=>{let O=!0;const $=R.slice();let p=$.pop();for(;O&&$.length;)O=$.every(b=>p.intersects(b,_)),p=$.pop();return O},A=(R,_)=>(R=R.replace(c[a.BUILD],""),o("comp",R,_),R=T(R,_),o("caret",R),R=x(R,_),o("tildes",R),R=M(R,_),o("xrange",R),R=B(R,_),o("stars",R),R),k=R=>!R||R.toLowerCase()==="x"||R==="*",U=(R,_,O)=>k(R)&&!k(_)||k(_)&&O&&!k(O),x=(R,_)=>R.trim().split(/\s+/).map(O=>ae(O,_)).join(" "),ae=(R,_)=>{const O=_.loose?c[a.TILDELOOSE]:c[a.TILDE];return R.replace(O,($,p,b,w,u)=>{o("tilde",R,$,p,b,w,u);let h;return k(p)?h="":k(b)?h=`>=${p}.0.0 <${+p+1}.0.0-0`:k(w)?h=`>=${p}.${b}.0 <${p}.${+b+1}.0-0`:u?(o("replaceTilde pr",u),h=`>=${p}.${b}.${w}-${u} <${p}.${+b+1}.0-0`):h=`>=${p}.${b}.${w} <${p}.${+b+1}.0-0`,o("tilde return",h),h})},T=(R,_)=>R.trim().split(/\s+/).map(O=>D(O,_)).join(" "),D=(R,_)=>{o("caret",R,_);const O=_.loose?c[a.CARETLOOSE]:c[a.CARET],$=_.includePrerelease?"-0":"";return R.replace(O,(p,b,w,u,h)=>{o("caret",R,p,b,w,u,h);let N;return k(b)?N="":k(w)?N=`>=${b}.0.0${$} <${+b+1}.0.0-0`:k(u)?b==="0"?N=`>=${b}.${w}.0${$} <${b}.${+w+1}.0-0`:N=`>=${b}.${w}.0${$} <${+b+1}.0.0-0`:h?(o("replaceCaret pr",h),b==="0"?w==="0"?N=`>=${b}.${w}.${u}-${h} <${b}.${w}.${+u+1}-0`:N=`>=${b}.${w}.${u}-${h} <${b}.${+w+1}.0-0`:N=`>=${b}.${w}.${u}-${h} <${+b+1}.0.0-0`):(o("no pr"),b==="0"?w==="0"?N=`>=${b}.${w}.${u} <${b}.${w}.${+u+1}-0`:N=`>=${b}.${w}.${u} <${b}.${+w+1}.0-0`:N=`>=${b}.${w}.${u} <${+b+1}.0.0-0`),o("caret return",N),N})},M=(R,_)=>(o("replaceXRanges",R,_),R.split(/\s+/).map(O=>V(O,_)).join(" ")),V=(R,_)=>{R=R.trim();const O=_.loose?c[a.XRANGELOOSE]:c[a.XRANGE];return R.replace(O,($,p,b,w,u,h)=>{if(o("xRange",R,$,p,b,w,u,h),U(b,w,u))return R;const N=k(b),C=N||k(w),j=C||k(u),J=j;return p==="="&&J&&(p=""),h=_.includePrerelease?"-0":"",N?p===">"||p==="<"?$="<0.0.0-0":$="*":p&&J?(C&&(w=0),u=0,p===">"?(p=">=",C?(b=+b+1,w=0,u=0):(w=+w+1,u=0)):p==="<="&&(p="<",C?b=+b+1:w=+w+1),p==="<"&&(h="-0"),$=`${p+b}.${w}.${u}${h}`):C?$=`>=${b}.0.0${h} <${+b+1}.0.0-0`:j&&($=`>=${b}.${w}.0${h} <${b}.${+w+1}.0-0`),o("xRange return",$),$})},B=(R,_)=>(o("replaceStars",R,_),R.trim().replace(c[a.STAR],"")),H=(R,_)=>(o("replaceGTE0",R,_),R.trim().replace(c[_.includePrerelease?a.GTE0PRE:a.GTE0],"")),G=R=>(_,O,$,p,b,w,u,h,N,C,j,J)=>(k($)?O="":k(p)?O=`>=${$}.0.0${R?"-0":""}`:k(b)?O=`>=${$}.${p}.0${R?"-0":""}`:w?O=`>=${O}`:O=`>=${O}${R?"-0":""}`,k(N)?h="":k(C)?h=`<${+N+1}.0.0-0`:k(j)?h=`<${N}.${+C+1}.0-0`:J?h=`<=${N}.${C}.${j}-${J}`:R?h=`<${N}.${C}.${+j+1}-0`:h=`<=${h}`,`${O} ${h}`.trim()),X=(R,_,O)=>{for(let $=0;$<R.length;$++)if(!R[$].test(_))return!1;if(_.prerelease.length&&!O.includePrerelease){for(let $=0;$<R.length;$++)if(o(R[$].semver),R[$].semver!==i.ANY&&R[$].semver.prerelease.length>0){const p=R[$].semver;if(p.major===_.major&&p.minor===_.minor&&p.patch===_.patch)return!0}return!1}return!0};return Un}var Vn,Do;function hn(){if(Do)return Vn;Do=1;const e=Symbol("SemVer ANY");class t{static get ANY(){return e}constructor(a,d){if(d=r(d),a instanceof t){if(a.loose===!!d.loose)return a;a=a.value}a=a.trim().split(/\s+/).join(" "),o("comparator",a,d),this.options=d,this.loose=!!d.loose,this.parse(a),this.semver===e?this.value="":this.value=this.operator+this.semver.version,o("comp",this)}parse(a){const d=this.options.loose?n[s.COMPARATORLOOSE]:n[s.COMPARATOR],v=a.match(d);if(!v)throw new TypeError(`Invalid comparator: ${a}`);this.operator=v[1]!==void 0?v[1]:"",this.operator==="="&&(this.operator=""),v[2]?this.semver=new l(v[2],this.options.loose):this.semver=e}toString(){return this.value}test(a){if(o("Comparator.test",a,this.options.loose),this.semver===e||a===e)return!0;if(typeof a=="string")try{a=new l(a,this.options)}catch{return!1}return i(a,this.operator,this.semver,this.options)}intersects(a,d){if(!(a instanceof t))throw new TypeError("a Comparator is required");return this.operator===""?this.value===""?!0:new c(a.value,d).test(this.value):a.operator===""?a.value===""?!0:new c(this.value,d).test(a.semver):(d=r(d),d.includePrerelease&&(this.value==="<0.0.0-0"||a.value==="<0.0.0-0")||!d.includePrerelease&&(this.value.startsWith("<0.0.0")||a.value.startsWith("<0.0.0"))?!1:!!(this.operator.startsWith(">")&&a.operator.startsWith(">")||this.operator.startsWith("<")&&a.operator.startsWith("<")||this.semver.version===a.semver.version&&this.operator.includes("=")&&a.operator.includes("=")||i(this.semver,"<",a.semver,d)&&this.operator.startsWith(">")&&a.operator.startsWith("<")||i(this.semver,">",a.semver,d)&&this.operator.startsWith("<")&&a.operator.startsWith(">")))}}Vn=t;const r=_i,{safeRe:n,t:s}=wr,i=cl,o=fn,l=Ee,c=ze();return Vn}const Xg=ze(),Yg=(e,t,r)=>{try{t=new Xg(t,r)}catch{return!1}return t.test(e)};var mn=Yg;const Qg=ze(),Zg=(e,t)=>new Qg(e,t).set.map(r=>r.map(n=>n.value).join(" ").trim().split(" "));var ev=Zg;const tv=Ee,rv=ze(),nv=(e,t,r)=>{let n=null,s=null,i=null;try{i=new rv(t,r)}catch{return null}return e.forEach(o=>{i.test(o)&&(!n||s.compare(o)===-1)&&(n=o,s=new tv(n,r))}),n};var sv=nv;const iv=Ee,ov=ze(),av=(e,t,r)=>{let n=null,s=null,i=null;try{i=new ov(t,r)}catch{return null}return e.forEach(o=>{i.test(o)&&(!n||s.compare(o)===1)&&(n=o,s=new iv(n,r))}),n};var cv=av;const zn=Ee,lv=ze(),Co=dn,uv=(e,t)=>{e=new lv(e,t);let r=new zn("0.0.0");if(e.test(r)||(r=new zn("0.0.0-0"),e.test(r)))return r;r=null;for(let n=0;n<e.set.length;++n){const s=e.set[n];let i=null;s.forEach(o=>{const l=new zn(o.semver.version);switch(o.operator){case">":l.prerelease.length===0?l.patch++:l.prerelease.push(0),l.raw=l.format();case"":case">=":(!i||Co(l,i))&&(i=l);break;case"<":case"<=":break;default:throw new Error(`Unexpected operation: ${o.operator}`)}}),i&&(!r||Co(r,i))&&(r=i)}return r&&e.test(r)?r:null};var fv=uv;const dv=ze(),hv=(e,t)=>{try{return new dv(e,t).range||"*"}catch{return null}};var mv=hv;const pv=Ee,ll=hn(),{ANY:yv}=ll,$v=ze(),gv=mn,Lo=dn,Fo=Si,vv=Pi,wv=bi,_v=(e,t,r,n)=>{e=new pv(e,n),t=new $v(t,n);let s,i,o,l,c;switch(r){case">":s=Lo,i=vv,o=Fo,l=">",c=">=";break;case"<":s=Fo,i=wv,o=Lo,l="<",c="<=";break;default:throw new TypeError('Must provide a hilo val of "<" or ">"')}if(gv(e,t,n))return!1;for(let f=0;f<t.set.length;++f){const a=t.set[f];let d=null,v=null;if(a.forEach(m=>{m.semver===yv&&(m=new ll(">=0.0.0")),d=d||m,v=v||m,s(m.semver,d.semver,n)?d=m:o(m.semver,v.semver,n)&&(v=m)}),d.operator===l||d.operator===c||(!v.operator||v.operator===l)&&i(e,v.semver))return!1;if(v.operator===c&&o(e,v.semver))return!1}return!0};var Oi=_v;const Ev=Oi,Sv=(e,t,r)=>Ev(e,t,">",r);var bv=Sv;const Pv=Oi,Ov=(e,t,r)=>Pv(e,t,"<",r);var Nv=Ov;const Mo=ze(),Iv=(e,t,r)=>(e=new Mo(e,r),t=new Mo(t,r),e.intersects(t,r));var Rv=Iv;const Tv=mn,Av=Ve;var kv=(e,t,r)=>{const n=[];let s=null,i=null;const o=e.sort((a,d)=>Av(a,d,r));for(const a of o)Tv(a,t,r)?(i=a,s||(s=a)):(i&&n.push([s,i]),i=null,s=null);s&&n.push([s,null]);const l=[];for(const[a,d]of n)a===d?l.push(a):!d&&a===o[0]?l.push("*"):d?a===o[0]?l.push(`<=${d}`):l.push(`${a} - ${d}`):l.push(`>=${a}`);const c=l.join(" || "),f=typeof t.raw=="string"?t.raw:String(t);return c.length<f.length?c:t};const Uo=ze(),Ni=hn(),{ANY:qn}=Ni,xn=mn,Ii=Ve,jv=(e,t,r={})=>{if(e===t)return!0;e=new Uo(e,r),t=new Uo(t,r);let n=!1;e:for(const s of e.set){for(const i of t.set){const o=Cv(s,i,r);if(n=n||o!==null,o)continue e}if(n)return!1}return!0},Dv=[new Ni(">=0.0.0-0")],Vo=[new Ni(">=0.0.0")],Cv=(e,t,r)=>{if(e===t)return!0;if(e.length===1&&e[0].semver===qn){if(t.length===1&&t[0].semver===qn)return!0;r.includePrerelease?e=Dv:e=Vo}if(t.length===1&&t[0].semver===qn){if(r.includePrerelease)return!0;t=Vo}const n=new Set;let s,i;for(const m of e)m.operator===">"||m.operator===">="?s=zo(s,m,r):m.operator==="<"||m.operator==="<="?i=qo(i,m,r):n.add(m.semver);if(n.size>1)return null;let o;if(s&&i){if(o=Ii(s.semver,i.semver,r),o>0)return null;if(o===0&&(s.operator!==">="||i.operator!=="<="))return null}for(const m of n){if(s&&!xn(m,String(s),r)||i&&!xn(m,String(i),r))return null;for(const S of t)if(!xn(m,String(S),r))return!1;return!0}let l,c,f,a,d=i&&!r.includePrerelease&&i.semver.prerelease.length?i.semver:!1,v=s&&!r.includePrerelease&&s.semver.prerelease.length?s.semver:!1;d&&d.prerelease.length===1&&i.operator==="<"&&d.prerelease[0]===0&&(d=!1);for(const m of t){if(a=a||m.operator===">"||m.operator===">=",f=f||m.operator==="<"||m.operator==="<=",s){if(v&&m.semver.prerelease&&m.semver.prerelease.length&&m.semver.major===v.major&&m.semver.minor===v.minor&&m.semver.patch===v.patch&&(v=!1),m.operator===">"||m.operator===">="){if(l=zo(s,m,r),l===m&&l!==s)return!1}else if(s.operator===">="&&!m.test(s.semver))return!1}if(i){if(d&&m.semver.prerelease&&m.semver.prerelease.length&&m.semver.major===d.major&&m.semver.minor===d.minor&&m.semver.patch===d.patch&&(d=!1),m.operator==="<"||m.operator==="<="){if(c=qo(i,m,r),c===m&&c!==i)return!1}else if(i.operator==="<="&&!m.test(i.semver))return!1}if(!m.operator&&(i||s)&&o!==0)return!1}return!(s&&f&&!i&&o!==0||i&&a&&!s&&o!==0||v||d)},zo=(e,t,r)=>{if(!e)return t;const n=Ii(e.semver,t.semver,r);return n>0?e:n<0||t.operator===">"&&e.operator===">="?t:e},qo=(e,t,r)=>{if(!e)return t;const n=Ii(e.semver,t.semver,r);return n<0?e:n>0||t.operator==="<"&&e.operator==="<="?t:e};var Lv=jv;const Gn=wr,xo=vr,Fv=Ee,Go=il,Mv=bt,Uv=F0,Vv=V0,zv=q0,qv=G0,xv=K0,Gv=X0,Wv=Z0,Hv=rg,Kv=Ve,Bv=og,Jv=lg,Xv=Ei,Yv=hg,Qv=yg,Zv=dn,ew=Si,tw=ol,rw=al,nw=bi,sw=Pi,iw=cl,ow=Ug,aw=Kg,cw=hn(),lw=ze(),uw=mn,fw=ev,dw=sv,hw=cv,mw=fv,pw=mv,yw=Oi,$w=bv,gw=Nv,vw=Rv,ww=kv,_w=Lv;var Ew={parse:Mv,valid:Uv,clean:Vv,inc:zv,diff:qv,major:xv,minor:Gv,patch:Wv,prerelease:Hv,compare:Kv,rcompare:Bv,compareLoose:Jv,compareBuild:Xv,sort:Yv,rsort:Qv,gt:Zv,lt:ew,eq:tw,neq:rw,gte:nw,lte:sw,cmp:iw,coerce:ow,truncate:aw,Comparator:cw,Range:lw,satisfies:uw,toComparators:fw,maxSatisfying:dw,minSatisfying:hw,minVersion:mw,validRange:pw,outside:yw,gtr:$w,ltr:gw,intersects:vw,simplifyRange:ww,subset:_w,SemVer:Fv,re:Gn.re,src:Gn.src,tokens:Gn.t,SEMVER_SPEC_VERSION:xo.SEMVER_SPEC_VERSION,RELEASE_TYPES:xo.RELEASE_TYPES,compareIdentifiers:Go.compareIdentifiers,rcompareIdentifiers:Go.rcompareIdentifiers},pn={exports:{}},Ri={exports:{}};const ul=(e,t)=>{for(const r of Reflect.ownKeys(t))Object.defineProperty(e,r,Object.getOwnPropertyDescriptor(t,r));return e};Ri.exports=ul;Ri.exports.default=ul;var Sw=Ri.exports;const bw=Sw,Xr=new WeakMap,fl=(e,t={})=>{if(typeof e!="function")throw new TypeError("Expected a function");let r,n=0;const s=e.displayName||e.name||"<anonymous>",i=function(...o){if(Xr.set(i,++n),n===1)r=e.apply(this,o),e=null;else if(t.throw===!0)throw new Error(`Function \`${s}\` can only be called once`);return r};return bw(i,e),Xr.set(i,n),i};pn.exports=fl;pn.exports.default=fl;pn.exports.callCount=e=>{if(!Xr.has(e))throw new Error(`The given function \`${e.name}\` is not wrapped by the \`onetime\` package`);return Xr.get(e)};var Pw=pn.exports;(function(e,t){var r=$t&&$t.__classPrivateFieldSet||function(R,_,O,$,p){if($==="m")throw new TypeError("Private method is not writable");if($==="a"&&!p)throw new TypeError("Private accessor was defined without a setter");if(typeof _=="function"?R!==_||!p:!_.has(R))throw new TypeError("Cannot write private member to an object whose class did not declare it");return $==="a"?p.call(R,O):p?p.value=O:_.set(R,O),O},n=$t&&$t.__classPrivateFieldGet||function(R,_,O,$){if(O==="a"&&!$)throw new TypeError("Private accessor was defined without a getter");if(typeof _=="function"?R!==_||!$:!_.has(R))throw new TypeError("Cannot read private member from an object whose class did not declare it");return O==="m"?$:O==="a"?$.call(R):$?$.value:_.get(R)},s,i,o,l,c,f;Object.defineProperty(t,"__esModule",{value:!0});const a=as,d=mr,v=ue,m=pl,S=Xo,g=yl,E=bd,y=Cd,P=Ud,I=We,A=el,k=l0,U=w0,x=Ew,ae=Pw,T="aes-256-cbc",D=()=>Object.create(null),M=R=>R!=null;let V="";try{delete require.cache[__filename],V=v.dirname((i=(s=e.parent)===null||s===void 0?void 0:s.filename)!==null&&i!==void 0?i:".")}catch{}const B=(R,_)=>{const O=new Set(["undefined","symbol","function"]),$=typeof _;if(O.has($))throw new TypeError(`Setting a value of type \`${$}\` for key \`${R}\` is not allowed as it's not supported by JSON`)},H="__internal__",G=`${H}.migrations.version`;class X{constructor(_={}){var O;o.set(this,void 0),l.set(this,void 0),c.set(this,void 0),f.set(this,{}),this._deserialize=h=>JSON.parse(h),this._serialize=h=>JSON.stringify(h,void 0,"	");const $={configName:"config",fileExtension:"json",projectSuffix:"nodejs",clearInvalidConfig:!1,accessPropertiesByDotNotation:!0,configFileMode:438,..._},p=ae(()=>{const h=y.sync({cwd:V}),N=h&&JSON.parse(d.readFileSync(h,"utf8"));return N??{}});if(!$.cwd){if($.projectName||($.projectName=p().name),!$.projectName)throw new Error("Project name could not be inferred. Please specify the `projectName` option.");$.cwd=P($.projectName,{suffix:$.projectSuffix}).config}if(r(this,c,$,"f"),$.schema){if(typeof $.schema!="object")throw new TypeError("The `schema` option must be an object.");const h=new A.default({allErrors:!0,useDefaults:!0});(0,k.default)(h);const N={type:"object",properties:$.schema};r(this,o,h.compile(N),"f");for(const[C,j]of Object.entries($.schema))j!=null&&j.default&&(n(this,f,"f")[C]=j.default)}$.defaults&&r(this,f,{...n(this,f,"f"),...$.defaults},"f"),$.serialize&&(this._serialize=$.serialize),$.deserialize&&(this._deserialize=$.deserialize),this.events=new g.EventEmitter,r(this,l,$.encryptionKey,"f");const b=$.fileExtension?`.${$.fileExtension}`:"";this.path=v.resolve($.cwd,`${(O=$.configName)!==null&&O!==void 0?O:"config"}${b}`);const w=this.store,u=Object.assign(D(),$.defaults,w);this._validate(u);try{S.deepEqual(w,u)}catch{this.store=u}if($.watch&&this._watch(),$.migrations){if($.projectVersion||($.projectVersion=p().version),!$.projectVersion)throw new Error("Project version could not be inferred. Please specify the `projectVersion` option.");this._migrate($.migrations,$.projectVersion,$.beforeEachMigration)}}get(_,O){if(n(this,c,"f").accessPropertiesByDotNotation)return this._get(_,O);const{store:$}=this;return _ in $?$[_]:O}set(_,O){if(typeof _!="string"&&typeof _!="object")throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof _}`);if(typeof _!="object"&&O===void 0)throw new TypeError("Use `delete()` to clear values");if(this._containsReservedKey(_))throw new TypeError(`Please don't use the ${H} key, as it's used to manage this module internal operations.`);const{store:$}=this,p=(b,w)=>{B(b,w),n(this,c,"f").accessPropertiesByDotNotation?E.set($,b,w):$[b]=w};if(typeof _=="object"){const b=_;for(const[w,u]of Object.entries(b))p(w,u)}else p(_,O);this.store=$}has(_){return n(this,c,"f").accessPropertiesByDotNotation?E.has(this.store,_):_ in this.store}reset(..._){for(const O of _)M(n(this,f,"f")[O])&&this.set(O,n(this,f,"f")[O])}delete(_){const{store:O}=this;n(this,c,"f").accessPropertiesByDotNotation?E.delete(O,_):delete O[_],this.store=O}clear(){this.store=D();for(const _ of Object.keys(n(this,f,"f")))this.reset(_)}onDidChange(_,O){if(typeof _!="string")throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof _}`);if(typeof O!="function")throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof O}`);return this._handleChange(()=>this.get(_),O)}onDidAnyChange(_){if(typeof _!="function")throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof _}`);return this._handleChange(()=>this.store,_)}get size(){return Object.keys(this.store).length}get store(){try{const _=d.readFileSync(this.path,n(this,l,"f")?null:"utf8"),O=this._encryptData(_),$=this._deserialize(O);return this._validate($),Object.assign(D(),$)}catch(_){if((_==null?void 0:_.code)==="ENOENT")return this._ensureDirectory(),D();if(n(this,c,"f").clearInvalidConfig&&_.name==="SyntaxError")return D();throw _}}set store(_){this._ensureDirectory(),this._validate(_),this._write(_),this.events.emit("change")}*[(o=new WeakMap,l=new WeakMap,c=new WeakMap,f=new WeakMap,Symbol.iterator)](){for(const[_,O]of Object.entries(this.store))yield[_,O]}_encryptData(_){if(!n(this,l,"f"))return _.toString();try{if(n(this,l,"f"))try{if(_.slice(16,17).toString()===":"){const O=_.slice(0,16),$=m.pbkdf2Sync(n(this,l,"f"),O.toString(),1e4,32,"sha512"),p=m.createDecipheriv(T,$,O);_=Buffer.concat([p.update(Buffer.from(_.slice(17))),p.final()]).toString("utf8")}else{const O=m.createDecipher(T,n(this,l,"f"));_=Buffer.concat([O.update(Buffer.from(_)),O.final()]).toString("utf8")}}catch{}}catch{}return _.toString()}_handleChange(_,O){let $=_();const p=()=>{const b=$,w=_();(0,a.isDeepStrictEqual)(w,b)||($=w,O.call(this,w,b))};return this.events.on("change",p),()=>this.events.removeListener("change",p)}_validate(_){if(!n(this,o,"f")||n(this,o,"f").call(this,_)||!n(this,o,"f").errors)return;const $=n(this,o,"f").errors.map(({instancePath:p,message:b=""})=>`\`${p.slice(1)}\` ${b}`);throw new Error("Config schema violation: "+$.join("; "))}_ensureDirectory(){d.mkdirSync(v.dirname(this.path),{recursive:!0})}_write(_){let O=this._serialize(_);if(n(this,l,"f")){const $=m.randomBytes(16),p=m.pbkdf2Sync(n(this,l,"f"),$.toString(),1e4,32,"sha512"),b=m.createCipheriv(T,p,$);O=Buffer.concat([$,Buffer.from(":"),b.update(Buffer.from(O)),b.final()])}if(process.env.SNAP)d.writeFileSync(this.path,O,{mode:n(this,c,"f").configFileMode});else try{I.writeFileSync(this.path,O,{mode:n(this,c,"f").configFileMode})}catch($){if(($==null?void 0:$.code)==="EXDEV"){d.writeFileSync(this.path,O,{mode:n(this,c,"f").configFileMode});return}throw $}}_watch(){this._ensureDirectory(),d.existsSync(this.path)||this._write(D()),process.platform==="win32"?d.watch(this.path,{persistent:!1},U(()=>{this.events.emit("change")},{wait:100})):d.watchFile(this.path,{persistent:!1},U(()=>{this.events.emit("change")},{wait:5e3}))}_migrate(_,O,$){let p=this._get(G,"0.0.0");const b=Object.keys(_).filter(u=>this._shouldPerformMigration(u,p,O));let w={...this.store};for(const u of b)try{$&&$(this,{fromVersion:p,toVersion:u,finalVersion:O,versions:b});const h=_[u];h(this),this._set(G,u),p=u,w={...this.store}}catch(h){throw this.store=w,new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${h}`)}(this._isVersionInRangeFormat(p)||!x.eq(p,O))&&this._set(G,O)}_containsReservedKey(_){return typeof _=="object"&&Object.keys(_)[0]===H?!0:typeof _!="string"?!1:n(this,c,"f").accessPropertiesByDotNotation?!!_.startsWith(`${H}.`):!1}_isVersionInRangeFormat(_){return x.clean(_)===null}_shouldPerformMigration(_,O,$){return this._isVersionInRangeFormat(_)?O!=="0.0.0"&&x.satisfies(O,_)?!1:x.satisfies($,_):!(x.lte(_,O)||x.gt(_,$))}_get(_,O){return E.get(this.store,_,O)}_set(_,O){const{store:$}=this;E.set($,_,O),this.store=$}}t.default=X,e.exports=X,e.exports.default=X})(Kn,Kn.exports);var Ow=Kn.exports;const Wo=ue,{app:xr,ipcMain:os,ipcRenderer:Ho,shell:Nw}=oe,Iw=Ow;let Ko=!1;const Bo=()=>{if(!os||!xr)throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");const e={defaultCwd:xr.getPath("userData"),appVersion:xr.getVersion()};return Ko||(os.on("electron-store-get-data",t=>{t.returnValue=e}),Ko=!0),e};class Rw extends Iw{constructor(t){let r,n;if(Ho){const s=Ho.sendSync("electron-store-get-data");if(!s)throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");({defaultCwd:r,appVersion:n}=s)}else os&&xr&&({defaultCwd:r,appVersion:n}=Bo());t={name:"config",...t},t.projectVersion||(t.projectVersion=n),t.cwd?t.cwd=Wo.isAbsolute(t.cwd)?t.cwd:Wo.join(r,t.cwd):t.cwd=r,t.configName=t.name,delete t.name,super(t)}static initRenderer(){Bo()}async openInEditor(){const t=await Nw.openPath(this.path);if(t)throw new Error(t)}}var Tw=Rw;const Aw=Hl(Tw),Ti=new Aw,kw=(e,t)=>{Ti.set(e,t)},jw=e=>Ti.get(e),Dw=e=>{Ti.delete(e)},Cw=()=>{oe.ipcMain.on("set-item",(e,t,r)=>{kw(t,r)}),oe.ipcMain.on("del-item",(e,t)=>{Dw(t)}),oe.ipcMain.handle("get-item",async(e,t)=>await jw(t))};wl();wd();Gl();Cw();oe.ipcMain.on("store-set",(e,t)=>{or.travWindowSend(t,oe.BrowserWindow.fromWebContents(e.sender))});oe.app.commandLine.appendSwitch("--ignore-certificate-errors","true");oe.protocol.registerSchemesAsPrivileged([{scheme:"app",privileges:{secure:!0,standard:!0}}]);oe.app.whenReady().then(()=>{Jo(),oe.app.on("activate",()=>{oe.BrowserWindow.getAllWindows().length===0&&Jo()})});const Lw=1e3,Fw=830,Jo=async()=>{let e=new or;console.info("createMainWindow"),e.createWindow({route:"/",isMainWin:!0,width:Lw,height:Fw,minWidth:800,minHeight:680,resizable:!0,windowName:"main"})};oe.app.on("window-all-closed",()=>{process.platform!=="darwin"&&oe.app.quit()});
+"use strict";
+const require$$1 = require("electron");
+const require$$1$1 = require("path");
+const require$$0$2 = require("fs");
+const require$$0 = require("constants");
+const require$$0$1 = require("stream");
+const require$$4 = require("util");
+const require$$5 = require("assert");
+const require$$3$1 = require("crypto");
+const require$$5$1 = require("events");
+const require$$1$2 = require("os");
+const promises = require("fs/promises");
+const promises$1 = require("stream/promises");
+const child_process = require("child_process");
+const path$j = require("path");
+const DEV = true;
+const _CreateWindow = class _CreateWindow {
+  constructor() {
+    this.getWindowById = (id2) => {
+      return require$$1.BrowserWindow.fromId(id2);
+    };
+    this.debounce = (func, wait) => {
+      let timeout;
+      return function() {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => {
+          func.apply(context, args);
+        }, wait);
+      };
+    };
+    this.moveDepWindow = (win) => {
+      if (_CreateWindow.windowMap.get("bottom")) {
+        const bottomWin = _CreateWindow.windowMap.get("bottom").window;
+        bottomWin.setBounds({
+          x: win.getPosition()[0],
+          y: win.getPosition()[1] + win.getSize()[1],
+          width: 680,
+          height: 400
+        });
+      }
+      if (_CreateWindow.windowMap.get("right")) {
+        const rightWin = _CreateWindow.windowMap.get("right").window;
+        rightWin.setBounds({
+          x: win.getPosition()[0] + win.getSize()[0],
+          y: win.getPosition()[1],
+          width: rightWin.getSize()[0],
+          height: rightWin.getSize()[1]
+        });
+      }
+    };
+    this.defaultConfig = {
+      // 页面路由
+      route: "",
+      parentId: null,
+      isMainWin: false,
+      width: 900,
+      height: 700,
+      //窗口是否在屏幕居中. 默认值为 false
+      center: true,
+      transparent: true,
+      //设置为 false 时可以创建一个无边框窗口 默认值为 true。
+      frame: false,
+      titleBarStyle: "hidden",
+      backgroundColor: "#00000000",
+      //窗口是否在创建时显示。 默认值为 true。
+      show: false,
+      maxWidth: null,
+      maxHeight: null,
+      minWidth: null,
+      minHeight: null,
+      autoHideMenuBar: true,
+      resizable: true,
+      minimizable: true,
+      maximizable: true,
+      windowName: "",
+      /* 
+        【父窗口不能操作】
+         模态窗口 -- 模态窗口是禁用父窗口的子窗口，创
+         建模态窗口必须设置 parent 和 modal 选项
+      */
+      modal: false,
+      parent: null,
+      titleBarOverlay: false,
+      maximize: false,
+      webPreferences: {
+        devTools: DEV,
+        // nodeIntegration: true,
+        contextIsolation: true,
+        // nodeIntegrationInWorker: true,
+        webSecurity: false,
+        // sandbox: false,
+        nodeIntegration: true,
+        preload: path$j.join(__dirname, "../preload/preload.js"),
+        // 禁用离屏渲染
+        offscreen: false,
+        // 防止后台渲染节流
+        backgroundThrottling: false
+      }
+    };
+  }
+  /********************************************************************************
+   * @brief: 创建窗口
+   * @param {object} configurations
+   * @param {object} options
+   * @return {*}
+   ********************************************************************************/
+  createWindow(configurations) {
+    if (!configurations.windowName) {
+      console.info("window name is required");
+      return;
+    }
+    if (_CreateWindow.windowMap.has(configurations.windowName)) {
+      console.info("window is already created");
+      _CreateWindow.windowMap.get(configurations.windowName).window.blur();
+      return;
+    }
+    let windowConfig = Object.assign({}, this.defaultConfig, configurations);
+    if (!windowConfig.isMainWin) {
+      windowConfig.parent = _CreateWindow.getMainWindow();
+    }
+    let win = new require$$1.BrowserWindow(windowConfig);
+    win.setTitle("");
+    console.log("window id:" + win.id);
+    _CreateWindow.windowMap.set(windowConfig.windowName, {
+      windowId: win.id,
+      route: windowConfig.route,
+      windowName: windowConfig.windowName,
+      window: win
+    });
+    if (windowConfig.maximize && windowConfig.resizable) {
+      win.maximize();
+    }
+    if (process.platform == "darwin") {
+      win.setWindowButtonVisibility(false);
+    }
+    win.on("close", () => {
+      if (win == _CreateWindow.windowMap.get("main").window) {
+        require$$1.app.quit();
+        return;
+      }
+      _CreateWindow.windowMap.forEach((value, key) => {
+        if (value.window == win) {
+          win.webContents.closeDevTools();
+          _CreateWindow.windowMap.delete(key);
+        }
+      });
+      win.setOpacity(0);
+    });
+    win.on("ready-to-show", () => {
+      win.show();
+      win.focus();
+    });
+    let winURL;
+    if (require$$1.app.isPackaged) {
+      win.loadFile(require$$1$1.join(__dirname, "../../dist/index.html"), {
+        hash: windowConfig.route
+      });
+    } else {
+      winURL = windowConfig.route ? `${process.env.VITE_DEV_SERVER_URL}/#${windowConfig.route}` : `${process.env.VITE_DEV_SERVER_URL}}/#`;
+      win.loadURL(winURL);
+    }
+    win.setMenu(null);
+    {
+      win.webContents.once("did-finish-load", () => {
+        win.webContents.openDevTools({ mode: "detach" });
+      });
+      win.on("hide", () => win.webContents.closeDevTools());
+      require$$1.globalShortcut.register("CommandOrControl+Shift+i", function() {
+        win.webContents.openDevTools();
+      });
+    }
+    return win;
+  }
+};
+_CreateWindow.windowMap = /* @__PURE__ */ new Map();
+_CreateWindow.travWindowSend = (data, curWindow = null) => {
+  _CreateWindow.windowMap.forEach((value, key) => {
+    if (curWindow && value.window == curWindow) {
+      return;
+    }
+    value.window.webContents.send("store-get", data);
+  });
+};
+_CreateWindow.sendToWindow = (windowName, data) => {
+  if (_CreateWindow.windowMap.has(windowName)) {
+    _CreateWindow.windowMap.get(windowName).window.webContents.send("store-get", data);
+  }
+};
+_CreateWindow.getMainWindow = () => {
+  return _CreateWindow.windowMap.get("main").window;
+};
+let CreateWindow = _CreateWindow;
+const { ipcMain: ipcMain$2, BrowserWindow, screen } = require("electron");
+const windowControlListener = () => {
+  ipcMain$2.on("window-create", (event, configObj) => {
+    let cw = new CreateWindow();
+    cw.createWindow(configObj);
+  });
+  ipcMain$2.handle("get-screen-size", () => {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    return primaryDisplay.size;
+  });
+  ipcMain$2.on("window-on-top", (event, state) => {
+    const webContent = event.sender;
+    const win = BrowserWindow.fromWebContents(webContent);
+    win.setAlwaysOnTop(state);
+  });
+  ipcMain$2.on("window-min", (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow.fromWebContents(webContent);
+    win.minimize();
+  });
+  ipcMain$2.on("window-max", (event, state, windowSize = {}) => {
+    const webContent = event.sender;
+    const win = BrowserWindow.fromWebContents(webContent);
+    if (state) {
+      const { width: screenWidth, height: screenHeight } = screen.getPrimaryDisplay().workAreaSize;
+      const x = Math.round((screenWidth - windowSize.width) / 2);
+      const y = Math.round((screenHeight - windowSize.height) / 2);
+      win.setBounds({ ...windowSize, x, y });
+    } else {
+      win.maximize();
+    }
+  });
+  ipcMain$2.on("window-close", (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow.fromWebContents(webContent);
+    win.close();
+  });
+  ipcMain$2.handle("get-window-position", async (event) => {
+    const webContent = event.sender;
+    const win = BrowserWindow.fromWebContents(webContent);
+    return win.getPosition();
+  });
+};
+const { ipcMain: ipcMain$1, nativeImage } = require("electron");
+const fs$l = require("fs-extra");
+const ffmpegPath = require("@ffmpeg-installer/ffmpeg").path;
+const ffprobePath = require("@ffprobe-installer/ffprobe").path;
+const { spawn } = require("child_process");
+const path$i = require("path");
+const DEFAULT_CONFIG_ARRAY = [1, 2, 0, 0, 1];
+const DEFAULT_THRESHOLD = 120;
+const videoTaskMap = /* @__PURE__ */ new Map();
+const TEMP_ROOT_PATH = path$i.resolve(__dirname, "../../temp");
+const VIDEO_TEMP_DIR_REG = /^video_\d+_[a-f0-9]+$/i;
+const VIDEO_TEMP_FRAME_REG = /^temp_\d+\.png$/i;
+const removeTempPath = (targetPath) => {
+  try {
+    if (fs$l.existsSync(targetPath)) {
+      fs$l.removeSync(targetPath);
+    }
+  } catch (error2) {
+    console.error("Remove temp path failed:", targetPath, error2);
+  }
+};
+const removeTempRootIfEmpty = () => {
+  try {
+    if (fs$l.existsSync(TEMP_ROOT_PATH) && fs$l.readdirSync(TEMP_ROOT_PATH).length == 0) {
+      fs$l.removeSync(TEMP_ROOT_PATH);
+    }
+  } catch (error2) {
+    console.error("Remove temp root failed:", error2);
+  }
+};
+const cleanupVideoTempRoot = () => {
+  try {
+    if (!fs$l.existsSync(TEMP_ROOT_PATH)) return;
+    fs$l.readdirSync(TEMP_ROOT_PATH, { withFileTypes: true }).forEach((item) => {
+      const shouldRemove = item.isDirectory() && VIDEO_TEMP_DIR_REG.test(item.name) || item.isFile() && VIDEO_TEMP_FRAME_REG.test(item.name);
+      if (shouldRemove) {
+        removeTempPath(path$i.join(TEMP_ROOT_PATH, item.name));
+      }
+    });
+    removeTempRootIfEmpty();
+  } catch (error2) {
+    console.error("Cleanup video temp failed:", error2);
+  }
+};
+const getVideoTaskKey = (event) => {
+  var _a;
+  return ((_a = event == null ? void 0 : event.sender) == null ? void 0 : _a.id) || 0;
+};
+const createVideoTask = (event) => {
+  const key = getVideoTaskKey(event);
+  const oldTask = videoTaskMap.get(key);
+  if ((oldTask == null ? void 0 : oldTask.process) && !oldTask.process.killed) {
+    oldTask.cancelled = true;
+    oldTask.process.kill("SIGTERM");
+  }
+  const task = {
+    cancelled: false,
+    process: null
+  };
+  videoTaskMap.set(key, task);
+  return { key, task };
+};
+const cancelVideoTask = (event) => {
+  const task = videoTaskMap.get(getVideoTaskKey(event));
+  if (!task) return false;
+  task.cancelled = true;
+  if (task.process && !task.process.killed) {
+    task.process.kill("SIGTERM");
+  }
+  return true;
+};
+const assertVideoTaskActive = (task) => {
+  if (task == null ? void 0 : task.cancelled) {
+    throw new Error("VIDEO_TASK_CANCELLED");
+  }
+};
+const sendVideoProgress = (event, progress, message) => {
+  if (!(event == null ? void 0 : event.sender) || event.sender.isDestroyed()) return;
+  const value = Math.round(Number(progress));
+  event.sender.send("video-frame-progress", {
+    progress: Number.isFinite(value) ? Math.max(0, Math.min(value, 100)) : 0,
+    message
+  });
+};
+const toPositiveInt = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, Math.floor(num));
+};
+const toNonNegativeNumber = (value) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return 0;
+  return Math.max(0, num);
+};
+const runFfmpeg = (args, task = null) => {
+  return new Promise((resolve2, reject) => {
+    if (task == null ? void 0 : task.cancelled) {
+      reject(new Error("VIDEO_TASK_CANCELLED"));
+      return;
+    }
+    let stderr = "";
+    const ffmpegProc = spawn(ffmpegPath, args, { windowsHide: true });
+    if (task) task.process = ffmpegProc;
+    if (ffmpegProc.stderr) {
+      ffmpegProc.stderr.setEncoding("utf8");
+      ffmpegProc.stderr.on("data", (data) => {
+        stderr += data;
+      });
+    }
+    ffmpegProc.on("error", reject);
+    ffmpegProc.on("close", (code2) => {
+      if ((task == null ? void 0 : task.process) === ffmpegProc) task.process = null;
+      if (task == null ? void 0 : task.cancelled) {
+        reject(new Error("VIDEO_TASK_CANCELLED"));
+        return;
+      }
+      if (code2 === 0) {
+        resolve2(true);
+        return;
+      }
+      reject(new Error(`ffmpeg exited with code ${code2}: ${stderr.slice(-1e3)}`));
+    });
+  });
+};
+const runFfprobe = (args) => {
+  return new Promise((resolve2, reject) => {
+    let stdout = "";
+    let stderr = "";
+    const ffprobeProc = spawn(ffprobePath, args, { windowsHide: true });
+    if (ffprobeProc.stdout) {
+      ffprobeProc.stdout.setEncoding("utf8");
+      ffprobeProc.stdout.on("data", (data) => {
+        stdout += data;
+      });
+    }
+    if (ffprobeProc.stderr) {
+      ffprobeProc.stderr.setEncoding("utf8");
+      ffprobeProc.stderr.on("data", (data) => {
+        stderr += data;
+      });
+    }
+    ffprobeProc.on("error", reject);
+    ffprobeProc.on("close", (code2) => {
+      if (code2 === 0) {
+        resolve2(stdout);
+        return;
+      }
+      reject(new Error(`ffprobe exited with code ${code2}: ${stderr.slice(-1e3)}`));
+    });
+  });
+};
+const getVideoInfo = async (videoPath) => {
+  var _a, _b;
+  const output = await runFfprobe([
+    "-v",
+    "error",
+    "-select_streams",
+    "v:0",
+    "-show_entries",
+    "format=duration:stream=width,height,duration",
+    "-of",
+    "json",
+    videoPath
+  ]);
+  const data = JSON.parse(output || "{}");
+  const stream = ((_a = data.streams) == null ? void 0 : _a[0]) || {};
+  const duration = toNonNegativeNumber(((_b = data.format) == null ? void 0 : _b.duration) || stream.duration);
+  return {
+    width: toPositiveInt(stream.width),
+    height: toPositiveInt(stream.height),
+    duration: Number(duration.toFixed(2))
+  };
+};
+const getScaleFilter = (width, height, scaleMode) => {
+  switch (scaleMode) {
+    case "contain":
+      return `scale=${width}:${height}:force_original_aspect_ratio=decrease,pad=${width}:${height}:(ow-iw)/2:(oh-ih)/2:black`;
+    case "cover":
+      return `scale=${width}:${height}:force_original_aspect_ratio=increase,crop=${width}:${height}`;
+    default:
+      return `scale=${width}:${height}`;
+  }
+};
+const ffmpegScreenShot = async (videoPath, timeArr, tempPath, width, height, scaleMode, onProgress, task) => {
+  for (let index = 0; index < timeArr.length; index++) {
+    assertVideoTaskActive(task);
+    const outputPath = path$i.join(tempPath, `temp_${index + 1}.png`);
+    const args = [
+      "-y",
+      "-ss",
+      String(timeArr[index]),
+      "-i",
+      videoPath,
+      "-frames:v",
+      "1",
+      "-vf",
+      getScaleFilter(width, height, scaleMode),
+      outputPath
+    ];
+    await runFfmpeg(args, task);
+    assertVideoTaskActive(task);
+    onProgress == null ? void 0 : onProgress(index + 1, timeArr.length);
+  }
+  console.info("screeshot ok");
+  return true;
+};
+const normalizeConfigArray = (configArray) => {
+  return DEFAULT_CONFIG_ARRAY.map((defaultValue, index) => {
+    const value = Number(configArray == null ? void 0 : configArray[index]);
+    return Number.isFinite(value) ? Math.trunc(value) : defaultValue;
+  });
+};
+const formatBytes = (bytes, outputMode) => {
+  const data = Array.from(bytes);
+  if (outputMode === 0) {
+    return data.map((value) => `0x${value.toString(16).padStart(2, "0")}`);
+  }
+  return data;
+};
+const getBitMask = (offset, configArray) => {
+  return configArray[2] != 0 ? 1 << 7 - offset : 1 << offset;
+};
+const getPointValue = (value, configArray) => {
+  return configArray[0] !== 0 ? value === 0 ? 1 : 0 : value;
+};
+const writePoint = (bytes, byteIndex, bitMask, pointValue) => {
+  if (pointValue === 0) {
+    bytes[byteIndex] |= bitMask;
+  } else {
+    bytes[byteIndex] &= ~bitMask;
+  }
+};
+const sampleRow = (points, width, height, configArray) => {
+  const bytesPerRow = Math.ceil(width / 8);
+  const bytes = new Uint8Array(bytesPerRow * height);
+  for (let index = 0; index < points.length; index++) {
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const byteIndex = y * bytesPerRow + Math.floor(x / 8);
+    const bitMask = getBitMask(x % 8, configArray);
+    const pointValue = getPointValue(points[index], configArray);
+    writePoint(bytes, byteIndex, bitMask, pointValue);
+  }
+  return bytes;
+};
+const sampleCol = (points, width, height, configArray) => {
+  const bytesPerCol = Math.ceil(height / 8);
+  const bytes = new Uint8Array(bytesPerCol * width);
+  for (let index = 0; index < points.length; index++) {
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const byteIndex = x * bytesPerCol + Math.floor(y / 8);
+    const bitMask = getBitMask(y % 8, configArray);
+    const pointValue = getPointValue(points[index], configArray);
+    writePoint(bytes, byteIndex, bitMask, pointValue);
+  }
+  return bytes;
+};
+const sampleColRow = (points, width, height, configArray) => {
+  const bytes = new Uint8Array(Math.ceil(height / 8) * width);
+  for (let index = 0; index < points.length; index++) {
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const byteIndex = x + Math.floor(y / 8) * width;
+    const bitMask = getBitMask(y % 8, configArray);
+    const pointValue = getPointValue(points[index], configArray);
+    writePoint(bytes, byteIndex, bitMask, pointValue);
+  }
+  return bytes;
+};
+const sampleRowCol = (points, width, height, configArray) => {
+  const bytes = new Uint8Array(Math.ceil(width / 8) * height);
+  for (let index = 0; index < points.length; index++) {
+    const x = index % width;
+    const y = Math.floor(index / width);
+    const byteIndex = Math.floor(x / 8) * height + y;
+    const bitMask = getBitMask(x % 8, configArray);
+    const pointValue = getPointValue(points[index], configArray);
+    writePoint(bytes, byteIndex, bitMask, pointValue);
+  }
+  return bytes;
+};
+const sampleMono = (bitmap, width, height, threshold, configArray) => {
+  const points = new Uint8Array(width * height);
+  for (let index = 0, pointIndex = 0; index < bitmap.length; index += 4, pointIndex++) {
+    const b = bitmap[index];
+    const g = bitmap[index + 1];
+    const r = bitmap[index + 2];
+    const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+    points[pointIndex] = gray > threshold ? 1 : 0;
+  }
+  switch (configArray[1]) {
+    case 0:
+      return sampleRow(points, width, height, configArray);
+    case 1:
+      return sampleCol(points, width, height, configArray);
+    case 2:
+      return sampleColRow(points, width, height, configArray);
+    case 3:
+      return sampleRowCol(points, width, height, configArray);
+    default:
+      return sampleColRow(points, width, height, configArray);
+  }
+};
+const sampleColor = (bitmap, configArray) => {
+  const bytes = new Uint8Array(bitmap.length / 4 * 2);
+  let outIndex = 0;
+  for (let index = 0; index < bitmap.length; index += 4) {
+    const b = bitmap[index];
+    const g = bitmap[index + 1];
+    const r = bitmap[index + 2];
+    const color = r >> 3 << 11 | g >> 2 << 5 | b >> 3;
+    let high = color >> 8 & 255;
+    let low = color & 255;
+    if (configArray[0] == 0 || configArray[2] == 1) {
+      high = ~high & 255;
+      low = ~low & 255;
+    }
+    bytes[outIndex++] = high;
+    bytes[outIndex++] = low;
+  }
+  return bytes;
+};
+const getFrameIndex = (name) => {
+  const match = name.match(/temp_(\d+)\.png$/i);
+  return match ? Number(match[1]) : 0;
+};
+const generateFrameData = (imageBuffer, width, height, threshold, configArray) => {
+  const config = normalizeConfigArray(configArray);
+  const thresholdValue = Number(threshold);
+  const image = nativeImage.createFromBuffer(imageBuffer);
+  if (image.isEmpty()) {
+    throw new Error("视频帧图片解析失败");
+  }
+  const targetWidth = Number(width);
+  const targetHeight = Number(height);
+  const resizedImage = targetWidth > 0 && targetHeight > 0 ? image.resize({ width: targetWidth, height: targetHeight, quality: "best" }) : image;
+  const size = resizedImage.getSize();
+  const bitmap = resizedImage.toBitmap();
+  const bytes = config[4] === 1 ? sampleMono(
+    bitmap,
+    size.width,
+    size.height,
+    Number.isFinite(thresholdValue) ? thresholdValue : DEFAULT_THRESHOLD,
+    config
+  ) : sampleColor(bitmap, config);
+  return formatBytes(bytes, config[3]);
+};
+const ffmpegListener = async () => {
+  cleanupVideoTempRoot();
+  ipcMain$1.handle("get-video-info", async (event, videoPath) => {
+    try {
+      if (!videoPath) return null;
+      return await getVideoInfo(videoPath);
+    } catch (error2) {
+      console.error("Error reading video info:", error2);
+      return null;
+    }
+  });
+  ipcMain$1.handle(
+    "get-video-frame-data",
+    async (event, videoPath, width, height, videoStart, videoDur, videoFrame, scaleMode, threshold, ...configArray) => {
+      const tempDirPath = path$i.join(
+        TEMP_ROOT_PATH,
+        `video_${Date.now()}_${Math.random().toString(16).slice(2)}`
+      );
+      const { key, task } = createVideoTask(event);
+      try {
+        const targetWidth = toPositiveInt(width);
+        const targetHeight = toPositiveInt(height);
+        const targetStart = toNonNegativeNumber(videoStart);
+        const targetDur = toPositiveInt(videoDur);
+        const targetFrame = toPositiveInt(videoFrame);
+        if (!targetWidth || !targetHeight || !targetDur || !targetFrame) {
+          sendVideoProgress(event, 100, "视频配置错误");
+          return null;
+        }
+        fs$l.ensureDirSync(tempDirPath);
+        sendVideoProgress(event, 0, "准备视频取模...");
+        const frameStrArr = genTimestampArr(targetStart, targetDur, targetFrame);
+        assertVideoTaskActive(task);
+        const result = await ffmpegScreenShot(
+          videoPath,
+          frameStrArr,
+          tempDirPath,
+          targetWidth,
+          targetHeight,
+          scaleMode,
+          (current, total) => {
+            if (task.cancelled) return;
+            sendVideoProgress(
+              event,
+              total > 0 ? current / total * 70 : 0,
+              `正在截取视频帧 ${current}/${total}`
+            );
+          },
+          task
+        );
+        assertVideoTaskActive(task);
+        if (!result) {
+          console.info("video frame error");
+          sendVideoProgress(event, 100, "视频取模失败");
+          return null;
+        }
+        let resultData = [];
+        const files = fs$l.readdirSync(tempDirPath, {
+          withFileTypes: true
+        }).filter((file2) => file2.isFile() && file2.name.toLowerCase().endsWith(".png")).sort((a, b) => getFrameIndex(a.name) - getFrameIndex(b.name));
+        if (files.length == 0) {
+          sendVideoProgress(event, 100, "视频取模失败");
+          return null;
+        }
+        for (let index = 0; index < files.length; index++) {
+          assertVideoTaskActive(task);
+          const o = files[index];
+          const imageBuffer = fs$l.readFileSync(path$i.join(tempDirPath, o.name));
+          const arrData = generateFrameData(
+            imageBuffer,
+            targetWidth,
+            targetHeight,
+            threshold,
+            configArray
+          );
+          resultData.push(arrData);
+          if (task.cancelled) return null;
+          sendVideoProgress(
+            event,
+            70 + (index + 1) / files.length * 30,
+            `正在生成取模数据 ${index + 1}/${files.length}`
+          );
+        }
+        sendVideoProgress(event, 100, "视频取模完成");
+        return resultData;
+      } catch (error2) {
+        if ((error2 == null ? void 0 : error2.message) === "VIDEO_TASK_CANCELLED") {
+          sendVideoProgress(event, 100, "已取消视频取模");
+          return null;
+        }
+        console.error("Error reading image:", error2);
+        sendVideoProgress(event, 100, "视频取模失败");
+        return null;
+      } finally {
+        if (videoTaskMap.get(key) === task) {
+          videoTaskMap.delete(key);
+        }
+        removeTempPath(tempDirPath);
+        removeTempRootIfEmpty();
+      }
+    }
+  );
+  ipcMain$1.handle("cancel-video-frame-data", async (event) => {
+    const cancelled = cancelVideoTask(event);
+    if (cancelled) {
+      sendVideoProgress(event, 100, "正在取消视频取模...");
+    }
+    return cancelled;
+  });
+};
+const genTimestampArr = (videoStart, videoDur, videoFrame) => {
+  const start = toNonNegativeNumber(videoStart);
+  const dur = toPositiveInt(videoDur);
+  const frame = toPositiveInt(videoFrame);
+  const temp2 = 1 / frame;
+  const strArr = [];
+  for (let i = 0; i < dur; i++) {
+    for (let j = 0; j < frame; j++) {
+      strArr.push(String((start + i + temp2 * j).toFixed(2)));
+    }
+  }
+  return strArr;
+};
+var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
+function getDefaultExportFromCjs(x) {
+  return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, "default") ? x["default"] : x;
+}
+var fs$k = {};
+var universalify$1 = {};
+universalify$1.fromCallback = function(fn) {
+  return Object.defineProperty(function(...args) {
+    if (typeof args[args.length - 1] === "function") fn.apply(this, args);
+    else {
+      return new Promise((resolve2, reject) => {
+        args.push((err, res) => err != null ? reject(err) : resolve2(res));
+        fn.apply(this, args);
+      });
+    }
+  }, "name", { value: fn.name });
+};
+universalify$1.fromPromise = function(fn) {
+  return Object.defineProperty(function(...args) {
+    const cb = args[args.length - 1];
+    if (typeof cb !== "function") return fn.apply(this, args);
+    else {
+      args.pop();
+      fn.apply(this, args).then((r) => cb(null, r), cb);
+    }
+  }, "name", { value: fn.name });
+};
+var constants$3 = require$$0;
+var origCwd = process.cwd;
+var cwd = null;
+var platform = process.env.GRACEFUL_FS_PLATFORM || process.platform;
+process.cwd = function() {
+  if (!cwd)
+    cwd = origCwd.call(process);
+  return cwd;
+};
+try {
+  process.cwd();
+} catch (er) {
+}
+if (typeof process.chdir === "function") {
+  var chdir = process.chdir;
+  process.chdir = function(d) {
+    cwd = null;
+    chdir.call(process, d);
+  };
+  if (Object.setPrototypeOf) Object.setPrototypeOf(process.chdir, chdir);
+}
+var polyfills$1 = patch$3;
+function patch$3(fs2) {
+  if (constants$3.hasOwnProperty("O_SYMLINK") && process.version.match(/^v0\.6\.[0-2]|^v0\.5\./)) {
+    patchLchmod(fs2);
+  }
+  if (!fs2.lutimes) {
+    patchLutimes(fs2);
+  }
+  fs2.chown = chownFix(fs2.chown);
+  fs2.fchown = chownFix(fs2.fchown);
+  fs2.lchown = chownFix(fs2.lchown);
+  fs2.chmod = chmodFix(fs2.chmod);
+  fs2.fchmod = chmodFix(fs2.fchmod);
+  fs2.lchmod = chmodFix(fs2.lchmod);
+  fs2.chownSync = chownFixSync(fs2.chownSync);
+  fs2.fchownSync = chownFixSync(fs2.fchownSync);
+  fs2.lchownSync = chownFixSync(fs2.lchownSync);
+  fs2.chmodSync = chmodFixSync(fs2.chmodSync);
+  fs2.fchmodSync = chmodFixSync(fs2.fchmodSync);
+  fs2.lchmodSync = chmodFixSync(fs2.lchmodSync);
+  fs2.stat = statFix(fs2.stat);
+  fs2.fstat = statFix(fs2.fstat);
+  fs2.lstat = statFix(fs2.lstat);
+  fs2.statSync = statFixSync(fs2.statSync);
+  fs2.fstatSync = statFixSync(fs2.fstatSync);
+  fs2.lstatSync = statFixSync(fs2.lstatSync);
+  if (fs2.chmod && !fs2.lchmod) {
+    fs2.lchmod = function(path2, mode, cb) {
+      if (cb) process.nextTick(cb);
+    };
+    fs2.lchmodSync = function() {
+    };
+  }
+  if (fs2.chown && !fs2.lchown) {
+    fs2.lchown = function(path2, uid, gid, cb) {
+      if (cb) process.nextTick(cb);
+    };
+    fs2.lchownSync = function() {
+    };
+  }
+  if (platform === "win32") {
+    fs2.rename = typeof fs2.rename !== "function" ? fs2.rename : function(fs$rename) {
+      function rename2(from, to, cb) {
+        var start = Date.now();
+        var backoff = 0;
+        fs$rename(from, to, function CB(er) {
+          if (er && (er.code === "EACCES" || er.code === "EPERM" || er.code === "EBUSY") && Date.now() - start < 6e4) {
+            setTimeout(function() {
+              fs2.stat(to, function(stater, st) {
+                if (stater && stater.code === "ENOENT")
+                  fs$rename(from, to, CB);
+                else
+                  cb(er);
+              });
+            }, backoff);
+            if (backoff < 100)
+              backoff += 10;
+            return;
+          }
+          if (cb) cb(er);
+        });
+      }
+      if (Object.setPrototypeOf) Object.setPrototypeOf(rename2, fs$rename);
+      return rename2;
+    }(fs2.rename);
+  }
+  fs2.read = typeof fs2.read !== "function" ? fs2.read : function(fs$read) {
+    function read(fd, buffer, offset, length, position, callback_) {
+      var callback;
+      if (callback_ && typeof callback_ === "function") {
+        var eagCounter = 0;
+        callback = function(er, _, __) {
+          if (er && er.code === "EAGAIN" && eagCounter < 10) {
+            eagCounter++;
+            return fs$read.call(fs2, fd, buffer, offset, length, position, callback);
+          }
+          callback_.apply(this, arguments);
+        };
+      }
+      return fs$read.call(fs2, fd, buffer, offset, length, position, callback);
+    }
+    if (Object.setPrototypeOf) Object.setPrototypeOf(read, fs$read);
+    return read;
+  }(fs2.read);
+  fs2.readSync = typeof fs2.readSync !== "function" ? fs2.readSync : /* @__PURE__ */ function(fs$readSync) {
+    return function(fd, buffer, offset, length, position) {
+      var eagCounter = 0;
+      while (true) {
+        try {
+          return fs$readSync.call(fs2, fd, buffer, offset, length, position);
+        } catch (er) {
+          if (er.code === "EAGAIN" && eagCounter < 10) {
+            eagCounter++;
+            continue;
+          }
+          throw er;
+        }
+      }
+    };
+  }(fs2.readSync);
+  function patchLchmod(fs22) {
+    fs22.lchmod = function(path2, mode, callback) {
+      fs22.open(
+        path2,
+        constants$3.O_WRONLY | constants$3.O_SYMLINK,
+        mode,
+        function(err, fd) {
+          if (err) {
+            if (callback) callback(err);
+            return;
+          }
+          fs22.fchmod(fd, mode, function(err2) {
+            fs22.close(fd, function(err22) {
+              if (callback) callback(err2 || err22);
+            });
+          });
+        }
+      );
+    };
+    fs22.lchmodSync = function(path2, mode) {
+      var fd = fs22.openSync(path2, constants$3.O_WRONLY | constants$3.O_SYMLINK, mode);
+      var threw = true;
+      var ret;
+      try {
+        ret = fs22.fchmodSync(fd, mode);
+        threw = false;
+      } finally {
+        if (threw) {
+          try {
+            fs22.closeSync(fd);
+          } catch (er) {
+          }
+        } else {
+          fs22.closeSync(fd);
+        }
+      }
+      return ret;
+    };
+  }
+  function patchLutimes(fs22) {
+    if (constants$3.hasOwnProperty("O_SYMLINK") && fs22.futimes) {
+      fs22.lutimes = function(path2, at, mt, cb) {
+        fs22.open(path2, constants$3.O_SYMLINK, function(er, fd) {
+          if (er) {
+            if (cb) cb(er);
+            return;
+          }
+          fs22.futimes(fd, at, mt, function(er2) {
+            fs22.close(fd, function(er22) {
+              if (cb) cb(er2 || er22);
+            });
+          });
+        });
+      };
+      fs22.lutimesSync = function(path2, at, mt) {
+        var fd = fs22.openSync(path2, constants$3.O_SYMLINK);
+        var ret;
+        var threw = true;
+        try {
+          ret = fs22.futimesSync(fd, at, mt);
+          threw = false;
+        } finally {
+          if (threw) {
+            try {
+              fs22.closeSync(fd);
+            } catch (er) {
+            }
+          } else {
+            fs22.closeSync(fd);
+          }
+        }
+        return ret;
+      };
+    } else if (fs22.futimes) {
+      fs22.lutimes = function(_a, _b, _c, cb) {
+        if (cb) process.nextTick(cb);
+      };
+      fs22.lutimesSync = function() {
+      };
+    }
+  }
+  function chmodFix(orig) {
+    if (!orig) return orig;
+    return function(target, mode, cb) {
+      return orig.call(fs2, target, mode, function(er) {
+        if (chownErOk(er)) er = null;
+        if (cb) cb.apply(this, arguments);
+      });
+    };
+  }
+  function chmodFixSync(orig) {
+    if (!orig) return orig;
+    return function(target, mode) {
+      try {
+        return orig.call(fs2, target, mode);
+      } catch (er) {
+        if (!chownErOk(er)) throw er;
+      }
+    };
+  }
+  function chownFix(orig) {
+    if (!orig) return orig;
+    return function(target, uid, gid, cb) {
+      return orig.call(fs2, target, uid, gid, function(er) {
+        if (chownErOk(er)) er = null;
+        if (cb) cb.apply(this, arguments);
+      });
+    };
+  }
+  function chownFixSync(orig) {
+    if (!orig) return orig;
+    return function(target, uid, gid) {
+      try {
+        return orig.call(fs2, target, uid, gid);
+      } catch (er) {
+        if (!chownErOk(er)) throw er;
+      }
+    };
+  }
+  function statFix(orig) {
+    if (!orig) return orig;
+    return function(target, options, cb) {
+      if (typeof options === "function") {
+        cb = options;
+        options = null;
+      }
+      function callback(er, stats) {
+        if (stats) {
+          if (stats.uid < 0) stats.uid += 4294967296;
+          if (stats.gid < 0) stats.gid += 4294967296;
+        }
+        if (cb) cb.apply(this, arguments);
+      }
+      return options ? orig.call(fs2, target, options, callback) : orig.call(fs2, target, callback);
+    };
+  }
+  function statFixSync(orig) {
+    if (!orig) return orig;
+    return function(target, options) {
+      var stats = options ? orig.call(fs2, target, options) : orig.call(fs2, target);
+      if (stats) {
+        if (stats.uid < 0) stats.uid += 4294967296;
+        if (stats.gid < 0) stats.gid += 4294967296;
+      }
+      return stats;
+    };
+  }
+  function chownErOk(er) {
+    if (!er)
+      return true;
+    if (er.code === "ENOSYS")
+      return true;
+    var nonroot = !process.getuid || process.getuid() !== 0;
+    if (nonroot) {
+      if (er.code === "EINVAL" || er.code === "EPERM")
+        return true;
+    }
+    return false;
+  }
+}
+var Stream = require$$0$1.Stream;
+var legacyStreams = legacy$1;
+function legacy$1(fs2) {
+  return {
+    ReadStream,
+    WriteStream
+  };
+  function ReadStream(path2, options) {
+    if (!(this instanceof ReadStream)) return new ReadStream(path2, options);
+    Stream.call(this);
+    var self2 = this;
+    this.path = path2;
+    this.fd = null;
+    this.readable = true;
+    this.paused = false;
+    this.flags = "r";
+    this.mode = 438;
+    this.bufferSize = 64 * 1024;
+    options = options || {};
+    var keys = Object.keys(options);
+    for (var index = 0, length = keys.length; index < length; index++) {
+      var key = keys[index];
+      this[key] = options[key];
+    }
+    if (this.encoding) this.setEncoding(this.encoding);
+    if (this.start !== void 0) {
+      if ("number" !== typeof this.start) {
+        throw TypeError("start must be a Number");
+      }
+      if (this.end === void 0) {
+        this.end = Infinity;
+      } else if ("number" !== typeof this.end) {
+        throw TypeError("end must be a Number");
+      }
+      if (this.start > this.end) {
+        throw new Error("start must be <= end");
+      }
+      this.pos = this.start;
+    }
+    if (this.fd !== null) {
+      process.nextTick(function() {
+        self2._read();
+      });
+      return;
+    }
+    fs2.open(this.path, this.flags, this.mode, function(err, fd) {
+      if (err) {
+        self2.emit("error", err);
+        self2.readable = false;
+        return;
+      }
+      self2.fd = fd;
+      self2.emit("open", fd);
+      self2._read();
+    });
+  }
+  function WriteStream(path2, options) {
+    if (!(this instanceof WriteStream)) return new WriteStream(path2, options);
+    Stream.call(this);
+    this.path = path2;
+    this.fd = null;
+    this.writable = true;
+    this.flags = "w";
+    this.encoding = "binary";
+    this.mode = 438;
+    this.bytesWritten = 0;
+    options = options || {};
+    var keys = Object.keys(options);
+    for (var index = 0, length = keys.length; index < length; index++) {
+      var key = keys[index];
+      this[key] = options[key];
+    }
+    if (this.start !== void 0) {
+      if ("number" !== typeof this.start) {
+        throw TypeError("start must be a Number");
+      }
+      if (this.start < 0) {
+        throw new Error("start must be >= zero");
+      }
+      this.pos = this.start;
+    }
+    this.busy = false;
+    this._queue = [];
+    if (this.fd === null) {
+      this._open = fs2.open;
+      this._queue.push([this._open, this.path, this.flags, this.mode, void 0]);
+      this.flush();
+    }
+  }
+}
+var clone_1 = clone$1;
+var getPrototypeOf = Object.getPrototypeOf || function(obj) {
+  return obj.__proto__;
+};
+function clone$1(obj) {
+  if (obj === null || typeof obj !== "object")
+    return obj;
+  if (obj instanceof Object)
+    var copy2 = { __proto__: getPrototypeOf(obj) };
+  else
+    var copy2 = /* @__PURE__ */ Object.create(null);
+  Object.getOwnPropertyNames(obj).forEach(function(key) {
+    Object.defineProperty(copy2, key, Object.getOwnPropertyDescriptor(obj, key));
+  });
+  return copy2;
+}
+var fs$j = require$$0$2;
+var polyfills = polyfills$1;
+var legacy = legacyStreams;
+var clone = clone_1;
+var util$1 = require$$4;
+var gracefulQueue;
+var previousSymbol;
+if (typeof Symbol === "function" && typeof Symbol.for === "function") {
+  gracefulQueue = Symbol.for("graceful-fs.queue");
+  previousSymbol = Symbol.for("graceful-fs.previous");
+} else {
+  gracefulQueue = "___graceful-fs.queue";
+  previousSymbol = "___graceful-fs.previous";
+}
+function noop() {
+}
+function publishQueue(context, queue2) {
+  Object.defineProperty(context, gracefulQueue, {
+    get: function() {
+      return queue2;
+    }
+  });
+}
+var debug$2 = noop;
+if (util$1.debuglog)
+  debug$2 = util$1.debuglog("gfs4");
+else if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || ""))
+  debug$2 = function() {
+    var m = util$1.format.apply(util$1, arguments);
+    m = "GFS4: " + m.split(/\n/).join("\nGFS4: ");
+    console.error(m);
+  };
+if (!fs$j[gracefulQueue]) {
+  var queue = commonjsGlobal[gracefulQueue] || [];
+  publishQueue(fs$j, queue);
+  fs$j.close = function(fs$close) {
+    function close(fd, cb) {
+      return fs$close.call(fs$j, fd, function(err) {
+        if (!err) {
+          resetQueue();
+        }
+        if (typeof cb === "function")
+          cb.apply(this, arguments);
+      });
+    }
+    Object.defineProperty(close, previousSymbol, {
+      value: fs$close
+    });
+    return close;
+  }(fs$j.close);
+  fs$j.closeSync = function(fs$closeSync) {
+    function closeSync(fd) {
+      fs$closeSync.apply(fs$j, arguments);
+      resetQueue();
+    }
+    Object.defineProperty(closeSync, previousSymbol, {
+      value: fs$closeSync
+    });
+    return closeSync;
+  }(fs$j.closeSync);
+  if (/\bgfs4\b/i.test(process.env.NODE_DEBUG || "")) {
+    process.on("exit", function() {
+      debug$2(fs$j[gracefulQueue]);
+      require$$5.equal(fs$j[gracefulQueue].length, 0);
+    });
+  }
+}
+if (!commonjsGlobal[gracefulQueue]) {
+  publishQueue(commonjsGlobal, fs$j[gracefulQueue]);
+}
+var gracefulFs = patch$2(clone(fs$j));
+if (process.env.TEST_GRACEFUL_FS_GLOBAL_PATCH && !fs$j.__patched) {
+  gracefulFs = patch$2(fs$j);
+  fs$j.__patched = true;
+}
+function patch$2(fs2) {
+  polyfills(fs2);
+  fs2.gracefulify = patch$2;
+  fs2.createReadStream = createReadStream;
+  fs2.createWriteStream = createWriteStream;
+  var fs$readFile = fs2.readFile;
+  fs2.readFile = readFile2;
+  function readFile2(path2, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$readFile(path2, options, cb);
+    function go$readFile(path22, options2, cb2, startTime) {
+      return fs$readFile(path22, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$readFile, [path22, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$writeFile = fs2.writeFile;
+  fs2.writeFile = writeFile2;
+  function writeFile2(path2, data, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$writeFile(path2, data, options, cb);
+    function go$writeFile(path22, data2, options2, cb2, startTime) {
+      return fs$writeFile(path22, data2, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$writeFile, [path22, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$appendFile = fs2.appendFile;
+  if (fs$appendFile)
+    fs2.appendFile = appendFile;
+  function appendFile(path2, data, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    return go$appendFile(path2, data, options, cb);
+    function go$appendFile(path22, data2, options2, cb2, startTime) {
+      return fs$appendFile(path22, data2, options2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$appendFile, [path22, data2, options2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$copyFile = fs2.copyFile;
+  if (fs$copyFile)
+    fs2.copyFile = copyFile2;
+  function copyFile2(src, dest, flags, cb) {
+    if (typeof flags === "function") {
+      cb = flags;
+      flags = 0;
+    }
+    return go$copyFile(src, dest, flags, cb);
+    function go$copyFile(src2, dest2, flags2, cb2, startTime) {
+      return fs$copyFile(src2, dest2, flags2, function(err) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$copyFile, [src2, dest2, flags2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  var fs$readdir = fs2.readdir;
+  fs2.readdir = readdir;
+  var noReaddirOptionVersions = /^v[0-5]\./;
+  function readdir(path2, options, cb) {
+    if (typeof options === "function")
+      cb = options, options = null;
+    var go$readdir = noReaddirOptionVersions.test(process.version) ? function go$readdir2(path22, options2, cb2, startTime) {
+      return fs$readdir(path22, fs$readdirCallback(
+        path22,
+        options2,
+        cb2,
+        startTime
+      ));
+    } : function go$readdir2(path22, options2, cb2, startTime) {
+      return fs$readdir(path22, options2, fs$readdirCallback(
+        path22,
+        options2,
+        cb2,
+        startTime
+      ));
+    };
+    return go$readdir(path2, options, cb);
+    function fs$readdirCallback(path22, options2, cb2, startTime) {
+      return function(err, files) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([
+            go$readdir,
+            [path22, options2, cb2],
+            err,
+            startTime || Date.now(),
+            Date.now()
+          ]);
+        else {
+          if (files && files.sort)
+            files.sort();
+          if (typeof cb2 === "function")
+            cb2.call(this, err, files);
+        }
+      };
+    }
+  }
+  if (process.version.substr(0, 4) === "v0.8") {
+    var legStreams = legacy(fs2);
+    ReadStream = legStreams.ReadStream;
+    WriteStream = legStreams.WriteStream;
+  }
+  var fs$ReadStream = fs2.ReadStream;
+  if (fs$ReadStream) {
+    ReadStream.prototype = Object.create(fs$ReadStream.prototype);
+    ReadStream.prototype.open = ReadStream$open;
+  }
+  var fs$WriteStream = fs2.WriteStream;
+  if (fs$WriteStream) {
+    WriteStream.prototype = Object.create(fs$WriteStream.prototype);
+    WriteStream.prototype.open = WriteStream$open;
+  }
+  Object.defineProperty(fs2, "ReadStream", {
+    get: function() {
+      return ReadStream;
+    },
+    set: function(val) {
+      ReadStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  Object.defineProperty(fs2, "WriteStream", {
+    get: function() {
+      return WriteStream;
+    },
+    set: function(val) {
+      WriteStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  var FileReadStream = ReadStream;
+  Object.defineProperty(fs2, "FileReadStream", {
+    get: function() {
+      return FileReadStream;
+    },
+    set: function(val) {
+      FileReadStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  var FileWriteStream = WriteStream;
+  Object.defineProperty(fs2, "FileWriteStream", {
+    get: function() {
+      return FileWriteStream;
+    },
+    set: function(val) {
+      FileWriteStream = val;
+    },
+    enumerable: true,
+    configurable: true
+  });
+  function ReadStream(path2, options) {
+    if (this instanceof ReadStream)
+      return fs$ReadStream.apply(this, arguments), this;
+    else
+      return ReadStream.apply(Object.create(ReadStream.prototype), arguments);
+  }
+  function ReadStream$open() {
+    var that = this;
+    open(that.path, that.flags, that.mode, function(err, fd) {
+      if (err) {
+        if (that.autoClose)
+          that.destroy();
+        that.emit("error", err);
+      } else {
+        that.fd = fd;
+        that.emit("open", fd);
+        that.read();
+      }
+    });
+  }
+  function WriteStream(path2, options) {
+    if (this instanceof WriteStream)
+      return fs$WriteStream.apply(this, arguments), this;
+    else
+      return WriteStream.apply(Object.create(WriteStream.prototype), arguments);
+  }
+  function WriteStream$open() {
+    var that = this;
+    open(that.path, that.flags, that.mode, function(err, fd) {
+      if (err) {
+        that.destroy();
+        that.emit("error", err);
+      } else {
+        that.fd = fd;
+        that.emit("open", fd);
+      }
+    });
+  }
+  function createReadStream(path2, options) {
+    return new fs2.ReadStream(path2, options);
+  }
+  function createWriteStream(path2, options) {
+    return new fs2.WriteStream(path2, options);
+  }
+  var fs$open = fs2.open;
+  fs2.open = open;
+  function open(path2, flags, mode, cb) {
+    if (typeof mode === "function")
+      cb = mode, mode = null;
+    return go$open(path2, flags, mode, cb);
+    function go$open(path22, flags2, mode2, cb2, startTime) {
+      return fs$open(path22, flags2, mode2, function(err, fd) {
+        if (err && (err.code === "EMFILE" || err.code === "ENFILE"))
+          enqueue([go$open, [path22, flags2, mode2, cb2], err, startTime || Date.now(), Date.now()]);
+        else {
+          if (typeof cb2 === "function")
+            cb2.apply(this, arguments);
+        }
+      });
+    }
+  }
+  return fs2;
+}
+function enqueue(elem) {
+  debug$2("ENQUEUE", elem[0].name, elem[1]);
+  fs$j[gracefulQueue].push(elem);
+  retry();
+}
+var retryTimer;
+function resetQueue() {
+  var now = Date.now();
+  for (var i = 0; i < fs$j[gracefulQueue].length; ++i) {
+    if (fs$j[gracefulQueue][i].length > 2) {
+      fs$j[gracefulQueue][i][3] = now;
+      fs$j[gracefulQueue][i][4] = now;
+    }
+  }
+  retry();
+}
+function retry() {
+  clearTimeout(retryTimer);
+  retryTimer = void 0;
+  if (fs$j[gracefulQueue].length === 0)
+    return;
+  var elem = fs$j[gracefulQueue].shift();
+  var fn = elem[0];
+  var args = elem[1];
+  var err = elem[2];
+  var startTime = elem[3];
+  var lastTime = elem[4];
+  if (startTime === void 0) {
+    debug$2("RETRY", fn.name, args);
+    fn.apply(null, args);
+  } else if (Date.now() - startTime >= 6e4) {
+    debug$2("TIMEOUT", fn.name, args);
+    var cb = args.pop();
+    if (typeof cb === "function")
+      cb.call(null, err);
+  } else {
+    var sinceAttempt = Date.now() - lastTime;
+    var sinceStart = Math.max(lastTime - startTime, 1);
+    var desiredDelay = Math.min(sinceStart * 1.2, 100);
+    if (sinceAttempt >= desiredDelay) {
+      debug$2("RETRY", fn.name, args);
+      fn.apply(null, args.concat([startTime]));
+    } else {
+      fs$j[gracefulQueue].push(elem);
+    }
+  }
+  if (retryTimer === void 0) {
+    retryTimer = setTimeout(retry, 0);
+  }
+}
+(function(exports) {
+  const u2 = universalify$1.fromCallback;
+  const fs2 = gracefulFs;
+  const api = [
+    "access",
+    "appendFile",
+    "chmod",
+    "chown",
+    "close",
+    "copyFile",
+    "cp",
+    "fchmod",
+    "fchown",
+    "fdatasync",
+    "fstat",
+    "fsync",
+    "ftruncate",
+    "futimes",
+    "glob",
+    "lchmod",
+    "lchown",
+    "lutimes",
+    "link",
+    "lstat",
+    "mkdir",
+    "mkdtemp",
+    "open",
+    "opendir",
+    "readdir",
+    "readFile",
+    "readlink",
+    "realpath",
+    "rename",
+    "rm",
+    "rmdir",
+    "stat",
+    "statfs",
+    "symlink",
+    "truncate",
+    "unlink",
+    "utimes",
+    "writeFile"
+  ].filter((key) => {
+    return typeof fs2[key] === "function";
+  });
+  Object.assign(exports, fs2);
+  api.forEach((method) => {
+    exports[method] = u2(fs2[method]);
+  });
+  exports.exists = function(filename, callback) {
+    if (typeof callback === "function") {
+      return fs2.exists(filename, callback);
+    }
+    return new Promise((resolve2) => {
+      return fs2.exists(filename, resolve2);
+    });
+  };
+  exports.read = function(fd, buffer, offset, length, position, callback) {
+    if (typeof callback === "function") {
+      return fs2.read(fd, buffer, offset, length, position, callback);
+    }
+    return new Promise((resolve2, reject) => {
+      fs2.read(fd, buffer, offset, length, position, (err, bytesRead, buffer2) => {
+        if (err) return reject(err);
+        resolve2({ bytesRead, buffer: buffer2 });
+      });
+    });
+  };
+  exports.write = function(fd, buffer, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.write(fd, buffer, ...args);
+    }
+    return new Promise((resolve2, reject) => {
+      fs2.write(fd, buffer, ...args, (err, bytesWritten, buffer2) => {
+        if (err) return reject(err);
+        resolve2({ bytesWritten, buffer: buffer2 });
+      });
+    });
+  };
+  exports.readv = function(fd, buffers, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.readv(fd, buffers, ...args);
+    }
+    return new Promise((resolve2, reject) => {
+      fs2.readv(fd, buffers, ...args, (err, bytesRead, buffers2) => {
+        if (err) return reject(err);
+        resolve2({ bytesRead, buffers: buffers2 });
+      });
+    });
+  };
+  exports.writev = function(fd, buffers, ...args) {
+    if (typeof args[args.length - 1] === "function") {
+      return fs2.writev(fd, buffers, ...args);
+    }
+    return new Promise((resolve2, reject) => {
+      fs2.writev(fd, buffers, ...args, (err, bytesWritten, buffers2) => {
+        if (err) return reject(err);
+        resolve2({ bytesWritten, buffers: buffers2 });
+      });
+    });
+  };
+  if (typeof fs2.realpath.native === "function") {
+    exports.realpath.native = u2(fs2.realpath.native);
+  } else {
+    process.emitWarning(
+      "fs.realpath.native is not a function. Is fs being monkey-patched?",
+      "Warning",
+      "fs-extra-WARN0003"
+    );
+  }
+})(fs$k);
+var makeDir$1 = {};
+var utils$2 = {};
+const path$h = require$$1$1;
+utils$2.checkPath = function checkPath(pth) {
+  if (process.platform === "win32") {
+    const pathHasInvalidWinCharacters = /[<>:"|?*]/.test(pth.replace(path$h.parse(pth).root, ""));
+    if (pathHasInvalidWinCharacters) {
+      const error2 = new Error(`Path contains invalid characters: ${pth}`);
+      error2.code = "EINVAL";
+      throw error2;
+    }
+  }
+};
+const fs$i = fs$k;
+const { checkPath: checkPath2 } = utils$2;
+const getMode = (options) => {
+  const defaults2 = { mode: 511 };
+  if (typeof options === "number") return options;
+  return { ...defaults2, ...options }.mode;
+};
+makeDir$1.makeDir = async (dir, options) => {
+  checkPath2(dir);
+  return fs$i.mkdir(dir, {
+    mode: getMode(options),
+    recursive: true
+  });
+};
+makeDir$1.makeDirSync = (dir, options) => {
+  checkPath2(dir);
+  return fs$i.mkdirSync(dir, {
+    mode: getMode(options),
+    recursive: true
+  });
+};
+const u$e = universalify$1.fromPromise;
+const { makeDir: _makeDir, makeDirSync } = makeDir$1;
+const makeDir = u$e(_makeDir);
+var mkdirs$2 = {
+  mkdirs: makeDir,
+  mkdirsSync: makeDirSync,
+  // alias
+  mkdirp: makeDir,
+  mkdirpSync: makeDirSync,
+  ensureDir: makeDir,
+  ensureDirSync: makeDirSync
+};
+const u$d = universalify$1.fromPromise;
+const fs$h = fs$k;
+function pathExists$8(path2) {
+  return fs$h.access(path2).then(() => true).catch(() => false);
+}
+var pathExists_1 = {
+  pathExists: u$d(pathExists$8),
+  pathExistsSync: fs$h.existsSync
+};
+const fs$g = fs$k;
+const u$c = universalify$1.fromPromise;
+async function utimesMillis$1(path2, atime, mtime) {
+  const fd = await fs$g.open(path2, "r+");
+  let error2 = null;
+  try {
+    await fs$g.futimes(fd, atime, mtime);
+  } catch (futimesErr) {
+    error2 = futimesErr;
+  } finally {
+    try {
+      await fs$g.close(fd);
+    } catch (closeErr) {
+      if (!error2) error2 = closeErr;
+    }
+  }
+  if (error2) {
+    throw error2;
+  }
+}
+function utimesMillisSync$1(path2, atime, mtime) {
+  const fd = fs$g.openSync(path2, "r+");
+  let error2 = null;
+  try {
+    fs$g.futimesSync(fd, atime, mtime);
+  } catch (futimesErr) {
+    error2 = futimesErr;
+  } finally {
+    try {
+      fs$g.closeSync(fd);
+    } catch (closeErr) {
+      if (!error2) error2 = closeErr;
+    }
+  }
+  if (error2) {
+    throw error2;
+  }
+}
+var utimes = {
+  utimesMillis: u$c(utimesMillis$1),
+  utimesMillisSync: utimesMillisSync$1
+};
+const fs$f = fs$k;
+const path$g = require$$1$1;
+const u$b = universalify$1.fromPromise;
+function getStats$1(src, dest, opts) {
+  const statFunc = opts.dereference ? (file2) => fs$f.stat(file2, { bigint: true }) : (file2) => fs$f.lstat(file2, { bigint: true });
+  return Promise.all([
+    statFunc(src),
+    statFunc(dest).catch((err) => {
+      if (err.code === "ENOENT") return null;
+      throw err;
+    })
+  ]).then(([srcStat, destStat]) => ({ srcStat, destStat }));
+}
+function getStatsSync(src, dest, opts) {
+  let destStat;
+  const statFunc = opts.dereference ? (file2) => fs$f.statSync(file2, { bigint: true }) : (file2) => fs$f.lstatSync(file2, { bigint: true });
+  const srcStat = statFunc(src);
+  try {
+    destStat = statFunc(dest);
+  } catch (err) {
+    if (err.code === "ENOENT") return { srcStat, destStat: null };
+    throw err;
+  }
+  return { srcStat, destStat };
+}
+async function checkPaths(src, dest, funcName, opts) {
+  const { srcStat, destStat } = await getStats$1(src, dest, opts);
+  if (destStat) {
+    if (areIdentical$2(srcStat, destStat)) {
+      const srcBaseName = path$g.basename(src);
+      const destBaseName = path$g.basename(dest);
+      if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
+        return { srcStat, destStat, isChangingCase: true };
+      }
+      throw new Error("Source and destination must not be the same.");
+    }
+    if (srcStat.isDirectory() && !destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'.`);
+    }
+    if (!srcStat.isDirectory() && destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite directory '${dest}' with non-directory '${src}'.`);
+    }
+  }
+  if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return { srcStat, destStat };
+}
+function checkPathsSync(src, dest, funcName, opts) {
+  const { srcStat, destStat } = getStatsSync(src, dest, opts);
+  if (destStat) {
+    if (areIdentical$2(srcStat, destStat)) {
+      const srcBaseName = path$g.basename(src);
+      const destBaseName = path$g.basename(dest);
+      if (funcName === "move" && srcBaseName !== destBaseName && srcBaseName.toLowerCase() === destBaseName.toLowerCase()) {
+        return { srcStat, destStat, isChangingCase: true };
+      }
+      throw new Error("Source and destination must not be the same.");
+    }
+    if (srcStat.isDirectory() && !destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite non-directory '${dest}' with directory '${src}'.`);
+    }
+    if (!srcStat.isDirectory() && destStat.isDirectory()) {
+      throw new Error(`Cannot overwrite directory '${dest}' with non-directory '${src}'.`);
+    }
+  }
+  if (srcStat.isDirectory() && isSrcSubdir(src, dest)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return { srcStat, destStat };
+}
+async function checkParentPaths(src, srcStat, dest, funcName) {
+  const srcParent = path$g.resolve(path$g.dirname(src));
+  const destParent = path$g.resolve(path$g.dirname(dest));
+  if (destParent === srcParent || destParent === path$g.parse(destParent).root) return;
+  let destStat;
+  try {
+    destStat = await fs$f.stat(destParent, { bigint: true });
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  if (areIdentical$2(srcStat, destStat)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return checkParentPaths(src, srcStat, destParent, funcName);
+}
+function checkParentPathsSync(src, srcStat, dest, funcName) {
+  const srcParent = path$g.resolve(path$g.dirname(src));
+  const destParent = path$g.resolve(path$g.dirname(dest));
+  if (destParent === srcParent || destParent === path$g.parse(destParent).root) return;
+  let destStat;
+  try {
+    destStat = fs$f.statSync(destParent, { bigint: true });
+  } catch (err) {
+    if (err.code === "ENOENT") return;
+    throw err;
+  }
+  if (areIdentical$2(srcStat, destStat)) {
+    throw new Error(errMsg(src, dest, funcName));
+  }
+  return checkParentPathsSync(src, srcStat, destParent, funcName);
+}
+function areIdentical$2(srcStat, destStat) {
+  return destStat.ino !== void 0 && destStat.dev !== void 0 && destStat.ino === srcStat.ino && destStat.dev === srcStat.dev;
+}
+function isSrcSubdir(src, dest) {
+  const srcArr = path$g.resolve(src).split(path$g.sep).filter((i) => i);
+  const destArr = path$g.resolve(dest).split(path$g.sep).filter((i) => i);
+  return srcArr.every((cur, i) => destArr[i] === cur);
+}
+function errMsg(src, dest, funcName) {
+  return `Cannot ${funcName} '${src}' to a subdirectory of itself, '${dest}'.`;
+}
+var stat$4 = {
+  // checkPaths
+  checkPaths: u$b(checkPaths),
+  checkPathsSync,
+  // checkParent
+  checkParentPaths: u$b(checkParentPaths),
+  checkParentPathsSync,
+  // Misc
+  isSrcSubdir,
+  areIdentical: areIdentical$2
+};
+async function asyncIteratorConcurrentProcess$1(iterator, fn) {
+  const promises2 = [];
+  for await (const item of iterator) {
+    promises2.push(
+      fn(item).then(
+        () => null,
+        (err) => err ?? new Error("unknown error")
+      )
+    );
+  }
+  await Promise.all(
+    promises2.map(
+      (promise) => promise.then((possibleErr) => {
+        if (possibleErr !== null) throw possibleErr;
+      })
+    )
+  );
+}
+var async = {
+  asyncIteratorConcurrentProcess: asyncIteratorConcurrentProcess$1
+};
+const fs$e = fs$k;
+const path$f = require$$1$1;
+const { mkdirs: mkdirs$1 } = mkdirs$2;
+const { pathExists: pathExists$7 } = pathExists_1;
+const { utimesMillis } = utimes;
+const stat$3 = stat$4;
+const { asyncIteratorConcurrentProcess } = async;
+async function copy$2(src, dest, opts = {}) {
+  if (typeof opts === "function") {
+    opts = { filter: opts };
+  }
+  opts.clobber = "clobber" in opts ? !!opts.clobber : true;
+  opts.overwrite = "overwrite" in opts ? !!opts.overwrite : opts.clobber;
+  if (opts.preserveTimestamps && process.arch === "ia32") {
+    process.emitWarning(
+      "Using the preserveTimestamps option in 32-bit node is not recommended;\n\n	see https://github.com/jprichardson/node-fs-extra/issues/269",
+      "Warning",
+      "fs-extra-WARN0001"
+    );
+  }
+  const { srcStat, destStat } = await stat$3.checkPaths(src, dest, "copy", opts);
+  await stat$3.checkParentPaths(src, srcStat, dest, "copy");
+  const include = await runFilter(src, dest, opts);
+  if (!include) return;
+  const destParent = path$f.dirname(dest);
+  const dirExists = await pathExists$7(destParent);
+  if (!dirExists) {
+    await mkdirs$1(destParent);
+  }
+  await getStatsAndPerformCopy(destStat, src, dest, opts);
+}
+async function runFilter(src, dest, opts) {
+  if (!opts.filter) return true;
+  return opts.filter(src, dest);
+}
+async function getStatsAndPerformCopy(destStat, src, dest, opts) {
+  const statFn = opts.dereference ? fs$e.stat : fs$e.lstat;
+  const srcStat = await statFn(src);
+  if (srcStat.isDirectory()) return onDir$1(srcStat, destStat, src, dest, opts);
+  if (srcStat.isFile() || srcStat.isCharacterDevice() || srcStat.isBlockDevice()) return onFile$1(srcStat, destStat, src, dest, opts);
+  if (srcStat.isSymbolicLink()) return onLink$1(destStat, src, dest, opts);
+  if (srcStat.isSocket()) throw new Error(`Cannot copy a socket file: ${src}`);
+  if (srcStat.isFIFO()) throw new Error(`Cannot copy a FIFO pipe: ${src}`);
+  throw new Error(`Unknown file: ${src}`);
+}
+async function onFile$1(srcStat, destStat, src, dest, opts) {
+  if (!destStat) return copyFile$1(srcStat, src, dest, opts);
+  if (opts.overwrite) {
+    await fs$e.unlink(dest);
+    return copyFile$1(srcStat, src, dest, opts);
+  }
+  if (opts.errorOnExist) {
+    throw new Error(`'${dest}' already exists`);
+  }
+}
+async function copyFile$1(srcStat, src, dest, opts) {
+  await fs$e.copyFile(src, dest);
+  if (opts.preserveTimestamps) {
+    if (fileIsNotWritable$1(srcStat.mode)) {
+      await makeFileWritable$1(dest, srcStat.mode);
+    }
+    const updatedSrcStat = await fs$e.stat(src);
+    await utimesMillis(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
+  }
+  return fs$e.chmod(dest, srcStat.mode);
+}
+function fileIsNotWritable$1(srcMode) {
+  return (srcMode & 128) === 0;
+}
+function makeFileWritable$1(dest, srcMode) {
+  return fs$e.chmod(dest, srcMode | 128);
+}
+async function onDir$1(srcStat, destStat, src, dest, opts) {
+  if (!destStat) {
+    await fs$e.mkdir(dest);
+  }
+  await asyncIteratorConcurrentProcess(await fs$e.opendir(src), async (item) => {
+    const srcItem = path$f.join(src, item.name);
+    const destItem = path$f.join(dest, item.name);
+    const include = await runFilter(srcItem, destItem, opts);
+    if (include) {
+      const { destStat: destStat2 } = await stat$3.checkPaths(srcItem, destItem, "copy", opts);
+      await getStatsAndPerformCopy(destStat2, srcItem, destItem, opts);
+    }
+  });
+  if (!destStat) {
+    await fs$e.chmod(dest, srcStat.mode);
+  }
+}
+async function onLink$1(destStat, src, dest, opts) {
+  let resolvedSrc = await fs$e.readlink(src);
+  if (opts.dereference) {
+    resolvedSrc = path$f.resolve(process.cwd(), resolvedSrc);
+  }
+  if (!destStat) {
+    return fs$e.symlink(resolvedSrc, dest);
+  }
+  let resolvedDest = null;
+  try {
+    resolvedDest = await fs$e.readlink(dest);
+  } catch (e) {
+    if (e.code === "EINVAL" || e.code === "UNKNOWN") return fs$e.symlink(resolvedSrc, dest);
+    throw e;
+  }
+  if (opts.dereference) {
+    resolvedDest = path$f.resolve(process.cwd(), resolvedDest);
+  }
+  if (resolvedSrc !== resolvedDest) {
+    if (stat$3.isSrcSubdir(resolvedSrc, resolvedDest)) {
+      throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
+    }
+    if (stat$3.isSrcSubdir(resolvedDest, resolvedSrc)) {
+      throw new Error(`Cannot overwrite '${resolvedDest}' with '${resolvedSrc}'.`);
+    }
+  }
+  await fs$e.unlink(dest);
+  return fs$e.symlink(resolvedSrc, dest);
+}
+var copy_1 = copy$2;
+const fs$d = gracefulFs;
+const path$e = require$$1$1;
+const mkdirsSync$1 = mkdirs$2.mkdirsSync;
+const utimesMillisSync = utimes.utimesMillisSync;
+const stat$2 = stat$4;
+function copySync$1(src, dest, opts) {
+  if (typeof opts === "function") {
+    opts = { filter: opts };
+  }
+  opts = opts || {};
+  opts.clobber = "clobber" in opts ? !!opts.clobber : true;
+  opts.overwrite = "overwrite" in opts ? !!opts.overwrite : opts.clobber;
+  if (opts.preserveTimestamps && process.arch === "ia32") {
+    process.emitWarning(
+      "Using the preserveTimestamps option in 32-bit node is not recommended;\n\n	see https://github.com/jprichardson/node-fs-extra/issues/269",
+      "Warning",
+      "fs-extra-WARN0002"
+    );
+  }
+  const { srcStat, destStat } = stat$2.checkPathsSync(src, dest, "copy", opts);
+  stat$2.checkParentPathsSync(src, srcStat, dest, "copy");
+  if (opts.filter && !opts.filter(src, dest)) return;
+  const destParent = path$e.dirname(dest);
+  if (!fs$d.existsSync(destParent)) mkdirsSync$1(destParent);
+  return getStats(destStat, src, dest, opts);
+}
+function getStats(destStat, src, dest, opts) {
+  const statSync = opts.dereference ? fs$d.statSync : fs$d.lstatSync;
+  const srcStat = statSync(src);
+  if (srcStat.isDirectory()) return onDir(srcStat, destStat, src, dest, opts);
+  else if (srcStat.isFile() || srcStat.isCharacterDevice() || srcStat.isBlockDevice()) return onFile(srcStat, destStat, src, dest, opts);
+  else if (srcStat.isSymbolicLink()) return onLink(destStat, src, dest, opts);
+  else if (srcStat.isSocket()) throw new Error(`Cannot copy a socket file: ${src}`);
+  else if (srcStat.isFIFO()) throw new Error(`Cannot copy a FIFO pipe: ${src}`);
+  throw new Error(`Unknown file: ${src}`);
+}
+function onFile(srcStat, destStat, src, dest, opts) {
+  if (!destStat) return copyFile(srcStat, src, dest, opts);
+  return mayCopyFile(srcStat, src, dest, opts);
+}
+function mayCopyFile(srcStat, src, dest, opts) {
+  if (opts.overwrite) {
+    fs$d.unlinkSync(dest);
+    return copyFile(srcStat, src, dest, opts);
+  } else if (opts.errorOnExist) {
+    throw new Error(`'${dest}' already exists`);
+  }
+}
+function copyFile(srcStat, src, dest, opts) {
+  fs$d.copyFileSync(src, dest);
+  if (opts.preserveTimestamps) handleTimestamps(srcStat.mode, src, dest);
+  return setDestMode(dest, srcStat.mode);
+}
+function handleTimestamps(srcMode, src, dest) {
+  if (fileIsNotWritable(srcMode)) makeFileWritable(dest, srcMode);
+  return setDestTimestamps(src, dest);
+}
+function fileIsNotWritable(srcMode) {
+  return (srcMode & 128) === 0;
+}
+function makeFileWritable(dest, srcMode) {
+  return setDestMode(dest, srcMode | 128);
+}
+function setDestMode(dest, srcMode) {
+  return fs$d.chmodSync(dest, srcMode);
+}
+function setDestTimestamps(src, dest) {
+  const updatedSrcStat = fs$d.statSync(src);
+  return utimesMillisSync(dest, updatedSrcStat.atime, updatedSrcStat.mtime);
+}
+function onDir(srcStat, destStat, src, dest, opts) {
+  if (!destStat) return mkDirAndCopy(srcStat.mode, src, dest, opts);
+  return copyDir(src, dest, opts);
+}
+function mkDirAndCopy(srcMode, src, dest, opts) {
+  fs$d.mkdirSync(dest);
+  copyDir(src, dest, opts);
+  return setDestMode(dest, srcMode);
+}
+function copyDir(src, dest, opts) {
+  const dir = fs$d.opendirSync(src);
+  try {
+    let dirent;
+    while ((dirent = dir.readSync()) !== null) {
+      copyDirItem(dirent.name, src, dest, opts);
+    }
+  } finally {
+    dir.closeSync();
+  }
+}
+function copyDirItem(item, src, dest, opts) {
+  const srcItem = path$e.join(src, item);
+  const destItem = path$e.join(dest, item);
+  if (opts.filter && !opts.filter(srcItem, destItem)) return;
+  const { destStat } = stat$2.checkPathsSync(srcItem, destItem, "copy", opts);
+  return getStats(destStat, srcItem, destItem, opts);
+}
+function onLink(destStat, src, dest, opts) {
+  let resolvedSrc = fs$d.readlinkSync(src);
+  if (opts.dereference) {
+    resolvedSrc = path$e.resolve(process.cwd(), resolvedSrc);
+  }
+  if (!destStat) {
+    return fs$d.symlinkSync(resolvedSrc, dest);
+  } else {
+    let resolvedDest;
+    try {
+      resolvedDest = fs$d.readlinkSync(dest);
+    } catch (err) {
+      if (err.code === "EINVAL" || err.code === "UNKNOWN") return fs$d.symlinkSync(resolvedSrc, dest);
+      throw err;
+    }
+    if (opts.dereference) {
+      resolvedDest = path$e.resolve(process.cwd(), resolvedDest);
+    }
+    if (resolvedSrc !== resolvedDest) {
+      if (stat$2.isSrcSubdir(resolvedSrc, resolvedDest)) {
+        throw new Error(`Cannot copy '${resolvedSrc}' to a subdirectory of itself, '${resolvedDest}'.`);
+      }
+      if (stat$2.isSrcSubdir(resolvedDest, resolvedSrc)) {
+        throw new Error(`Cannot overwrite '${resolvedDest}' with '${resolvedSrc}'.`);
+      }
+    }
+    return copyLink(resolvedSrc, dest);
+  }
+}
+function copyLink(resolvedSrc, dest) {
+  fs$d.unlinkSync(dest);
+  return fs$d.symlinkSync(resolvedSrc, dest);
+}
+var copySync_1 = copySync$1;
+const u$a = universalify$1.fromPromise;
+var copy$1 = {
+  copy: u$a(copy_1),
+  copySync: copySync_1
+};
+const fs$c = gracefulFs;
+const u$9 = universalify$1.fromCallback;
+function remove$2(path2, callback) {
+  fs$c.rm(path2, { recursive: true, force: true }, callback);
+}
+function removeSync$1(path2) {
+  fs$c.rmSync(path2, { recursive: true, force: true });
+}
+var remove_1 = {
+  remove: u$9(remove$2),
+  removeSync: removeSync$1
+};
+const u$8 = universalify$1.fromPromise;
+const fs$b = fs$k;
+const path$d = require$$1$1;
+const mkdir$3 = mkdirs$2;
+const remove$1 = remove_1;
+const emptyDir = u$8(async function emptyDir2(dir) {
+  let items2;
+  try {
+    items2 = await fs$b.readdir(dir);
+  } catch {
+    return mkdir$3.mkdirs(dir);
+  }
+  return Promise.all(items2.map((item) => remove$1.remove(path$d.join(dir, item))));
+});
+function emptyDirSync(dir) {
+  let items2;
+  try {
+    items2 = fs$b.readdirSync(dir);
+  } catch {
+    return mkdir$3.mkdirsSync(dir);
+  }
+  items2.forEach((item) => {
+    item = path$d.join(dir, item);
+    remove$1.removeSync(item);
+  });
+}
+var empty = {
+  emptyDirSync,
+  emptydirSync: emptyDirSync,
+  emptyDir,
+  emptydir: emptyDir
+};
+const u$7 = universalify$1.fromPromise;
+const path$c = require$$1$1;
+const fs$a = fs$k;
+const mkdir$2 = mkdirs$2;
+async function createFile$1(file2) {
+  let stats;
+  try {
+    stats = await fs$a.stat(file2);
+  } catch {
+  }
+  if (stats && stats.isFile()) return;
+  const dir = path$c.dirname(file2);
+  let dirStats = null;
+  try {
+    dirStats = await fs$a.stat(dir);
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      await mkdir$2.mkdirs(dir);
+      await fs$a.writeFile(file2, "");
+      return;
+    } else {
+      throw err;
+    }
+  }
+  if (dirStats.isDirectory()) {
+    await fs$a.writeFile(file2, "");
+  } else {
+    await fs$a.readdir(dir);
+  }
+}
+function createFileSync$1(file2) {
+  let stats;
+  try {
+    stats = fs$a.statSync(file2);
+  } catch {
+  }
+  if (stats && stats.isFile()) return;
+  const dir = path$c.dirname(file2);
+  try {
+    if (!fs$a.statSync(dir).isDirectory()) {
+      fs$a.readdirSync(dir);
+    }
+  } catch (err) {
+    if (err && err.code === "ENOENT") mkdir$2.mkdirsSync(dir);
+    else throw err;
+  }
+  fs$a.writeFileSync(file2, "");
+}
+var file = {
+  createFile: u$7(createFile$1),
+  createFileSync: createFileSync$1
+};
+const u$6 = universalify$1.fromPromise;
+const path$b = require$$1$1;
+const fs$9 = fs$k;
+const mkdir$1 = mkdirs$2;
+const { pathExists: pathExists$6 } = pathExists_1;
+const { areIdentical: areIdentical$1 } = stat$4;
+async function createLink$1(srcpath, dstpath) {
+  let dstStat;
+  try {
+    dstStat = await fs$9.lstat(dstpath, { bigint: true });
+  } catch {
+  }
+  let srcStat;
+  try {
+    srcStat = await fs$9.lstat(srcpath, { bigint: true });
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureLink");
+    throw err;
+  }
+  if (dstStat && areIdentical$1(srcStat, dstStat)) return;
+  const dir = path$b.dirname(dstpath);
+  const dirExists = await pathExists$6(dir);
+  if (!dirExists) {
+    await mkdir$1.mkdirs(dir);
+  }
+  await fs$9.link(srcpath, dstpath);
+}
+function createLinkSync$1(srcpath, dstpath) {
+  let dstStat;
+  try {
+    dstStat = fs$9.lstatSync(dstpath, { bigint: true });
+  } catch {
+  }
+  try {
+    const srcStat = fs$9.lstatSync(srcpath, { bigint: true });
+    if (dstStat && areIdentical$1(srcStat, dstStat)) return;
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureLink");
+    throw err;
+  }
+  const dir = path$b.dirname(dstpath);
+  const dirExists = fs$9.existsSync(dir);
+  if (dirExists) return fs$9.linkSync(srcpath, dstpath);
+  mkdir$1.mkdirsSync(dir);
+  return fs$9.linkSync(srcpath, dstpath);
+}
+var link = {
+  createLink: u$6(createLink$1),
+  createLinkSync: createLinkSync$1
+};
+const path$a = require$$1$1;
+const fs$8 = fs$k;
+const { pathExists: pathExists$5 } = pathExists_1;
+const u$5 = universalify$1.fromPromise;
+async function symlinkPaths$1(srcpath, dstpath) {
+  if (path$a.isAbsolute(srcpath)) {
+    try {
+      await fs$8.lstat(srcpath);
+    } catch (err) {
+      err.message = err.message.replace("lstat", "ensureSymlink");
+      throw err;
+    }
+    return {
+      toCwd: srcpath,
+      toDst: srcpath
+    };
+  }
+  const dstdir = path$a.dirname(dstpath);
+  const relativeToDst = path$a.join(dstdir, srcpath);
+  const exists = await pathExists$5(relativeToDst);
+  if (exists) {
+    return {
+      toCwd: relativeToDst,
+      toDst: srcpath
+    };
+  }
+  try {
+    await fs$8.lstat(srcpath);
+  } catch (err) {
+    err.message = err.message.replace("lstat", "ensureSymlink");
+    throw err;
+  }
+  return {
+    toCwd: srcpath,
+    toDst: path$a.relative(dstdir, srcpath)
+  };
+}
+function symlinkPathsSync$1(srcpath, dstpath) {
+  if (path$a.isAbsolute(srcpath)) {
+    const exists2 = fs$8.existsSync(srcpath);
+    if (!exists2) throw new Error("absolute srcpath does not exist");
+    return {
+      toCwd: srcpath,
+      toDst: srcpath
+    };
+  }
+  const dstdir = path$a.dirname(dstpath);
+  const relativeToDst = path$a.join(dstdir, srcpath);
+  const exists = fs$8.existsSync(relativeToDst);
+  if (exists) {
+    return {
+      toCwd: relativeToDst,
+      toDst: srcpath
+    };
+  }
+  const srcExists = fs$8.existsSync(srcpath);
+  if (!srcExists) throw new Error("relative srcpath does not exist");
+  return {
+    toCwd: srcpath,
+    toDst: path$a.relative(dstdir, srcpath)
+  };
+}
+var symlinkPaths_1 = {
+  symlinkPaths: u$5(symlinkPaths$1),
+  symlinkPathsSync: symlinkPathsSync$1
+};
+const fs$7 = fs$k;
+const u$4 = universalify$1.fromPromise;
+async function symlinkType$1(srcpath, type2) {
+  if (type2) return type2;
+  let stats;
+  try {
+    stats = await fs$7.lstat(srcpath);
+  } catch {
+    return "file";
+  }
+  return stats && stats.isDirectory() ? "dir" : "file";
+}
+function symlinkTypeSync$1(srcpath, type2) {
+  if (type2) return type2;
+  let stats;
+  try {
+    stats = fs$7.lstatSync(srcpath);
+  } catch {
+    return "file";
+  }
+  return stats && stats.isDirectory() ? "dir" : "file";
+}
+var symlinkType_1 = {
+  symlinkType: u$4(symlinkType$1),
+  symlinkTypeSync: symlinkTypeSync$1
+};
+const u$3 = universalify$1.fromPromise;
+const path$9 = require$$1$1;
+const fs$6 = fs$k;
+const { mkdirs, mkdirsSync } = mkdirs$2;
+const { symlinkPaths, symlinkPathsSync } = symlinkPaths_1;
+const { symlinkType, symlinkTypeSync } = symlinkType_1;
+const { pathExists: pathExists$4 } = pathExists_1;
+const { areIdentical } = stat$4;
+async function createSymlink$1(srcpath, dstpath, type2) {
+  let stats;
+  try {
+    stats = await fs$6.lstat(dstpath);
+  } catch {
+  }
+  if (stats && stats.isSymbolicLink()) {
+    let srcStat;
+    if (path$9.isAbsolute(srcpath)) {
+      srcStat = await fs$6.stat(srcpath, { bigint: true });
+    } else {
+      const dstdir = path$9.dirname(dstpath);
+      const relativeToDst = path$9.join(dstdir, srcpath);
+      try {
+        srcStat = await fs$6.stat(relativeToDst, { bigint: true });
+      } catch {
+        srcStat = await fs$6.stat(srcpath, { bigint: true });
+      }
+    }
+    const dstStat = await fs$6.stat(dstpath, { bigint: true });
+    if (areIdentical(srcStat, dstStat)) return;
+  }
+  const relative = await symlinkPaths(srcpath, dstpath);
+  srcpath = relative.toDst;
+  const toType = await symlinkType(relative.toCwd, type2);
+  const dir = path$9.dirname(dstpath);
+  if (!await pathExists$4(dir)) {
+    await mkdirs(dir);
+  }
+  return fs$6.symlink(srcpath, dstpath, toType);
+}
+function createSymlinkSync$1(srcpath, dstpath, type2) {
+  let stats;
+  try {
+    stats = fs$6.lstatSync(dstpath);
+  } catch {
+  }
+  if (stats && stats.isSymbolicLink()) {
+    let srcStat;
+    if (path$9.isAbsolute(srcpath)) {
+      srcStat = fs$6.statSync(srcpath, { bigint: true });
+    } else {
+      const dstdir = path$9.dirname(dstpath);
+      const relativeToDst = path$9.join(dstdir, srcpath);
+      try {
+        srcStat = fs$6.statSync(relativeToDst, { bigint: true });
+      } catch {
+        srcStat = fs$6.statSync(srcpath, { bigint: true });
+      }
+    }
+    const dstStat = fs$6.statSync(dstpath, { bigint: true });
+    if (areIdentical(srcStat, dstStat)) return;
+  }
+  const relative = symlinkPathsSync(srcpath, dstpath);
+  srcpath = relative.toDst;
+  type2 = symlinkTypeSync(relative.toCwd, type2);
+  const dir = path$9.dirname(dstpath);
+  const exists = fs$6.existsSync(dir);
+  if (exists) return fs$6.symlinkSync(srcpath, dstpath, type2);
+  mkdirsSync(dir);
+  return fs$6.symlinkSync(srcpath, dstpath, type2);
+}
+var symlink = {
+  createSymlink: u$3(createSymlink$1),
+  createSymlinkSync: createSymlinkSync$1
+};
+const { createFile, createFileSync } = file;
+const { createLink, createLinkSync } = link;
+const { createSymlink, createSymlinkSync } = symlink;
+var ensure = {
+  // file
+  createFile,
+  createFileSync,
+  ensureFile: createFile,
+  ensureFileSync: createFileSync,
+  // link
+  createLink,
+  createLinkSync,
+  ensureLink: createLink,
+  ensureLinkSync: createLinkSync,
+  // symlink
+  createSymlink,
+  createSymlinkSync,
+  ensureSymlink: createSymlink,
+  ensureSymlinkSync: createSymlinkSync
+};
+function stringify$3(obj, { EOL = "\n", finalEOL = true, replacer = null, spaces } = {}) {
+  const EOF = finalEOL ? EOL : "";
+  const str = JSON.stringify(obj, replacer, spaces);
+  if (str === void 0) {
+    throw new TypeError(`Converting ${typeof obj} value to JSON is not supported`);
+  }
+  return str.replace(/\n/g, EOL) + EOF;
+}
+function stripBom$1(content) {
+  if (Buffer.isBuffer(content)) content = content.toString("utf8");
+  return content.replace(/^\uFEFF/, "");
+}
+var utils$1 = { stringify: stringify$3, stripBom: stripBom$1 };
+let _fs;
+try {
+  _fs = gracefulFs;
+} catch (_) {
+  _fs = require$$0$2;
+}
+const universalify = universalify$1;
+const { stringify: stringify$2, stripBom } = utils$1;
+async function _readFile(file2, options = {}) {
+  if (typeof options === "string") {
+    options = { encoding: options };
+  }
+  const fs2 = options.fs || _fs;
+  const shouldThrow = "throws" in options ? options.throws : true;
+  let data = await universalify.fromCallback(fs2.readFile)(file2, options);
+  data = stripBom(data);
+  let obj;
+  try {
+    obj = JSON.parse(data, options ? options.reviver : null);
+  } catch (err) {
+    if (shouldThrow) {
+      err.message = `${file2}: ${err.message}`;
+      throw err;
+    } else {
+      return null;
+    }
+  }
+  return obj;
+}
+const readFile$1 = universalify.fromPromise(_readFile);
+function readFileSync$1(file2, options = {}) {
+  if (typeof options === "string") {
+    options = { encoding: options };
+  }
+  const fs2 = options.fs || _fs;
+  const shouldThrow = "throws" in options ? options.throws : true;
+  try {
+    let content = fs2.readFileSync(file2, options);
+    content = stripBom(content);
+    return JSON.parse(content, options.reviver);
+  } catch (err) {
+    if (shouldThrow) {
+      err.message = `${file2}: ${err.message}`;
+      throw err;
+    } else {
+      return null;
+    }
+  }
+}
+async function _writeFile(file2, obj, options = {}) {
+  const fs2 = options.fs || _fs;
+  const str = stringify$2(obj, options);
+  await universalify.fromCallback(fs2.writeFile)(file2, str, options);
+}
+const writeFile$1 = universalify.fromPromise(_writeFile);
+function writeFileSync$1(file2, obj, options = {}) {
+  const fs2 = options.fs || _fs;
+  const str = stringify$2(obj, options);
+  return fs2.writeFileSync(file2, str, options);
+}
+var jsonfile$1 = {
+  readFile: readFile$1,
+  readFileSync: readFileSync$1,
+  writeFile: writeFile$1,
+  writeFileSync: writeFileSync$1
+};
+const jsonFile$1 = jsonfile$1;
+var jsonfile = {
+  // jsonfile exports
+  readJson: jsonFile$1.readFile,
+  readJsonSync: jsonFile$1.readFileSync,
+  writeJson: jsonFile$1.writeFile,
+  writeJsonSync: jsonFile$1.writeFileSync
+};
+const u$2 = universalify$1.fromPromise;
+const fs$5 = fs$k;
+const path$8 = require$$1$1;
+const mkdir = mkdirs$2;
+const pathExists$3 = pathExists_1.pathExists;
+async function outputFile$1(file2, data, encoding = "utf-8") {
+  const dir = path$8.dirname(file2);
+  if (!await pathExists$3(dir)) {
+    await mkdir.mkdirs(dir);
+  }
+  return fs$5.writeFile(file2, data, encoding);
+}
+function outputFileSync$1(file2, ...args) {
+  const dir = path$8.dirname(file2);
+  if (!fs$5.existsSync(dir)) {
+    mkdir.mkdirsSync(dir);
+  }
+  fs$5.writeFileSync(file2, ...args);
+}
+var outputFile_1 = {
+  outputFile: u$2(outputFile$1),
+  outputFileSync: outputFileSync$1
+};
+const { stringify: stringify$1 } = utils$1;
+const { outputFile } = outputFile_1;
+async function outputJson(file2, data, options = {}) {
+  const str = stringify$1(data, options);
+  await outputFile(file2, str, options);
+}
+var outputJson_1 = outputJson;
+const { stringify } = utils$1;
+const { outputFileSync } = outputFile_1;
+function outputJsonSync(file2, data, options) {
+  const str = stringify(data, options);
+  outputFileSync(file2, str, options);
+}
+var outputJsonSync_1 = outputJsonSync;
+const u$1 = universalify$1.fromPromise;
+const jsonFile = jsonfile;
+jsonFile.outputJson = u$1(outputJson_1);
+jsonFile.outputJsonSync = outputJsonSync_1;
+jsonFile.outputJSON = jsonFile.outputJson;
+jsonFile.outputJSONSync = jsonFile.outputJsonSync;
+jsonFile.writeJSON = jsonFile.writeJson;
+jsonFile.writeJSONSync = jsonFile.writeJsonSync;
+jsonFile.readJSON = jsonFile.readJson;
+jsonFile.readJSONSync = jsonFile.readJsonSync;
+var json = jsonFile;
+const fs$4 = fs$k;
+const path$7 = require$$1$1;
+const { copy } = copy$1;
+const { remove } = remove_1;
+const { mkdirp } = mkdirs$2;
+const { pathExists: pathExists$2 } = pathExists_1;
+const stat$1 = stat$4;
+async function move$1(src, dest, opts = {}) {
+  const overwrite = opts.overwrite || opts.clobber || false;
+  const { srcStat, isChangingCase = false } = await stat$1.checkPaths(src, dest, "move", opts);
+  await stat$1.checkParentPaths(src, srcStat, dest, "move");
+  const destParent = path$7.dirname(dest);
+  const parsedParentPath = path$7.parse(destParent);
+  if (parsedParentPath.root !== destParent) {
+    await mkdirp(destParent);
+  }
+  return doRename$1(src, dest, overwrite, isChangingCase);
+}
+async function doRename$1(src, dest, overwrite, isChangingCase) {
+  if (!isChangingCase) {
+    if (overwrite) {
+      await remove(dest);
+    } else if (await pathExists$2(dest)) {
+      throw new Error("dest already exists.");
+    }
+  }
+  try {
+    await fs$4.rename(src, dest);
+  } catch (err) {
+    if (err.code !== "EXDEV") {
+      throw err;
+    }
+    await moveAcrossDevice$1(src, dest, overwrite);
+  }
+}
+async function moveAcrossDevice$1(src, dest, overwrite) {
+  const opts = {
+    overwrite,
+    errorOnExist: true,
+    preserveTimestamps: true
+  };
+  await copy(src, dest, opts);
+  return remove(src);
+}
+var move_1 = move$1;
+const fs$3 = gracefulFs;
+const path$6 = require$$1$1;
+const copySync = copy$1.copySync;
+const removeSync = remove_1.removeSync;
+const mkdirpSync = mkdirs$2.mkdirpSync;
+const stat = stat$4;
+function moveSync(src, dest, opts) {
+  opts = opts || {};
+  const overwrite = opts.overwrite || opts.clobber || false;
+  const { srcStat, isChangingCase = false } = stat.checkPathsSync(src, dest, "move", opts);
+  stat.checkParentPathsSync(src, srcStat, dest, "move");
+  if (!isParentRoot(dest)) mkdirpSync(path$6.dirname(dest));
+  return doRename(src, dest, overwrite, isChangingCase);
+}
+function isParentRoot(dest) {
+  const parent = path$6.dirname(dest);
+  const parsedPath = path$6.parse(parent);
+  return parsedPath.root === parent;
+}
+function doRename(src, dest, overwrite, isChangingCase) {
+  if (isChangingCase) return rename(src, dest, overwrite);
+  if (overwrite) {
+    removeSync(dest);
+    return rename(src, dest, overwrite);
+  }
+  if (fs$3.existsSync(dest)) throw new Error("dest already exists.");
+  return rename(src, dest, overwrite);
+}
+function rename(src, dest, overwrite) {
+  try {
+    fs$3.renameSync(src, dest);
+  } catch (err) {
+    if (err.code !== "EXDEV") throw err;
+    return moveAcrossDevice(src, dest, overwrite);
+  }
+}
+function moveAcrossDevice(src, dest, overwrite) {
+  const opts = {
+    overwrite,
+    errorOnExist: true,
+    preserveTimestamps: true
+  };
+  copySync(src, dest, opts);
+  return removeSync(src);
+}
+var moveSync_1 = moveSync;
+const u = universalify$1.fromPromise;
+var move = {
+  move: u(move_1),
+  moveSync: moveSync_1
+};
+var lib = {
+  // Export promiseified graceful-fs:
+  ...fs$k,
+  // Export extra methods:
+  ...copy$1,
+  ...empty,
+  ...ensure,
+  ...json,
+  ...mkdirs$2,
+  ...move,
+  ...outputFile_1,
+  ...pathExists_1,
+  ...remove_1
+};
+require("path");
+const getFilePath = async () => {
+  let filePath = await require$$1.dialog.showOpenDialog({
+    title: "选择一个文件",
+    buttonLabel: "确认选择",
+    properties: ["openFile"],
+    filters: [
+      {
+        name: "视频资源",
+        extensions: [
+          "mp4",
+          "avi",
+          "mkv",
+          "mov",
+          "flv",
+          "wmv",
+          "webm",
+          "mpeg",
+          "mpg",
+          "ogv",
+          "3gp",
+          "m4v",
+          "asf",
+          "rm",
+          "rmvb",
+          "ts"
+        ]
+      }
+    ]
+  });
+  return filePath;
+};
+const saveBinFile = async (data, fileName = "screen-go.bin") => {
+  const savePath = await require$$1.dialog.showSaveDialog({
+    title: "保存 BIN 文件",
+    defaultPath: fileName,
+    buttonLabel: "保存",
+    filters: [{ name: "BIN 文件", extensions: ["bin"] }]
+  });
+  if (savePath.canceled || !savePath.filePath) return false;
+  const bytes = data.map((value) => Number(value) & 255);
+  lib.writeFileSync(savePath.filePath, Buffer.from(bytes));
+  return true;
+};
+const fileListener = () => {
+  require$$1.ipcMain.handle("select-video-file", async (event, arg) => {
+    let filePath = await getFilePath();
+    return filePath;
+  });
+  require$$1.ipcMain.handle("save-bin-file", async (event, data, fileName) => {
+    return await saveBinFile(Array.isArray(data) ? data : [], fileName);
+  });
+};
+var source = { exports: {} };
+var isObj$1 = (value) => {
+  const type2 = typeof value;
+  return value !== null && (type2 === "object" || type2 === "function");
+};
+const isObj = isObj$1;
+const disallowedKeys = /* @__PURE__ */ new Set([
+  "__proto__",
+  "prototype",
+  "constructor"
+]);
+const isValidPath = (pathSegments) => !pathSegments.some((segment) => disallowedKeys.has(segment));
+function getPathSegments(path2) {
+  const pathArray = path2.split(".");
+  const parts = [];
+  for (let i = 0; i < pathArray.length; i++) {
+    let p = pathArray[i];
+    while (p[p.length - 1] === "\\" && pathArray[i + 1] !== void 0) {
+      p = p.slice(0, -1) + ".";
+      p += pathArray[++i];
+    }
+    parts.push(p);
+  }
+  if (!isValidPath(parts)) {
+    return [];
+  }
+  return parts;
+}
+var dotProp = {
+  get(object, path2, value) {
+    if (!isObj(object) || typeof path2 !== "string") {
+      return value === void 0 ? object : value;
+    }
+    const pathArray = getPathSegments(path2);
+    if (pathArray.length === 0) {
+      return;
+    }
+    for (let i = 0; i < pathArray.length; i++) {
+      object = object[pathArray[i]];
+      if (object === void 0 || object === null) {
+        if (i !== pathArray.length - 1) {
+          return value;
+        }
+        break;
+      }
+    }
+    return object === void 0 ? value : object;
+  },
+  set(object, path2, value) {
+    if (!isObj(object) || typeof path2 !== "string") {
+      return object;
+    }
+    const root = object;
+    const pathArray = getPathSegments(path2);
+    for (let i = 0; i < pathArray.length; i++) {
+      const p = pathArray[i];
+      if (!isObj(object[p])) {
+        object[p] = {};
+      }
+      if (i === pathArray.length - 1) {
+        object[p] = value;
+      }
+      object = object[p];
+    }
+    return root;
+  },
+  delete(object, path2) {
+    if (!isObj(object) || typeof path2 !== "string") {
+      return false;
+    }
+    const pathArray = getPathSegments(path2);
+    for (let i = 0; i < pathArray.length; i++) {
+      const p = pathArray[i];
+      if (i === pathArray.length - 1) {
+        delete object[p];
+        return true;
+      }
+      object = object[p];
+      if (!isObj(object)) {
+        return false;
+      }
+    }
+  },
+  has(object, path2) {
+    if (!isObj(object) || typeof path2 !== "string") {
+      return false;
+    }
+    const pathArray = getPathSegments(path2);
+    if (pathArray.length === 0) {
+      return false;
+    }
+    for (let i = 0; i < pathArray.length; i++) {
+      if (isObj(object)) {
+        if (!(pathArray[i] in object)) {
+          return false;
+        }
+        object = object[pathArray[i]];
+      } else {
+        return false;
+      }
+    }
+    return true;
+  }
+};
+var pkgUp = { exports: {} };
+var findUp$1 = { exports: {} };
+var locatePath$1 = { exports: {} };
+var pathExists$1 = { exports: {} };
+const fs$2 = require$$0$2;
+pathExists$1.exports = (fp) => new Promise((resolve2) => {
+  fs$2.access(fp, (err) => {
+    resolve2(!err);
+  });
+});
+pathExists$1.exports.sync = (fp) => {
+  try {
+    fs$2.accessSync(fp);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+var pathExistsExports = pathExists$1.exports;
+var pLimit$2 = { exports: {} };
+var pTry$2 = { exports: {} };
+const pTry$1 = (fn, ...arguments_) => new Promise((resolve2) => {
+  resolve2(fn(...arguments_));
+});
+pTry$2.exports = pTry$1;
+pTry$2.exports.default = pTry$1;
+var pTryExports = pTry$2.exports;
+const pTry = pTryExports;
+const pLimit$1 = (concurrency) => {
+  if (!((Number.isInteger(concurrency) || concurrency === Infinity) && concurrency > 0)) {
+    return Promise.reject(new TypeError("Expected `concurrency` to be a number from 1 and up"));
+  }
+  const queue = [];
+  let activeCount = 0;
+  const next = () => {
+    activeCount--;
+    if (queue.length > 0) {
+      queue.shift()();
+    }
+  };
+  const run = (fn, resolve2, ...args) => {
+    activeCount++;
+    const result = pTry(fn, ...args);
+    resolve2(result);
+    result.then(next, next);
+  };
+  const enqueue2 = (fn, resolve2, ...args) => {
+    if (activeCount < concurrency) {
+      run(fn, resolve2, ...args);
+    } else {
+      queue.push(run.bind(null, fn, resolve2, ...args));
+    }
+  };
+  const generator = (fn, ...args) => new Promise((resolve2) => enqueue2(fn, resolve2, ...args));
+  Object.defineProperties(generator, {
+    activeCount: {
+      get: () => activeCount
+    },
+    pendingCount: {
+      get: () => queue.length
+    },
+    clearQueue: {
+      value: () => {
+        queue.length = 0;
+      }
+    }
+  });
+  return generator;
+};
+pLimit$2.exports = pLimit$1;
+pLimit$2.exports.default = pLimit$1;
+var pLimitExports = pLimit$2.exports;
+const pLimit = pLimitExports;
+class EndError extends Error {
+  constructor(value) {
+    super();
+    this.value = value;
+  }
+}
+const testElement = (el, tester) => Promise.resolve(el).then(tester);
+const finder = (el) => Promise.all(el).then((val) => val[1] === true && Promise.reject(new EndError(val[0])));
+var pLocate$1 = (iterable, tester, opts) => {
+  opts = Object.assign({
+    concurrency: Infinity,
+    preserveOrder: true
+  }, opts);
+  const limit2 = pLimit(opts.concurrency);
+  const items2 = [...iterable].map((el) => [el, limit2(testElement, el, tester)]);
+  const checkLimit = pLimit(opts.preserveOrder ? 1 : Infinity);
+  return Promise.all(items2.map((el) => checkLimit(finder, el))).then(() => {
+  }).catch((err) => err instanceof EndError ? err.value : Promise.reject(err));
+};
+const path$5 = require$$1$1;
+const pathExists = pathExistsExports;
+const pLocate = pLocate$1;
+locatePath$1.exports = (iterable, options) => {
+  options = Object.assign({
+    cwd: process.cwd()
+  }, options);
+  return pLocate(iterable, (el) => pathExists(path$5.resolve(options.cwd, el)), options);
+};
+locatePath$1.exports.sync = (iterable, options) => {
+  options = Object.assign({
+    cwd: process.cwd()
+  }, options);
+  for (const el of iterable) {
+    if (pathExists.sync(path$5.resolve(options.cwd, el))) {
+      return el;
+    }
+  }
+};
+var locatePathExports = locatePath$1.exports;
+const path$4 = require$$1$1;
+const locatePath = locatePathExports;
+findUp$1.exports = (filename, opts = {}) => {
+  const startDir = path$4.resolve(opts.cwd || "");
+  const { root } = path$4.parse(startDir);
+  const filenames = [].concat(filename);
+  return new Promise((resolve2) => {
+    (function find(dir) {
+      locatePath(filenames, { cwd: dir }).then((file2) => {
+        if (file2) {
+          resolve2(path$4.join(dir, file2));
+        } else if (dir === root) {
+          resolve2(null);
+        } else {
+          find(path$4.dirname(dir));
+        }
+      });
+    })(startDir);
+  });
+};
+findUp$1.exports.sync = (filename, opts = {}) => {
+  let dir = path$4.resolve(opts.cwd || "");
+  const { root } = path$4.parse(dir);
+  const filenames = [].concat(filename);
+  while (true) {
+    const file2 = locatePath.sync(filenames, { cwd: dir });
+    if (file2) {
+      return path$4.join(dir, file2);
+    }
+    if (dir === root) {
+      return null;
+    }
+    dir = path$4.dirname(dir);
+  }
+};
+var findUpExports = findUp$1.exports;
+const findUp = findUpExports;
+pkgUp.exports = async ({ cwd: cwd2 } = {}) => findUp("package.json", { cwd: cwd2 });
+pkgUp.exports.sync = ({ cwd: cwd2 } = {}) => findUp.sync("package.json", { cwd: cwd2 });
+var pkgUpExports = pkgUp.exports;
+var envPaths$1 = { exports: {} };
+const path$3 = require$$1$1;
+const os = require$$1$2;
+const homedir = os.homedir();
+const tmpdir = os.tmpdir();
+const { env } = process;
+const macos = (name) => {
+  const library = path$3.join(homedir, "Library");
+  return {
+    data: path$3.join(library, "Application Support", name),
+    config: path$3.join(library, "Preferences", name),
+    cache: path$3.join(library, "Caches", name),
+    log: path$3.join(library, "Logs", name),
+    temp: path$3.join(tmpdir, name)
+  };
+};
+const windows = (name) => {
+  const appData = env.APPDATA || path$3.join(homedir, "AppData", "Roaming");
+  const localAppData = env.LOCALAPPDATA || path$3.join(homedir, "AppData", "Local");
+  return {
+    // Data/config/cache/log are invented by me as Windows isn't opinionated about this
+    data: path$3.join(localAppData, name, "Data"),
+    config: path$3.join(appData, name, "Config"),
+    cache: path$3.join(localAppData, name, "Cache"),
+    log: path$3.join(localAppData, name, "Log"),
+    temp: path$3.join(tmpdir, name)
+  };
+};
+const linux = (name) => {
+  const username = path$3.basename(homedir);
+  return {
+    data: path$3.join(env.XDG_DATA_HOME || path$3.join(homedir, ".local", "share"), name),
+    config: path$3.join(env.XDG_CONFIG_HOME || path$3.join(homedir, ".config"), name),
+    cache: path$3.join(env.XDG_CACHE_HOME || path$3.join(homedir, ".cache"), name),
+    // https://wiki.debian.org/XDGBaseDirectorySpecification#state
+    log: path$3.join(env.XDG_STATE_HOME || path$3.join(homedir, ".local", "state"), name),
+    temp: path$3.join(tmpdir, username, name)
+  };
+};
+const envPaths = (name, options) => {
+  if (typeof name !== "string") {
+    throw new TypeError(`Expected string, got ${typeof name}`);
+  }
+  options = Object.assign({ suffix: "nodejs" }, options);
+  if (options.suffix) {
+    name += `-${options.suffix}`;
+  }
+  if (process.platform === "darwin") {
+    return macos(name);
+  }
+  if (process.platform === "win32") {
+    return windows(name);
+  }
+  return linux(name);
+};
+envPaths$1.exports = envPaths;
+envPaths$1.exports.default = envPaths;
+var envPathsExports = envPaths$1.exports;
+var dist$1 = {};
+var consts = {};
+Object.defineProperty(consts, "__esModule", { value: true });
+consts.NOOP = consts.LIMIT_FILES_DESCRIPTORS = consts.LIMIT_BASENAME_LENGTH = consts.IS_USER_ROOT = consts.IS_POSIX = consts.DEFAULT_TIMEOUT_SYNC = consts.DEFAULT_TIMEOUT_ASYNC = consts.DEFAULT_WRITE_OPTIONS = consts.DEFAULT_READ_OPTIONS = consts.DEFAULT_FOLDER_MODE = consts.DEFAULT_FILE_MODE = consts.DEFAULT_ENCODING = void 0;
+const DEFAULT_ENCODING = "utf8";
+consts.DEFAULT_ENCODING = DEFAULT_ENCODING;
+const DEFAULT_FILE_MODE = 438;
+consts.DEFAULT_FILE_MODE = DEFAULT_FILE_MODE;
+const DEFAULT_FOLDER_MODE = 511;
+consts.DEFAULT_FOLDER_MODE = DEFAULT_FOLDER_MODE;
+const DEFAULT_READ_OPTIONS = {};
+consts.DEFAULT_READ_OPTIONS = DEFAULT_READ_OPTIONS;
+const DEFAULT_WRITE_OPTIONS = {};
+consts.DEFAULT_WRITE_OPTIONS = DEFAULT_WRITE_OPTIONS;
+const DEFAULT_TIMEOUT_ASYNC = 5e3;
+consts.DEFAULT_TIMEOUT_ASYNC = DEFAULT_TIMEOUT_ASYNC;
+const DEFAULT_TIMEOUT_SYNC = 100;
+consts.DEFAULT_TIMEOUT_SYNC = DEFAULT_TIMEOUT_SYNC;
+const IS_POSIX = !!process.getuid;
+consts.IS_POSIX = IS_POSIX;
+const IS_USER_ROOT = process.getuid ? !process.getuid() : false;
+consts.IS_USER_ROOT = IS_USER_ROOT;
+const LIMIT_BASENAME_LENGTH = 128;
+consts.LIMIT_BASENAME_LENGTH = LIMIT_BASENAME_LENGTH;
+const LIMIT_FILES_DESCRIPTORS = 1e4;
+consts.LIMIT_FILES_DESCRIPTORS = LIMIT_FILES_DESCRIPTORS;
+const NOOP = () => {
+};
+consts.NOOP = NOOP;
+var fs$1 = {};
+var attemptify = {};
+Object.defineProperty(attemptify, "__esModule", { value: true });
+attemptify.attemptifySync = attemptify.attemptifyAsync = void 0;
+const consts_1$4 = consts;
+const attemptifyAsync = (fn, onError = consts_1$4.NOOP) => {
+  return function() {
+    return fn.apply(void 0, arguments).catch(onError);
+  };
+};
+attemptify.attemptifyAsync = attemptifyAsync;
+const attemptifySync = (fn, onError = consts_1$4.NOOP) => {
+  return function() {
+    try {
+      return fn.apply(void 0, arguments);
+    } catch (error2) {
+      return onError(error2);
+    }
+  };
+};
+attemptify.attemptifySync = attemptifySync;
+var fs_handlers = {};
+Object.defineProperty(fs_handlers, "__esModule", { value: true });
+const consts_1$3 = consts;
+const Handlers = {
+  isChangeErrorOk: (error2) => {
+    const { code: code2 } = error2;
+    if (code2 === "ENOSYS")
+      return true;
+    if (!consts_1$3.IS_USER_ROOT && (code2 === "EINVAL" || code2 === "EPERM"))
+      return true;
+    return false;
+  },
+  isRetriableError: (error2) => {
+    const { code: code2 } = error2;
+    if (code2 === "EMFILE" || code2 === "ENFILE" || code2 === "EAGAIN" || code2 === "EBUSY" || code2 === "EACCESS" || code2 === "EACCS" || code2 === "EPERM")
+      return true;
+    return false;
+  },
+  onChangeError: (error2) => {
+    if (Handlers.isChangeErrorOk(error2))
+      return;
+    throw error2;
+  }
+};
+fs_handlers.default = Handlers;
+var retryify = {};
+var retryify_queue = {};
+Object.defineProperty(retryify_queue, "__esModule", { value: true });
+const consts_1$2 = consts;
+const RetryfyQueue = {
+  interval: 25,
+  intervalId: void 0,
+  limit: consts_1$2.LIMIT_FILES_DESCRIPTORS,
+  queueActive: /* @__PURE__ */ new Set(),
+  queueWaiting: /* @__PURE__ */ new Set(),
+  init: () => {
+    if (RetryfyQueue.intervalId)
+      return;
+    RetryfyQueue.intervalId = setInterval(RetryfyQueue.tick, RetryfyQueue.interval);
+  },
+  reset: () => {
+    if (!RetryfyQueue.intervalId)
+      return;
+    clearInterval(RetryfyQueue.intervalId);
+    delete RetryfyQueue.intervalId;
+  },
+  add: (fn) => {
+    RetryfyQueue.queueWaiting.add(fn);
+    if (RetryfyQueue.queueActive.size < RetryfyQueue.limit / 2) {
+      RetryfyQueue.tick();
+    } else {
+      RetryfyQueue.init();
+    }
+  },
+  remove: (fn) => {
+    RetryfyQueue.queueWaiting.delete(fn);
+    RetryfyQueue.queueActive.delete(fn);
+  },
+  schedule: () => {
+    return new Promise((resolve2) => {
+      const cleanup = () => RetryfyQueue.remove(resolver);
+      const resolver = () => resolve2(cleanup);
+      RetryfyQueue.add(resolver);
+    });
+  },
+  tick: () => {
+    if (RetryfyQueue.queueActive.size >= RetryfyQueue.limit)
+      return;
+    if (!RetryfyQueue.queueWaiting.size)
+      return RetryfyQueue.reset();
+    for (const fn of RetryfyQueue.queueWaiting) {
+      if (RetryfyQueue.queueActive.size >= RetryfyQueue.limit)
+        break;
+      RetryfyQueue.queueWaiting.delete(fn);
+      RetryfyQueue.queueActive.add(fn);
+      fn();
+    }
+  }
+};
+retryify_queue.default = RetryfyQueue;
+Object.defineProperty(retryify, "__esModule", { value: true });
+retryify.retryifySync = retryify.retryifyAsync = void 0;
+const retryify_queue_1 = retryify_queue;
+const retryifyAsync = (fn, isRetriableError) => {
+  return function(timestamp) {
+    return function attempt() {
+      return retryify_queue_1.default.schedule().then((cleanup) => {
+        return fn.apply(void 0, arguments).then((result) => {
+          cleanup();
+          return result;
+        }, (error2) => {
+          cleanup();
+          if (Date.now() >= timestamp)
+            throw error2;
+          if (isRetriableError(error2)) {
+            const delay = Math.round(100 + 400 * Math.random()), delayPromise = new Promise((resolve2) => setTimeout(resolve2, delay));
+            return delayPromise.then(() => attempt.apply(void 0, arguments));
+          }
+          throw error2;
+        });
+      });
+    };
+  };
+};
+retryify.retryifyAsync = retryifyAsync;
+const retryifySync = (fn, isRetriableError) => {
+  return function(timestamp) {
+    return function attempt() {
+      try {
+        return fn.apply(void 0, arguments);
+      } catch (error2) {
+        if (Date.now() > timestamp)
+          throw error2;
+        if (isRetriableError(error2))
+          return attempt.apply(void 0, arguments);
+        throw error2;
+      }
+    };
+  };
+};
+retryify.retryifySync = retryifySync;
+Object.defineProperty(fs$1, "__esModule", { value: true });
+const fs = require$$0$2;
+const util_1$s = require$$4;
+const attemptify_1 = attemptify;
+const fs_handlers_1 = fs_handlers;
+const retryify_1 = retryify;
+const FS = {
+  chmodAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.chmod), fs_handlers_1.default.onChangeError),
+  chownAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.chown), fs_handlers_1.default.onChangeError),
+  closeAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.close)),
+  fsyncAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.fsync)),
+  mkdirAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.mkdir)),
+  realpathAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.realpath)),
+  statAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.stat)),
+  unlinkAttempt: attemptify_1.attemptifyAsync(util_1$s.promisify(fs.unlink)),
+  closeRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.close), fs_handlers_1.default.isRetriableError),
+  fsyncRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.fsync), fs_handlers_1.default.isRetriableError),
+  openRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.open), fs_handlers_1.default.isRetriableError),
+  readFileRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.readFile), fs_handlers_1.default.isRetriableError),
+  renameRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.rename), fs_handlers_1.default.isRetriableError),
+  statRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.stat), fs_handlers_1.default.isRetriableError),
+  writeRetry: retryify_1.retryifyAsync(util_1$s.promisify(fs.write), fs_handlers_1.default.isRetriableError),
+  chmodSyncAttempt: attemptify_1.attemptifySync(fs.chmodSync, fs_handlers_1.default.onChangeError),
+  chownSyncAttempt: attemptify_1.attemptifySync(fs.chownSync, fs_handlers_1.default.onChangeError),
+  closeSyncAttempt: attemptify_1.attemptifySync(fs.closeSync),
+  mkdirSyncAttempt: attemptify_1.attemptifySync(fs.mkdirSync),
+  realpathSyncAttempt: attemptify_1.attemptifySync(fs.realpathSync),
+  statSyncAttempt: attemptify_1.attemptifySync(fs.statSync),
+  unlinkSyncAttempt: attemptify_1.attemptifySync(fs.unlinkSync),
+  closeSyncRetry: retryify_1.retryifySync(fs.closeSync, fs_handlers_1.default.isRetriableError),
+  fsyncSyncRetry: retryify_1.retryifySync(fs.fsyncSync, fs_handlers_1.default.isRetriableError),
+  openSyncRetry: retryify_1.retryifySync(fs.openSync, fs_handlers_1.default.isRetriableError),
+  readFileSyncRetry: retryify_1.retryifySync(fs.readFileSync, fs_handlers_1.default.isRetriableError),
+  renameSyncRetry: retryify_1.retryifySync(fs.renameSync, fs_handlers_1.default.isRetriableError),
+  statSyncRetry: retryify_1.retryifySync(fs.statSync, fs_handlers_1.default.isRetriableError),
+  writeSyncRetry: retryify_1.retryifySync(fs.writeSync, fs_handlers_1.default.isRetriableError)
+};
+fs$1.default = FS;
+var lang = {};
+Object.defineProperty(lang, "__esModule", { value: true });
+const Lang = {
+  isFunction: (x) => {
+    return typeof x === "function";
+  },
+  isString: (x) => {
+    return typeof x === "string";
+  },
+  isUndefined: (x) => {
+    return typeof x === "undefined";
+  }
+};
+lang.default = Lang;
+var scheduler = {};
+Object.defineProperty(scheduler, "__esModule", { value: true });
+const Queues = {};
+const Scheduler = {
+  next: (id2) => {
+    const queue = Queues[id2];
+    if (!queue)
+      return;
+    queue.shift();
+    const job = queue[0];
+    if (job) {
+      job(() => Scheduler.next(id2));
+    } else {
+      delete Queues[id2];
+    }
+  },
+  schedule: (id2) => {
+    return new Promise((resolve2) => {
+      let queue = Queues[id2];
+      if (!queue)
+        queue = Queues[id2] = [];
+      queue.push(resolve2);
+      if (queue.length > 1)
+        return;
+      resolve2(() => Scheduler.next(id2));
+    });
+  }
+};
+scheduler.default = Scheduler;
+var temp = {};
+Object.defineProperty(temp, "__esModule", { value: true });
+const path$2 = require$$1$1;
+const consts_1$1 = consts;
+const fs_1$1 = fs$1;
+const Temp = {
+  store: {},
+  create: (filePath) => {
+    const randomness = `000000${Math.floor(Math.random() * 16777215).toString(16)}`.slice(-6), timestamp = Date.now().toString().slice(-10), prefix = "tmp-", suffix = `.${prefix}${timestamp}${randomness}`, tempPath = `${filePath}${suffix}`;
+    return tempPath;
+  },
+  get: (filePath, creator, purge = true) => {
+    const tempPath = Temp.truncate(creator(filePath));
+    if (tempPath in Temp.store)
+      return Temp.get(filePath, creator, purge);
+    Temp.store[tempPath] = purge;
+    const disposer = () => delete Temp.store[tempPath];
+    return [tempPath, disposer];
+  },
+  purge: (filePath) => {
+    if (!Temp.store[filePath])
+      return;
+    delete Temp.store[filePath];
+    fs_1$1.default.unlinkAttempt(filePath);
+  },
+  purgeSync: (filePath) => {
+    if (!Temp.store[filePath])
+      return;
+    delete Temp.store[filePath];
+    fs_1$1.default.unlinkSyncAttempt(filePath);
+  },
+  purgeSyncAll: () => {
+    for (const filePath in Temp.store) {
+      Temp.purgeSync(filePath);
+    }
+  },
+  truncate: (filePath) => {
+    const basename = path$2.basename(filePath);
+    if (basename.length <= consts_1$1.LIMIT_BASENAME_LENGTH)
+      return filePath;
+    const truncable = /^(\.?)(.*?)((?:\.[^.]+)?(?:\.tmp-\d{10}[a-f0-9]{6})?)$/.exec(basename);
+    if (!truncable)
+      return filePath;
+    const truncationLength = basename.length - consts_1$1.LIMIT_BASENAME_LENGTH;
+    return `${filePath.slice(0, -basename.length)}${truncable[1]}${truncable[2].slice(0, -truncationLength)}${truncable[3]}`;
+  }
+};
+process.on("exit", Temp.purgeSyncAll);
+temp.default = Temp;
+Object.defineProperty(dist$1, "__esModule", { value: true });
+dist$1.writeFileSync = dist$1.writeFile = dist$1.readFileSync = dist$1.readFile = void 0;
+const path$1 = require$$1$1;
+const consts_1 = consts;
+const fs_1 = fs$1;
+const lang_1 = lang;
+const scheduler_1 = scheduler;
+const temp_1 = temp;
+function readFile(filePath, options = consts_1.DEFAULT_READ_OPTIONS) {
+  var _a;
+  if (lang_1.default.isString(options))
+    return readFile(filePath, { encoding: options });
+  const timeout = Date.now() + ((_a = options.timeout) !== null && _a !== void 0 ? _a : consts_1.DEFAULT_TIMEOUT_ASYNC);
+  return fs_1.default.readFileRetry(timeout)(filePath, options);
+}
+dist$1.readFile = readFile;
+function readFileSync(filePath, options = consts_1.DEFAULT_READ_OPTIONS) {
+  var _a;
+  if (lang_1.default.isString(options))
+    return readFileSync(filePath, { encoding: options });
+  const timeout = Date.now() + ((_a = options.timeout) !== null && _a !== void 0 ? _a : consts_1.DEFAULT_TIMEOUT_SYNC);
+  return fs_1.default.readFileSyncRetry(timeout)(filePath, options);
+}
+dist$1.readFileSync = readFileSync;
+const writeFile = (filePath, data, options, callback) => {
+  if (lang_1.default.isFunction(options))
+    return writeFile(filePath, data, consts_1.DEFAULT_WRITE_OPTIONS, options);
+  const promise = writeFileAsync(filePath, data, options);
+  if (callback)
+    promise.then(callback, callback);
+  return promise;
+};
+dist$1.writeFile = writeFile;
+const writeFileAsync = async (filePath, data, options = consts_1.DEFAULT_WRITE_OPTIONS) => {
+  var _a;
+  if (lang_1.default.isString(options))
+    return writeFileAsync(filePath, data, { encoding: options });
+  const timeout = Date.now() + ((_a = options.timeout) !== null && _a !== void 0 ? _a : consts_1.DEFAULT_TIMEOUT_ASYNC);
+  let schedulerCustomDisposer = null, schedulerDisposer = null, tempDisposer = null, tempPath = null, fd = null;
+  try {
+    if (options.schedule)
+      schedulerCustomDisposer = await options.schedule(filePath);
+    schedulerDisposer = await scheduler_1.default.schedule(filePath);
+    filePath = await fs_1.default.realpathAttempt(filePath) || filePath;
+    [tempPath, tempDisposer] = temp_1.default.get(filePath, options.tmpCreate || temp_1.default.create, !(options.tmpPurge === false));
+    const useStatChown = consts_1.IS_POSIX && lang_1.default.isUndefined(options.chown), useStatMode = lang_1.default.isUndefined(options.mode);
+    if (useStatChown || useStatMode) {
+      const stat2 = await fs_1.default.statAttempt(filePath);
+      if (stat2) {
+        options = { ...options };
+        if (useStatChown)
+          options.chown = { uid: stat2.uid, gid: stat2.gid };
+        if (useStatMode)
+          options.mode = stat2.mode;
+      }
+    }
+    const parentPath = path$1.dirname(filePath);
+    await fs_1.default.mkdirAttempt(parentPath, {
+      mode: consts_1.DEFAULT_FOLDER_MODE,
+      recursive: true
+    });
+    fd = await fs_1.default.openRetry(timeout)(tempPath, "w", options.mode || consts_1.DEFAULT_FILE_MODE);
+    if (options.tmpCreated)
+      options.tmpCreated(tempPath);
+    if (lang_1.default.isString(data)) {
+      await fs_1.default.writeRetry(timeout)(fd, data, 0, options.encoding || consts_1.DEFAULT_ENCODING);
+    } else if (!lang_1.default.isUndefined(data)) {
+      await fs_1.default.writeRetry(timeout)(fd, data, 0, data.length, 0);
+    }
+    if (options.fsync !== false) {
+      if (options.fsyncWait !== false) {
+        await fs_1.default.fsyncRetry(timeout)(fd);
+      } else {
+        fs_1.default.fsyncAttempt(fd);
+      }
+    }
+    await fs_1.default.closeRetry(timeout)(fd);
+    fd = null;
+    if (options.chown)
+      await fs_1.default.chownAttempt(tempPath, options.chown.uid, options.chown.gid);
+    if (options.mode)
+      await fs_1.default.chmodAttempt(tempPath, options.mode);
+    try {
+      await fs_1.default.renameRetry(timeout)(tempPath, filePath);
+    } catch (error2) {
+      if (error2.code !== "ENAMETOOLONG")
+        throw error2;
+      await fs_1.default.renameRetry(timeout)(tempPath, temp_1.default.truncate(filePath));
+    }
+    tempDisposer();
+    tempPath = null;
+  } finally {
+    if (fd)
+      await fs_1.default.closeAttempt(fd);
+    if (tempPath)
+      temp_1.default.purge(tempPath);
+    if (schedulerCustomDisposer)
+      schedulerCustomDisposer();
+    if (schedulerDisposer)
+      schedulerDisposer();
+  }
+};
+const writeFileSync = (filePath, data, options = consts_1.DEFAULT_WRITE_OPTIONS) => {
+  var _a;
+  if (lang_1.default.isString(options))
+    return writeFileSync(filePath, data, { encoding: options });
+  const timeout = Date.now() + ((_a = options.timeout) !== null && _a !== void 0 ? _a : consts_1.DEFAULT_TIMEOUT_SYNC);
+  let tempDisposer = null, tempPath = null, fd = null;
+  try {
+    filePath = fs_1.default.realpathSyncAttempt(filePath) || filePath;
+    [tempPath, tempDisposer] = temp_1.default.get(filePath, options.tmpCreate || temp_1.default.create, !(options.tmpPurge === false));
+    const useStatChown = consts_1.IS_POSIX && lang_1.default.isUndefined(options.chown), useStatMode = lang_1.default.isUndefined(options.mode);
+    if (useStatChown || useStatMode) {
+      const stat2 = fs_1.default.statSyncAttempt(filePath);
+      if (stat2) {
+        options = { ...options };
+        if (useStatChown)
+          options.chown = { uid: stat2.uid, gid: stat2.gid };
+        if (useStatMode)
+          options.mode = stat2.mode;
+      }
+    }
+    const parentPath = path$1.dirname(filePath);
+    fs_1.default.mkdirSyncAttempt(parentPath, {
+      mode: consts_1.DEFAULT_FOLDER_MODE,
+      recursive: true
+    });
+    fd = fs_1.default.openSyncRetry(timeout)(tempPath, "w", options.mode || consts_1.DEFAULT_FILE_MODE);
+    if (options.tmpCreated)
+      options.tmpCreated(tempPath);
+    if (lang_1.default.isString(data)) {
+      fs_1.default.writeSyncRetry(timeout)(fd, data, 0, options.encoding || consts_1.DEFAULT_ENCODING);
+    } else if (!lang_1.default.isUndefined(data)) {
+      fs_1.default.writeSyncRetry(timeout)(fd, data, 0, data.length, 0);
+    }
+    if (options.fsync !== false) {
+      if (options.fsyncWait !== false) {
+        fs_1.default.fsyncSyncRetry(timeout)(fd);
+      } else {
+        fs_1.default.fsyncAttempt(fd);
+      }
+    }
+    fs_1.default.closeSyncRetry(timeout)(fd);
+    fd = null;
+    if (options.chown)
+      fs_1.default.chownSyncAttempt(tempPath, options.chown.uid, options.chown.gid);
+    if (options.mode)
+      fs_1.default.chmodSyncAttempt(tempPath, options.mode);
+    try {
+      fs_1.default.renameSyncRetry(timeout)(tempPath, filePath);
+    } catch (error2) {
+      if (error2.code !== "ENAMETOOLONG")
+        throw error2;
+      fs_1.default.renameSyncRetry(timeout)(tempPath, temp_1.default.truncate(filePath));
+    }
+    tempDisposer();
+    tempPath = null;
+  } finally {
+    if (fd)
+      fs_1.default.closeSyncAttempt(fd);
+    if (tempPath)
+      temp_1.default.purge(tempPath);
+  }
+};
+dist$1.writeFileSync = writeFileSync;
+var ajv = { exports: {} };
+var core$2 = {};
+var validate = {};
+var boolSchema = {};
+var errors = {};
+var codegen = {};
+var code$1 = {};
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.regexpCode = exports.getEsmExportName = exports.getProperty = exports.safeStringify = exports.stringify = exports.strConcat = exports.addCodeArg = exports.str = exports._ = exports.nil = exports._Code = exports.Name = exports.IDENTIFIER = exports._CodeOrName = void 0;
+  class _CodeOrName {
+  }
+  exports._CodeOrName = _CodeOrName;
+  exports.IDENTIFIER = /^[a-z$_][a-z$_0-9]*$/i;
+  class Name extends _CodeOrName {
+    constructor(s) {
+      super();
+      if (!exports.IDENTIFIER.test(s))
+        throw new Error("CodeGen: name must be a valid identifier");
+      this.str = s;
+    }
+    toString() {
+      return this.str;
+    }
+    emptyStr() {
+      return false;
+    }
+    get names() {
+      return { [this.str]: 1 };
+    }
+  }
+  exports.Name = Name;
+  class _Code extends _CodeOrName {
+    constructor(code2) {
+      super();
+      this._items = typeof code2 === "string" ? [code2] : code2;
+    }
+    toString() {
+      return this.str;
+    }
+    emptyStr() {
+      if (this._items.length > 1)
+        return false;
+      const item = this._items[0];
+      return item === "" || item === '""';
+    }
+    get str() {
+      var _a;
+      return (_a = this._str) !== null && _a !== void 0 ? _a : this._str = this._items.reduce((s, c) => `${s}${c}`, "");
+    }
+    get names() {
+      var _a;
+      return (_a = this._names) !== null && _a !== void 0 ? _a : this._names = this._items.reduce((names2, c) => {
+        if (c instanceof Name)
+          names2[c.str] = (names2[c.str] || 0) + 1;
+        return names2;
+      }, {});
+    }
+  }
+  exports._Code = _Code;
+  exports.nil = new _Code("");
+  function _(strs, ...args) {
+    const code2 = [strs[0]];
+    let i = 0;
+    while (i < args.length) {
+      addCodeArg(code2, args[i]);
+      code2.push(strs[++i]);
+    }
+    return new _Code(code2);
+  }
+  exports._ = _;
+  const plus = new _Code("+");
+  function str(strs, ...args) {
+    const expr = [safeStringify(strs[0])];
+    let i = 0;
+    while (i < args.length) {
+      expr.push(plus);
+      addCodeArg(expr, args[i]);
+      expr.push(plus, safeStringify(strs[++i]));
+    }
+    optimize(expr);
+    return new _Code(expr);
+  }
+  exports.str = str;
+  function addCodeArg(code2, arg) {
+    if (arg instanceof _Code)
+      code2.push(...arg._items);
+    else if (arg instanceof Name)
+      code2.push(arg);
+    else
+      code2.push(interpolate(arg));
+  }
+  exports.addCodeArg = addCodeArg;
+  function optimize(expr) {
+    let i = 1;
+    while (i < expr.length - 1) {
+      if (expr[i] === plus) {
+        const res = mergeExprItems(expr[i - 1], expr[i + 1]);
+        if (res !== void 0) {
+          expr.splice(i - 1, 3, res);
+          continue;
+        }
+        expr[i++] = "+";
+      }
+      i++;
+    }
+  }
+  function mergeExprItems(a, b) {
+    if (b === '""')
+      return a;
+    if (a === '""')
+      return b;
+    if (typeof a == "string") {
+      if (b instanceof Name || a[a.length - 1] !== '"')
+        return;
+      if (typeof b != "string")
+        return `${a.slice(0, -1)}${b}"`;
+      if (b[0] === '"')
+        return a.slice(0, -1) + b.slice(1);
+      return;
+    }
+    if (typeof b == "string" && b[0] === '"' && !(a instanceof Name))
+      return `"${a}${b.slice(1)}`;
+    return;
+  }
+  function strConcat(c1, c2) {
+    return c2.emptyStr() ? c1 : c1.emptyStr() ? c2 : str`${c1}${c2}`;
+  }
+  exports.strConcat = strConcat;
+  function interpolate(x) {
+    return typeof x == "number" || typeof x == "boolean" || x === null ? x : safeStringify(Array.isArray(x) ? x.join(",") : x);
+  }
+  function stringify2(x) {
+    return new _Code(safeStringify(x));
+  }
+  exports.stringify = stringify2;
+  function safeStringify(x) {
+    return JSON.stringify(x).replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+  }
+  exports.safeStringify = safeStringify;
+  function getProperty(key) {
+    return typeof key == "string" && exports.IDENTIFIER.test(key) ? new _Code(`.${key}`) : _`[${key}]`;
+  }
+  exports.getProperty = getProperty;
+  function getEsmExportName(key) {
+    if (typeof key == "string" && exports.IDENTIFIER.test(key)) {
+      return new _Code(`${key}`);
+    }
+    throw new Error(`CodeGen: invalid export name: ${key}, use explicit $id name mapping`);
+  }
+  exports.getEsmExportName = getEsmExportName;
+  function regexpCode(rx) {
+    return new _Code(rx.toString());
+  }
+  exports.regexpCode = regexpCode;
+})(code$1);
+var scope = {};
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.ValueScope = exports.ValueScopeName = exports.Scope = exports.varKinds = exports.UsedValueState = void 0;
+  const code_12 = code$1;
+  class ValueError extends Error {
+    constructor(name) {
+      super(`CodeGen: "code" for ${name} not defined`);
+      this.value = name.value;
+    }
+  }
+  var UsedValueState;
+  (function(UsedValueState2) {
+    UsedValueState2[UsedValueState2["Started"] = 0] = "Started";
+    UsedValueState2[UsedValueState2["Completed"] = 1] = "Completed";
+  })(UsedValueState || (exports.UsedValueState = UsedValueState = {}));
+  exports.varKinds = {
+    const: new code_12.Name("const"),
+    let: new code_12.Name("let"),
+    var: new code_12.Name("var")
+  };
+  class Scope {
+    constructor({ prefixes, parent } = {}) {
+      this._names = {};
+      this._prefixes = prefixes;
+      this._parent = parent;
+    }
+    toName(nameOrPrefix) {
+      return nameOrPrefix instanceof code_12.Name ? nameOrPrefix : this.name(nameOrPrefix);
+    }
+    name(prefix) {
+      return new code_12.Name(this._newName(prefix));
+    }
+    _newName(prefix) {
+      const ng = this._names[prefix] || this._nameGroup(prefix);
+      return `${prefix}${ng.index++}`;
+    }
+    _nameGroup(prefix) {
+      var _a, _b;
+      if (((_b = (_a = this._parent) === null || _a === void 0 ? void 0 : _a._prefixes) === null || _b === void 0 ? void 0 : _b.has(prefix)) || this._prefixes && !this._prefixes.has(prefix)) {
+        throw new Error(`CodeGen: prefix "${prefix}" is not allowed in this scope`);
+      }
+      return this._names[prefix] = { prefix, index: 0 };
+    }
+  }
+  exports.Scope = Scope;
+  class ValueScopeName extends code_12.Name {
+    constructor(prefix, nameStr) {
+      super(nameStr);
+      this.prefix = prefix;
+    }
+    setValue(value, { property, itemIndex }) {
+      this.value = value;
+      this.scopePath = (0, code_12._)`.${new code_12.Name(property)}[${itemIndex}]`;
+    }
+  }
+  exports.ValueScopeName = ValueScopeName;
+  const line = (0, code_12._)`\n`;
+  class ValueScope extends Scope {
+    constructor(opts) {
+      super(opts);
+      this._values = {};
+      this._scope = opts.scope;
+      this.opts = { ...opts, _n: opts.lines ? line : code_12.nil };
+    }
+    get() {
+      return this._scope;
+    }
+    name(prefix) {
+      return new ValueScopeName(prefix, this._newName(prefix));
+    }
+    value(nameOrPrefix, value) {
+      var _a;
+      if (value.ref === void 0)
+        throw new Error("CodeGen: ref must be passed in value");
+      const name = this.toName(nameOrPrefix);
+      const { prefix } = name;
+      const valueKey = (_a = value.key) !== null && _a !== void 0 ? _a : value.ref;
+      let vs = this._values[prefix];
+      if (vs) {
+        const _name = vs.get(valueKey);
+        if (_name)
+          return _name;
+      } else {
+        vs = this._values[prefix] = /* @__PURE__ */ new Map();
+      }
+      vs.set(valueKey, name);
+      const s = this._scope[prefix] || (this._scope[prefix] = []);
+      const itemIndex = s.length;
+      s[itemIndex] = value.ref;
+      name.setValue(value, { property: prefix, itemIndex });
+      return name;
+    }
+    getValue(prefix, keyOrRef) {
+      const vs = this._values[prefix];
+      if (!vs)
+        return;
+      return vs.get(keyOrRef);
+    }
+    scopeRefs(scopeName, values = this._values) {
+      return this._reduceValues(values, (name) => {
+        if (name.scopePath === void 0)
+          throw new Error(`CodeGen: name "${name}" has no value`);
+        return (0, code_12._)`${scopeName}${name.scopePath}`;
+      });
+    }
+    scopeCode(values = this._values, usedValues, getCode) {
+      return this._reduceValues(values, (name) => {
+        if (name.value === void 0)
+          throw new Error(`CodeGen: name "${name}" has no value`);
+        return name.value.code;
+      }, usedValues, getCode);
+    }
+    _reduceValues(values, valueCode, usedValues = {}, getCode) {
+      let code2 = code_12.nil;
+      for (const prefix in values) {
+        const vs = values[prefix];
+        if (!vs)
+          continue;
+        const nameSet = usedValues[prefix] = usedValues[prefix] || /* @__PURE__ */ new Map();
+        vs.forEach((name) => {
+          if (nameSet.has(name))
+            return;
+          nameSet.set(name, UsedValueState.Started);
+          let c = valueCode(name);
+          if (c) {
+            const def2 = this.opts.es5 ? exports.varKinds.var : exports.varKinds.const;
+            code2 = (0, code_12._)`${code2}${def2} ${name} = ${c};${this.opts._n}`;
+          } else if (c = getCode === null || getCode === void 0 ? void 0 : getCode(name)) {
+            code2 = (0, code_12._)`${code2}${c}${this.opts._n}`;
+          } else {
+            throw new ValueError(name);
+          }
+          nameSet.set(name, UsedValueState.Completed);
+        });
+      }
+      return code2;
+    }
+  }
+  exports.ValueScope = ValueScope;
+})(scope);
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.or = exports.and = exports.not = exports.CodeGen = exports.operators = exports.varKinds = exports.ValueScopeName = exports.ValueScope = exports.Scope = exports.Name = exports.regexpCode = exports.stringify = exports.getProperty = exports.nil = exports.strConcat = exports.str = exports._ = void 0;
+  const code_12 = code$1;
+  const scope_1 = scope;
+  var code_2 = code$1;
+  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+    return code_2._;
+  } });
+  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+    return code_2.str;
+  } });
+  Object.defineProperty(exports, "strConcat", { enumerable: true, get: function() {
+    return code_2.strConcat;
+  } });
+  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+    return code_2.nil;
+  } });
+  Object.defineProperty(exports, "getProperty", { enumerable: true, get: function() {
+    return code_2.getProperty;
+  } });
+  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+    return code_2.stringify;
+  } });
+  Object.defineProperty(exports, "regexpCode", { enumerable: true, get: function() {
+    return code_2.regexpCode;
+  } });
+  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+    return code_2.Name;
+  } });
+  var scope_2 = scope;
+  Object.defineProperty(exports, "Scope", { enumerable: true, get: function() {
+    return scope_2.Scope;
+  } });
+  Object.defineProperty(exports, "ValueScope", { enumerable: true, get: function() {
+    return scope_2.ValueScope;
+  } });
+  Object.defineProperty(exports, "ValueScopeName", { enumerable: true, get: function() {
+    return scope_2.ValueScopeName;
+  } });
+  Object.defineProperty(exports, "varKinds", { enumerable: true, get: function() {
+    return scope_2.varKinds;
+  } });
+  exports.operators = {
+    GT: new code_12._Code(">"),
+    GTE: new code_12._Code(">="),
+    LT: new code_12._Code("<"),
+    LTE: new code_12._Code("<="),
+    EQ: new code_12._Code("==="),
+    NEQ: new code_12._Code("!=="),
+    NOT: new code_12._Code("!"),
+    OR: new code_12._Code("||"),
+    AND: new code_12._Code("&&"),
+    ADD: new code_12._Code("+")
+  };
+  class Node {
+    optimizeNodes() {
+      return this;
+    }
+    optimizeNames(_names, _constants) {
+      return this;
+    }
+  }
+  class Def extends Node {
+    constructor(varKind, name, rhs) {
+      super();
+      this.varKind = varKind;
+      this.name = name;
+      this.rhs = rhs;
+    }
+    render({ es5, _n }) {
+      const varKind = es5 ? scope_1.varKinds.var : this.varKind;
+      const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
+      return `${varKind} ${this.name}${rhs};` + _n;
+    }
+    optimizeNames(names2, constants2) {
+      if (!names2[this.name.str])
+        return;
+      if (this.rhs)
+        this.rhs = optimizeExpr(this.rhs, names2, constants2);
+      return this;
+    }
+    get names() {
+      return this.rhs instanceof code_12._CodeOrName ? this.rhs.names : {};
+    }
+  }
+  class Assign extends Node {
+    constructor(lhs, rhs, sideEffects) {
+      super();
+      this.lhs = lhs;
+      this.rhs = rhs;
+      this.sideEffects = sideEffects;
+    }
+    render({ _n }) {
+      return `${this.lhs} = ${this.rhs};` + _n;
+    }
+    optimizeNames(names2, constants2) {
+      if (this.lhs instanceof code_12.Name && !names2[this.lhs.str] && !this.sideEffects)
+        return;
+      this.rhs = optimizeExpr(this.rhs, names2, constants2);
+      return this;
+    }
+    get names() {
+      const names2 = this.lhs instanceof code_12.Name ? {} : { ...this.lhs.names };
+      return addExprNames(names2, this.rhs);
+    }
+  }
+  class AssignOp extends Assign {
+    constructor(lhs, op, rhs, sideEffects) {
+      super(lhs, rhs, sideEffects);
+      this.op = op;
+    }
+    render({ _n }) {
+      return `${this.lhs} ${this.op}= ${this.rhs};` + _n;
+    }
+  }
+  class Label extends Node {
+    constructor(label) {
+      super();
+      this.label = label;
+      this.names = {};
+    }
+    render({ _n }) {
+      return `${this.label}:` + _n;
+    }
+  }
+  class Break extends Node {
+    constructor(label) {
+      super();
+      this.label = label;
+      this.names = {};
+    }
+    render({ _n }) {
+      const label = this.label ? ` ${this.label}` : "";
+      return `break${label};` + _n;
+    }
+  }
+  class Throw extends Node {
+    constructor(error2) {
+      super();
+      this.error = error2;
+    }
+    render({ _n }) {
+      return `throw ${this.error};` + _n;
+    }
+    get names() {
+      return this.error.names;
+    }
+  }
+  class AnyCode extends Node {
+    constructor(code2) {
+      super();
+      this.code = code2;
+    }
+    render({ _n }) {
+      return `${this.code};` + _n;
+    }
+    optimizeNodes() {
+      return `${this.code}` ? this : void 0;
+    }
+    optimizeNames(names2, constants2) {
+      this.code = optimizeExpr(this.code, names2, constants2);
+      return this;
+    }
+    get names() {
+      return this.code instanceof code_12._CodeOrName ? this.code.names : {};
+    }
+  }
+  class ParentNode extends Node {
+    constructor(nodes = []) {
+      super();
+      this.nodes = nodes;
+    }
+    render(opts) {
+      return this.nodes.reduce((code2, n) => code2 + n.render(opts), "");
+    }
+    optimizeNodes() {
+      const { nodes } = this;
+      let i = nodes.length;
+      while (i--) {
+        const n = nodes[i].optimizeNodes();
+        if (Array.isArray(n))
+          nodes.splice(i, 1, ...n);
+        else if (n)
+          nodes[i] = n;
+        else
+          nodes.splice(i, 1);
+      }
+      return nodes.length > 0 ? this : void 0;
+    }
+    optimizeNames(names2, constants2) {
+      const { nodes } = this;
+      let i = nodes.length;
+      while (i--) {
+        const n = nodes[i];
+        if (n.optimizeNames(names2, constants2))
+          continue;
+        subtractNames(names2, n.names);
+        nodes.splice(i, 1);
+      }
+      return nodes.length > 0 ? this : void 0;
+    }
+    get names() {
+      return this.nodes.reduce((names2, n) => addNames(names2, n.names), {});
+    }
+  }
+  class BlockNode extends ParentNode {
+    render(opts) {
+      return "{" + opts._n + super.render(opts) + "}" + opts._n;
+    }
+  }
+  class Root extends ParentNode {
+  }
+  class Else extends BlockNode {
+  }
+  Else.kind = "else";
+  class If extends BlockNode {
+    constructor(condition, nodes) {
+      super(nodes);
+      this.condition = condition;
+    }
+    render(opts) {
+      let code2 = `if(${this.condition})` + super.render(opts);
+      if (this.else)
+        code2 += "else " + this.else.render(opts);
+      return code2;
+    }
+    optimizeNodes() {
+      super.optimizeNodes();
+      const cond = this.condition;
+      if (cond === true)
+        return this.nodes;
+      let e = this.else;
+      if (e) {
+        const ns = e.optimizeNodes();
+        e = this.else = Array.isArray(ns) ? new Else(ns) : ns;
+      }
+      if (e) {
+        if (cond === false)
+          return e instanceof If ? e : e.nodes;
+        if (this.nodes.length)
+          return this;
+        return new If(not2(cond), e instanceof If ? [e] : e.nodes);
+      }
+      if (cond === false || !this.nodes.length)
+        return void 0;
+      return this;
+    }
+    optimizeNames(names2, constants2) {
+      var _a;
+      this.else = (_a = this.else) === null || _a === void 0 ? void 0 : _a.optimizeNames(names2, constants2);
+      if (!(super.optimizeNames(names2, constants2) || this.else))
+        return;
+      this.condition = optimizeExpr(this.condition, names2, constants2);
+      return this;
+    }
+    get names() {
+      const names2 = super.names;
+      addExprNames(names2, this.condition);
+      if (this.else)
+        addNames(names2, this.else.names);
+      return names2;
+    }
+  }
+  If.kind = "if";
+  class For extends BlockNode {
+  }
+  For.kind = "for";
+  class ForLoop extends For {
+    constructor(iteration) {
+      super();
+      this.iteration = iteration;
+    }
+    render(opts) {
+      return `for(${this.iteration})` + super.render(opts);
+    }
+    optimizeNames(names2, constants2) {
+      if (!super.optimizeNames(names2, constants2))
+        return;
+      this.iteration = optimizeExpr(this.iteration, names2, constants2);
+      return this;
+    }
+    get names() {
+      return addNames(super.names, this.iteration.names);
+    }
+  }
+  class ForRange extends For {
+    constructor(varKind, name, from, to) {
+      super();
+      this.varKind = varKind;
+      this.name = name;
+      this.from = from;
+      this.to = to;
+    }
+    render(opts) {
+      const varKind = opts.es5 ? scope_1.varKinds.var : this.varKind;
+      const { name, from, to } = this;
+      return `for(${varKind} ${name}=${from}; ${name}<${to}; ${name}++)` + super.render(opts);
+    }
+    get names() {
+      const names2 = addExprNames(super.names, this.from);
+      return addExprNames(names2, this.to);
+    }
+  }
+  class ForIter extends For {
+    constructor(loop, varKind, name, iterable) {
+      super();
+      this.loop = loop;
+      this.varKind = varKind;
+      this.name = name;
+      this.iterable = iterable;
+    }
+    render(opts) {
+      return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
+    }
+    optimizeNames(names2, constants2) {
+      if (!super.optimizeNames(names2, constants2))
+        return;
+      this.iterable = optimizeExpr(this.iterable, names2, constants2);
+      return this;
+    }
+    get names() {
+      return addNames(super.names, this.iterable.names);
+    }
+  }
+  class Func extends BlockNode {
+    constructor(name, args, async2) {
+      super();
+      this.name = name;
+      this.args = args;
+      this.async = async2;
+    }
+    render(opts) {
+      const _async = this.async ? "async " : "";
+      return `${_async}function ${this.name}(${this.args})` + super.render(opts);
+    }
+  }
+  Func.kind = "func";
+  class Return extends ParentNode {
+    render(opts) {
+      return "return " + super.render(opts);
+    }
+  }
+  Return.kind = "return";
+  class Try extends BlockNode {
+    render(opts) {
+      let code2 = "try" + super.render(opts);
+      if (this.catch)
+        code2 += this.catch.render(opts);
+      if (this.finally)
+        code2 += this.finally.render(opts);
+      return code2;
+    }
+    optimizeNodes() {
+      var _a, _b;
+      super.optimizeNodes();
+      (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNodes();
+      (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
+      return this;
+    }
+    optimizeNames(names2, constants2) {
+      var _a, _b;
+      super.optimizeNames(names2, constants2);
+      (_a = this.catch) === null || _a === void 0 ? void 0 : _a.optimizeNames(names2, constants2);
+      (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names2, constants2);
+      return this;
+    }
+    get names() {
+      const names2 = super.names;
+      if (this.catch)
+        addNames(names2, this.catch.names);
+      if (this.finally)
+        addNames(names2, this.finally.names);
+      return names2;
+    }
+  }
+  class Catch extends BlockNode {
+    constructor(error2) {
+      super();
+      this.error = error2;
+    }
+    render(opts) {
+      return `catch(${this.error})` + super.render(opts);
+    }
+  }
+  Catch.kind = "catch";
+  class Finally extends BlockNode {
+    render(opts) {
+      return "finally" + super.render(opts);
+    }
+  }
+  Finally.kind = "finally";
+  class CodeGen {
+    constructor(extScope, opts = {}) {
+      this._values = {};
+      this._blockStarts = [];
+      this._constants = {};
+      this.opts = { ...opts, _n: opts.lines ? "\n" : "" };
+      this._extScope = extScope;
+      this._scope = new scope_1.Scope({ parent: extScope });
+      this._nodes = [new Root()];
+    }
+    toString() {
+      return this._root.render(this.opts);
+    }
+    // returns unique name in the internal scope
+    name(prefix) {
+      return this._scope.name(prefix);
+    }
+    // reserves unique name in the external scope
+    scopeName(prefix) {
+      return this._extScope.name(prefix);
+    }
+    // reserves unique name in the external scope and assigns value to it
+    scopeValue(prefixOrName, value) {
+      const name = this._extScope.value(prefixOrName, value);
+      const vs = this._values[name.prefix] || (this._values[name.prefix] = /* @__PURE__ */ new Set());
+      vs.add(name);
+      return name;
+    }
+    getScopeValue(prefix, keyOrRef) {
+      return this._extScope.getValue(prefix, keyOrRef);
+    }
+    // return code that assigns values in the external scope to the names that are used internally
+    // (same names that were returned by gen.scopeName or gen.scopeValue)
+    scopeRefs(scopeName) {
+      return this._extScope.scopeRefs(scopeName, this._values);
+    }
+    scopeCode() {
+      return this._extScope.scopeCode(this._values);
+    }
+    _def(varKind, nameOrPrefix, rhs, constant) {
+      const name = this._scope.toName(nameOrPrefix);
+      if (rhs !== void 0 && constant)
+        this._constants[name.str] = rhs;
+      this._leafNode(new Def(varKind, name, rhs));
+      return name;
+    }
+    // `const` declaration (`var` in es5 mode)
+    const(nameOrPrefix, rhs, _constant) {
+      return this._def(scope_1.varKinds.const, nameOrPrefix, rhs, _constant);
+    }
+    // `let` declaration with optional assignment (`var` in es5 mode)
+    let(nameOrPrefix, rhs, _constant) {
+      return this._def(scope_1.varKinds.let, nameOrPrefix, rhs, _constant);
+    }
+    // `var` declaration with optional assignment
+    var(nameOrPrefix, rhs, _constant) {
+      return this._def(scope_1.varKinds.var, nameOrPrefix, rhs, _constant);
+    }
+    // assignment code
+    assign(lhs, rhs, sideEffects) {
+      return this._leafNode(new Assign(lhs, rhs, sideEffects));
+    }
+    // `+=` code
+    add(lhs, rhs) {
+      return this._leafNode(new AssignOp(lhs, exports.operators.ADD, rhs));
+    }
+    // appends passed SafeExpr to code or executes Block
+    code(c) {
+      if (typeof c == "function")
+        c();
+      else if (c !== code_12.nil)
+        this._leafNode(new AnyCode(c));
+      return this;
+    }
+    // returns code for object literal for the passed argument list of key-value pairs
+    object(...keyValues) {
+      const code2 = ["{"];
+      for (const [key, value] of keyValues) {
+        if (code2.length > 1)
+          code2.push(",");
+        code2.push(key);
+        if (key !== value || this.opts.es5) {
+          code2.push(":");
+          (0, code_12.addCodeArg)(code2, value);
+        }
+      }
+      code2.push("}");
+      return new code_12._Code(code2);
+    }
+    // `if` clause (or statement if `thenBody` and, optionally, `elseBody` are passed)
+    if(condition, thenBody, elseBody) {
+      this._blockNode(new If(condition));
+      if (thenBody && elseBody) {
+        this.code(thenBody).else().code(elseBody).endIf();
+      } else if (thenBody) {
+        this.code(thenBody).endIf();
+      } else if (elseBody) {
+        throw new Error('CodeGen: "else" body without "then" body');
+      }
+      return this;
+    }
+    // `else if` clause - invalid without `if` or after `else` clauses
+    elseIf(condition) {
+      return this._elseNode(new If(condition));
+    }
+    // `else` clause - only valid after `if` or `else if` clauses
+    else() {
+      return this._elseNode(new Else());
+    }
+    // end `if` statement (needed if gen.if was used only with condition)
+    endIf() {
+      return this._endBlockNode(If, Else);
+    }
+    _for(node, forBody) {
+      this._blockNode(node);
+      if (forBody)
+        this.code(forBody).endFor();
+      return this;
+    }
+    // a generic `for` clause (or statement if `forBody` is passed)
+    for(iteration, forBody) {
+      return this._for(new ForLoop(iteration), forBody);
+    }
+    // `for` statement for a range of values
+    forRange(nameOrPrefix, from, to, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.let) {
+      const name = this._scope.toName(nameOrPrefix);
+      return this._for(new ForRange(varKind, name, from, to), () => forBody(name));
+    }
+    // `for-of` statement (in es5 mode replace with a normal for loop)
+    forOf(nameOrPrefix, iterable, forBody, varKind = scope_1.varKinds.const) {
+      const name = this._scope.toName(nameOrPrefix);
+      if (this.opts.es5) {
+        const arr = iterable instanceof code_12.Name ? iterable : this.var("_arr", iterable);
+        return this.forRange("_i", 0, (0, code_12._)`${arr}.length`, (i) => {
+          this.var(name, (0, code_12._)`${arr}[${i}]`);
+          forBody(name);
+        });
+      }
+      return this._for(new ForIter("of", varKind, name, iterable), () => forBody(name));
+    }
+    // `for-in` statement.
+    // With option `ownProperties` replaced with a `for-of` loop for object keys
+    forIn(nameOrPrefix, obj, forBody, varKind = this.opts.es5 ? scope_1.varKinds.var : scope_1.varKinds.const) {
+      if (this.opts.ownProperties) {
+        return this.forOf(nameOrPrefix, (0, code_12._)`Object.keys(${obj})`, forBody);
+      }
+      const name = this._scope.toName(nameOrPrefix);
+      return this._for(new ForIter("in", varKind, name, obj), () => forBody(name));
+    }
+    // end `for` loop
+    endFor() {
+      return this._endBlockNode(For);
+    }
+    // `label` statement
+    label(label) {
+      return this._leafNode(new Label(label));
+    }
+    // `break` statement
+    break(label) {
+      return this._leafNode(new Break(label));
+    }
+    // `return` statement
+    return(value) {
+      const node = new Return();
+      this._blockNode(node);
+      this.code(value);
+      if (node.nodes.length !== 1)
+        throw new Error('CodeGen: "return" should have one node');
+      return this._endBlockNode(Return);
+    }
+    // `try` statement
+    try(tryBody, catchCode, finallyCode) {
+      if (!catchCode && !finallyCode)
+        throw new Error('CodeGen: "try" without "catch" and "finally"');
+      const node = new Try();
+      this._blockNode(node);
+      this.code(tryBody);
+      if (catchCode) {
+        const error2 = this.name("e");
+        this._currNode = node.catch = new Catch(error2);
+        catchCode(error2);
+      }
+      if (finallyCode) {
+        this._currNode = node.finally = new Finally();
+        this.code(finallyCode);
+      }
+      return this._endBlockNode(Catch, Finally);
+    }
+    // `throw` statement
+    throw(error2) {
+      return this._leafNode(new Throw(error2));
+    }
+    // start self-balancing block
+    block(body, nodeCount) {
+      this._blockStarts.push(this._nodes.length);
+      if (body)
+        this.code(body).endBlock(nodeCount);
+      return this;
+    }
+    // end the current self-balancing block
+    endBlock(nodeCount) {
+      const len = this._blockStarts.pop();
+      if (len === void 0)
+        throw new Error("CodeGen: not in self-balancing block");
+      const toClose = this._nodes.length - len;
+      if (toClose < 0 || nodeCount !== void 0 && toClose !== nodeCount) {
+        throw new Error(`CodeGen: wrong number of nodes: ${toClose} vs ${nodeCount} expected`);
+      }
+      this._nodes.length = len;
+      return this;
+    }
+    // `function` heading (or definition if funcBody is passed)
+    func(name, args = code_12.nil, async2, funcBody) {
+      this._blockNode(new Func(name, args, async2));
+      if (funcBody)
+        this.code(funcBody).endFunc();
+      return this;
+    }
+    // end function definition
+    endFunc() {
+      return this._endBlockNode(Func);
+    }
+    optimize(n = 1) {
+      while (n-- > 0) {
+        this._root.optimizeNodes();
+        this._root.optimizeNames(this._root.names, this._constants);
+      }
+    }
+    _leafNode(node) {
+      this._currNode.nodes.push(node);
+      return this;
+    }
+    _blockNode(node) {
+      this._currNode.nodes.push(node);
+      this._nodes.push(node);
+    }
+    _endBlockNode(N1, N2) {
+      const n = this._currNode;
+      if (n instanceof N1 || N2 && n instanceof N2) {
+        this._nodes.pop();
+        return this;
+      }
+      throw new Error(`CodeGen: not in block "${N2 ? `${N1.kind}/${N2.kind}` : N1.kind}"`);
+    }
+    _elseNode(node) {
+      const n = this._currNode;
+      if (!(n instanceof If)) {
+        throw new Error('CodeGen: "else" without "if"');
+      }
+      this._currNode = n.else = node;
+      return this;
+    }
+    get _root() {
+      return this._nodes[0];
+    }
+    get _currNode() {
+      const ns = this._nodes;
+      return ns[ns.length - 1];
+    }
+    set _currNode(node) {
+      const ns = this._nodes;
+      ns[ns.length - 1] = node;
+    }
+  }
+  exports.CodeGen = CodeGen;
+  function addNames(names2, from) {
+    for (const n in from)
+      names2[n] = (names2[n] || 0) + (from[n] || 0);
+    return names2;
+  }
+  function addExprNames(names2, from) {
+    return from instanceof code_12._CodeOrName ? addNames(names2, from.names) : names2;
+  }
+  function optimizeExpr(expr, names2, constants2) {
+    if (expr instanceof code_12.Name)
+      return replaceName(expr);
+    if (!canOptimize(expr))
+      return expr;
+    return new code_12._Code(expr._items.reduce((items2, c) => {
+      if (c instanceof code_12.Name)
+        c = replaceName(c);
+      if (c instanceof code_12._Code)
+        items2.push(...c._items);
+      else
+        items2.push(c);
+      return items2;
+    }, []));
+    function replaceName(n) {
+      const c = constants2[n.str];
+      if (c === void 0 || names2[n.str] !== 1)
+        return n;
+      delete names2[n.str];
+      return c;
+    }
+    function canOptimize(e) {
+      return e instanceof code_12._Code && e._items.some((c) => c instanceof code_12.Name && names2[c.str] === 1 && constants2[c.str] !== void 0);
+    }
+  }
+  function subtractNames(names2, from) {
+    for (const n in from)
+      names2[n] = (names2[n] || 0) - (from[n] || 0);
+  }
+  function not2(x) {
+    return typeof x == "boolean" || typeof x == "number" || x === null ? !x : (0, code_12._)`!${par(x)}`;
+  }
+  exports.not = not2;
+  const andCode = mappend(exports.operators.AND);
+  function and(...args) {
+    return args.reduce(andCode);
+  }
+  exports.and = and;
+  const orCode = mappend(exports.operators.OR);
+  function or(...args) {
+    return args.reduce(orCode);
+  }
+  exports.or = or;
+  function mappend(op) {
+    return (x, y) => x === code_12.nil ? y : y === code_12.nil ? x : (0, code_12._)`${par(x)} ${op} ${par(y)}`;
+  }
+  function par(x) {
+    return x instanceof code_12.Name ? x : (0, code_12._)`(${x})`;
+  }
+})(codegen);
+var util = {};
+Object.defineProperty(util, "__esModule", { value: true });
+util.checkStrictMode = util.getErrorPath = util.Type = util.useFunc = util.setEvaluated = util.evaluatedPropsToName = util.mergeEvaluated = util.eachItem = util.unescapeJsonPointer = util.escapeJsonPointer = util.escapeFragment = util.unescapeFragment = util.schemaRefOrVal = util.schemaHasRulesButRef = util.schemaHasRules = util.checkUnknownRules = util.alwaysValidSchema = util.toHash = void 0;
+const codegen_1$v = codegen;
+const code_1$a = code$1;
+function toHash(arr) {
+  const hash = {};
+  for (const item of arr)
+    hash[item] = true;
+  return hash;
+}
+util.toHash = toHash;
+function alwaysValidSchema(it, schema) {
+  if (typeof schema == "boolean")
+    return schema;
+  if (Object.keys(schema).length === 0)
+    return true;
+  checkUnknownRules(it, schema);
+  return !schemaHasRules(schema, it.self.RULES.all);
+}
+util.alwaysValidSchema = alwaysValidSchema;
+function checkUnknownRules(it, schema = it.schema) {
+  const { opts, self: self2 } = it;
+  if (!opts.strictSchema)
+    return;
+  if (typeof schema === "boolean")
+    return;
+  const rules2 = self2.RULES.keywords;
+  for (const key in schema) {
+    if (!rules2[key])
+      checkStrictMode(it, `unknown keyword: "${key}"`);
+  }
+}
+util.checkUnknownRules = checkUnknownRules;
+function schemaHasRules(schema, rules2) {
+  if (typeof schema == "boolean")
+    return !schema;
+  for (const key in schema)
+    if (rules2[key])
+      return true;
+  return false;
+}
+util.schemaHasRules = schemaHasRules;
+function schemaHasRulesButRef(schema, RULES) {
+  if (typeof schema == "boolean")
+    return !schema;
+  for (const key in schema)
+    if (key !== "$ref" && RULES.all[key])
+      return true;
+  return false;
+}
+util.schemaHasRulesButRef = schemaHasRulesButRef;
+function schemaRefOrVal({ topSchemaRef, schemaPath }, schema, keyword2, $data) {
+  if (!$data) {
+    if (typeof schema == "number" || typeof schema == "boolean")
+      return schema;
+    if (typeof schema == "string")
+      return (0, codegen_1$v._)`${schema}`;
+  }
+  return (0, codegen_1$v._)`${topSchemaRef}${schemaPath}${(0, codegen_1$v.getProperty)(keyword2)}`;
+}
+util.schemaRefOrVal = schemaRefOrVal;
+function unescapeFragment(str) {
+  return unescapeJsonPointer(decodeURIComponent(str));
+}
+util.unescapeFragment = unescapeFragment;
+function escapeFragment(str) {
+  return encodeURIComponent(escapeJsonPointer(str));
+}
+util.escapeFragment = escapeFragment;
+function escapeJsonPointer(str) {
+  if (typeof str == "number")
+    return `${str}`;
+  return str.replace(/~/g, "~0").replace(/\//g, "~1");
+}
+util.escapeJsonPointer = escapeJsonPointer;
+function unescapeJsonPointer(str) {
+  return str.replace(/~1/g, "/").replace(/~0/g, "~");
+}
+util.unescapeJsonPointer = unescapeJsonPointer;
+function eachItem(xs, f) {
+  if (Array.isArray(xs)) {
+    for (const x of xs)
+      f(x);
+  } else {
+    f(xs);
+  }
+}
+util.eachItem = eachItem;
+function makeMergeEvaluated({ mergeNames, mergeToName, mergeValues, resultToName }) {
+  return (gen, from, to, toName) => {
+    const res = to === void 0 ? from : to instanceof codegen_1$v.Name ? (from instanceof codegen_1$v.Name ? mergeNames(gen, from, to) : mergeToName(gen, from, to), to) : from instanceof codegen_1$v.Name ? (mergeToName(gen, to, from), from) : mergeValues(from, to);
+    return toName === codegen_1$v.Name && !(res instanceof codegen_1$v.Name) ? resultToName(gen, res) : res;
+  };
+}
+util.mergeEvaluated = {
+  props: makeMergeEvaluated({
+    mergeNames: (gen, from, to) => gen.if((0, codegen_1$v._)`${to} !== true && ${from} !== undefined`, () => {
+      gen.if((0, codegen_1$v._)`${from} === true`, () => gen.assign(to, true), () => gen.assign(to, (0, codegen_1$v._)`${to} || {}`).code((0, codegen_1$v._)`Object.assign(${to}, ${from})`));
+    }),
+    mergeToName: (gen, from, to) => gen.if((0, codegen_1$v._)`${to} !== true`, () => {
+      if (from === true) {
+        gen.assign(to, true);
+      } else {
+        gen.assign(to, (0, codegen_1$v._)`${to} || {}`);
+        setEvaluated(gen, to, from);
+      }
+    }),
+    mergeValues: (from, to) => from === true ? true : { ...from, ...to },
+    resultToName: evaluatedPropsToName
+  }),
+  items: makeMergeEvaluated({
+    mergeNames: (gen, from, to) => gen.if((0, codegen_1$v._)`${to} !== true && ${from} !== undefined`, () => gen.assign(to, (0, codegen_1$v._)`${from} === true ? true : ${to} > ${from} ? ${to} : ${from}`)),
+    mergeToName: (gen, from, to) => gen.if((0, codegen_1$v._)`${to} !== true`, () => gen.assign(to, from === true ? true : (0, codegen_1$v._)`${to} > ${from} ? ${to} : ${from}`)),
+    mergeValues: (from, to) => from === true ? true : Math.max(from, to),
+    resultToName: (gen, items2) => gen.var("items", items2)
+  })
+};
+function evaluatedPropsToName(gen, ps) {
+  if (ps === true)
+    return gen.var("props", true);
+  const props = gen.var("props", (0, codegen_1$v._)`{}`);
+  if (ps !== void 0)
+    setEvaluated(gen, props, ps);
+  return props;
+}
+util.evaluatedPropsToName = evaluatedPropsToName;
+function setEvaluated(gen, props, ps) {
+  Object.keys(ps).forEach((p) => gen.assign((0, codegen_1$v._)`${props}${(0, codegen_1$v.getProperty)(p)}`, true));
+}
+util.setEvaluated = setEvaluated;
+const snippets = {};
+function useFunc(gen, f) {
+  return gen.scopeValue("func", {
+    ref: f,
+    code: snippets[f.code] || (snippets[f.code] = new code_1$a._Code(f.code))
+  });
+}
+util.useFunc = useFunc;
+var Type;
+(function(Type2) {
+  Type2[Type2["Num"] = 0] = "Num";
+  Type2[Type2["Str"] = 1] = "Str";
+})(Type || (util.Type = Type = {}));
+function getErrorPath(dataProp, dataPropType, jsPropertySyntax) {
+  if (dataProp instanceof codegen_1$v.Name) {
+    const isNumber = dataPropType === Type.Num;
+    return jsPropertySyntax ? isNumber ? (0, codegen_1$v._)`"[" + ${dataProp} + "]"` : (0, codegen_1$v._)`"['" + ${dataProp} + "']"` : isNumber ? (0, codegen_1$v._)`"/" + ${dataProp}` : (0, codegen_1$v._)`"/" + ${dataProp}.replace(/~/g, "~0").replace(/\\//g, "~1")`;
+  }
+  return jsPropertySyntax ? (0, codegen_1$v.getProperty)(dataProp).toString() : "/" + escapeJsonPointer(dataProp);
+}
+util.getErrorPath = getErrorPath;
+function checkStrictMode(it, msg, mode = it.opts.strictSchema) {
+  if (!mode)
+    return;
+  msg = `strict mode: ${msg}`;
+  if (mode === true)
+    throw new Error(msg);
+  it.self.logger.warn(msg);
+}
+util.checkStrictMode = checkStrictMode;
+var names$1 = {};
+Object.defineProperty(names$1, "__esModule", { value: true });
+const codegen_1$u = codegen;
+const names = {
+  // validation function arguments
+  data: new codegen_1$u.Name("data"),
+  // data passed to validation function
+  // args passed from referencing schema
+  valCxt: new codegen_1$u.Name("valCxt"),
+  // validation/data context - should not be used directly, it is destructured to the names below
+  instancePath: new codegen_1$u.Name("instancePath"),
+  parentData: new codegen_1$u.Name("parentData"),
+  parentDataProperty: new codegen_1$u.Name("parentDataProperty"),
+  rootData: new codegen_1$u.Name("rootData"),
+  // root data - same as the data passed to the first/top validation function
+  dynamicAnchors: new codegen_1$u.Name("dynamicAnchors"),
+  // used to support recursiveRef and dynamicRef
+  // function scoped variables
+  vErrors: new codegen_1$u.Name("vErrors"),
+  // null or array of validation errors
+  errors: new codegen_1$u.Name("errors"),
+  // counter of validation errors
+  this: new codegen_1$u.Name("this"),
+  // "globals"
+  self: new codegen_1$u.Name("self"),
+  scope: new codegen_1$u.Name("scope"),
+  // JTD serialize/parse name for JSON string and position
+  json: new codegen_1$u.Name("json"),
+  jsonPos: new codegen_1$u.Name("jsonPos"),
+  jsonLen: new codegen_1$u.Name("jsonLen"),
+  jsonPart: new codegen_1$u.Name("jsonPart")
+};
+names$1.default = names;
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.extendErrors = exports.resetErrorsCount = exports.reportExtraError = exports.reportError = exports.keyword$DataError = exports.keywordError = void 0;
+  const codegen_12 = codegen;
+  const util_12 = util;
+  const names_12 = names$1;
+  exports.keywordError = {
+    message: ({ keyword: keyword2 }) => (0, codegen_12.str)`must pass "${keyword2}" keyword validation`
+  };
+  exports.keyword$DataError = {
+    message: ({ keyword: keyword2, schemaType }) => schemaType ? (0, codegen_12.str)`"${keyword2}" keyword must be ${schemaType} ($data)` : (0, codegen_12.str)`"${keyword2}" keyword is invalid ($data)`
+  };
+  function reportError(cxt, error2 = exports.keywordError, errorPaths, overrideAllErrors) {
+    const { it } = cxt;
+    const { gen, compositeRule, allErrors } = it;
+    const errObj = errorObjectCode(cxt, error2, errorPaths);
+    if (overrideAllErrors !== null && overrideAllErrors !== void 0 ? overrideAllErrors : compositeRule || allErrors) {
+      addError(gen, errObj);
+    } else {
+      returnErrors(it, (0, codegen_12._)`[${errObj}]`);
+    }
+  }
+  exports.reportError = reportError;
+  function reportExtraError(cxt, error2 = exports.keywordError, errorPaths) {
+    const { it } = cxt;
+    const { gen, compositeRule, allErrors } = it;
+    const errObj = errorObjectCode(cxt, error2, errorPaths);
+    addError(gen, errObj);
+    if (!(compositeRule || allErrors)) {
+      returnErrors(it, names_12.default.vErrors);
+    }
+  }
+  exports.reportExtraError = reportExtraError;
+  function resetErrorsCount(gen, errsCount) {
+    gen.assign(names_12.default.errors, errsCount);
+    gen.if((0, codegen_12._)`${names_12.default.vErrors} !== null`, () => gen.if(errsCount, () => gen.assign((0, codegen_12._)`${names_12.default.vErrors}.length`, errsCount), () => gen.assign(names_12.default.vErrors, null)));
+  }
+  exports.resetErrorsCount = resetErrorsCount;
+  function extendErrors({ gen, keyword: keyword2, schemaValue, data, errsCount, it }) {
+    if (errsCount === void 0)
+      throw new Error("ajv implementation error");
+    const err = gen.name("err");
+    gen.forRange("i", errsCount, names_12.default.errors, (i) => {
+      gen.const(err, (0, codegen_12._)`${names_12.default.vErrors}[${i}]`);
+      gen.if((0, codegen_12._)`${err}.instancePath === undefined`, () => gen.assign((0, codegen_12._)`${err}.instancePath`, (0, codegen_12.strConcat)(names_12.default.instancePath, it.errorPath)));
+      gen.assign((0, codegen_12._)`${err}.schemaPath`, (0, codegen_12.str)`${it.errSchemaPath}/${keyword2}`);
+      if (it.opts.verbose) {
+        gen.assign((0, codegen_12._)`${err}.schema`, schemaValue);
+        gen.assign((0, codegen_12._)`${err}.data`, data);
+      }
+    });
+  }
+  exports.extendErrors = extendErrors;
+  function addError(gen, errObj) {
+    const err = gen.const("err", errObj);
+    gen.if((0, codegen_12._)`${names_12.default.vErrors} === null`, () => gen.assign(names_12.default.vErrors, (0, codegen_12._)`[${err}]`), (0, codegen_12._)`${names_12.default.vErrors}.push(${err})`);
+    gen.code((0, codegen_12._)`${names_12.default.errors}++`);
+  }
+  function returnErrors(it, errs) {
+    const { gen, validateName, schemaEnv } = it;
+    if (schemaEnv.$async) {
+      gen.throw((0, codegen_12._)`new ${it.ValidationError}(${errs})`);
+    } else {
+      gen.assign((0, codegen_12._)`${validateName}.errors`, errs);
+      gen.return(false);
+    }
+  }
+  const E = {
+    keyword: new codegen_12.Name("keyword"),
+    schemaPath: new codegen_12.Name("schemaPath"),
+    // also used in JTD errors
+    params: new codegen_12.Name("params"),
+    propertyName: new codegen_12.Name("propertyName"),
+    message: new codegen_12.Name("message"),
+    schema: new codegen_12.Name("schema"),
+    parentSchema: new codegen_12.Name("parentSchema")
+  };
+  function errorObjectCode(cxt, error2, errorPaths) {
+    const { createErrors } = cxt.it;
+    if (createErrors === false)
+      return (0, codegen_12._)`{}`;
+    return errorObject(cxt, error2, errorPaths);
+  }
+  function errorObject(cxt, error2, errorPaths = {}) {
+    const { gen, it } = cxt;
+    const keyValues = [
+      errorInstancePath(it, errorPaths),
+      errorSchemaPath(cxt, errorPaths)
+    ];
+    extraErrorProps(cxt, error2, keyValues);
+    return gen.object(...keyValues);
+  }
+  function errorInstancePath({ errorPath }, { instancePath }) {
+    const instPath = instancePath ? (0, codegen_12.str)`${errorPath}${(0, util_12.getErrorPath)(instancePath, util_12.Type.Str)}` : errorPath;
+    return [names_12.default.instancePath, (0, codegen_12.strConcat)(names_12.default.instancePath, instPath)];
+  }
+  function errorSchemaPath({ keyword: keyword2, it: { errSchemaPath } }, { schemaPath, parentSchema }) {
+    let schPath = parentSchema ? errSchemaPath : (0, codegen_12.str)`${errSchemaPath}/${keyword2}`;
+    if (schemaPath) {
+      schPath = (0, codegen_12.str)`${schPath}${(0, util_12.getErrorPath)(schemaPath, util_12.Type.Str)}`;
+    }
+    return [E.schemaPath, schPath];
+  }
+  function extraErrorProps(cxt, { params, message }, keyValues) {
+    const { keyword: keyword2, data, schemaValue, it } = cxt;
+    const { opts, propertyName, topSchemaRef, schemaPath } = it;
+    keyValues.push([E.keyword, keyword2], [E.params, typeof params == "function" ? params(cxt) : params || (0, codegen_12._)`{}`]);
+    if (opts.messages) {
+      keyValues.push([E.message, typeof message == "function" ? message(cxt) : message]);
+    }
+    if (opts.verbose) {
+      keyValues.push([E.schema, schemaValue], [E.parentSchema, (0, codegen_12._)`${topSchemaRef}${schemaPath}`], [names_12.default.data, data]);
+    }
+    if (propertyName)
+      keyValues.push([E.propertyName, propertyName]);
+  }
+})(errors);
+Object.defineProperty(boolSchema, "__esModule", { value: true });
+boolSchema.boolOrEmptySchema = boolSchema.topBoolOrEmptySchema = void 0;
+const errors_1$3 = errors;
+const codegen_1$t = codegen;
+const names_1$6 = names$1;
+const boolError = {
+  message: "boolean schema is false"
+};
+function topBoolOrEmptySchema(it) {
+  const { gen, schema, validateName } = it;
+  if (schema === false) {
+    falseSchemaError(it, false);
+  } else if (typeof schema == "object" && schema.$async === true) {
+    gen.return(names_1$6.default.data);
+  } else {
+    gen.assign((0, codegen_1$t._)`${validateName}.errors`, null);
+    gen.return(true);
+  }
+}
+boolSchema.topBoolOrEmptySchema = topBoolOrEmptySchema;
+function boolOrEmptySchema(it, valid2) {
+  const { gen, schema } = it;
+  if (schema === false) {
+    gen.var(valid2, false);
+    falseSchemaError(it);
+  } else {
+    gen.var(valid2, true);
+  }
+}
+boolSchema.boolOrEmptySchema = boolOrEmptySchema;
+function falseSchemaError(it, overrideAllErrors) {
+  const { gen, data } = it;
+  const cxt = {
+    gen,
+    keyword: "false schema",
+    data,
+    schema: false,
+    schemaCode: false,
+    schemaValue: false,
+    params: {},
+    it
+  };
+  (0, errors_1$3.reportError)(cxt, boolError, void 0, overrideAllErrors);
+}
+var dataType = {};
+var rules = {};
+Object.defineProperty(rules, "__esModule", { value: true });
+rules.getRules = rules.isJSONType = void 0;
+const _jsonTypes = ["string", "number", "integer", "boolean", "null", "object", "array"];
+const jsonTypes = new Set(_jsonTypes);
+function isJSONType(x) {
+  return typeof x == "string" && jsonTypes.has(x);
+}
+rules.isJSONType = isJSONType;
+function getRules() {
+  const groups = {
+    number: { type: "number", rules: [] },
+    string: { type: "string", rules: [] },
+    array: { type: "array", rules: [] },
+    object: { type: "object", rules: [] }
+  };
+  return {
+    types: { ...groups, integer: true, boolean: true, null: true },
+    rules: [{ rules: [] }, groups.number, groups.string, groups.array, groups.object],
+    post: { rules: [] },
+    all: {},
+    keywords: {}
+  };
+}
+rules.getRules = getRules;
+var applicability = {};
+Object.defineProperty(applicability, "__esModule", { value: true });
+applicability.shouldUseRule = applicability.shouldUseGroup = applicability.schemaHasRulesForType = void 0;
+function schemaHasRulesForType({ schema, self: self2 }, type2) {
+  const group = self2.RULES.types[type2];
+  return group && group !== true && shouldUseGroup(schema, group);
+}
+applicability.schemaHasRulesForType = schemaHasRulesForType;
+function shouldUseGroup(schema, group) {
+  return group.rules.some((rule) => shouldUseRule(schema, rule));
+}
+applicability.shouldUseGroup = shouldUseGroup;
+function shouldUseRule(schema, rule) {
+  var _a;
+  return schema[rule.keyword] !== void 0 || ((_a = rule.definition.implements) === null || _a === void 0 ? void 0 : _a.some((kwd) => schema[kwd] !== void 0));
+}
+applicability.shouldUseRule = shouldUseRule;
+Object.defineProperty(dataType, "__esModule", { value: true });
+dataType.reportTypeError = dataType.checkDataTypes = dataType.checkDataType = dataType.coerceAndCheckDataType = dataType.getJSONTypes = dataType.getSchemaTypes = dataType.DataType = void 0;
+const rules_1 = rules;
+const applicability_1$1 = applicability;
+const errors_1$2 = errors;
+const codegen_1$s = codegen;
+const util_1$r = util;
+var DataType;
+(function(DataType2) {
+  DataType2[DataType2["Correct"] = 0] = "Correct";
+  DataType2[DataType2["Wrong"] = 1] = "Wrong";
+})(DataType || (dataType.DataType = DataType = {}));
+function getSchemaTypes(schema) {
+  const types2 = getJSONTypes(schema.type);
+  const hasNull = types2.includes("null");
+  if (hasNull) {
+    if (schema.nullable === false)
+      throw new Error("type: null contradicts nullable: false");
+  } else {
+    if (!types2.length && schema.nullable !== void 0) {
+      throw new Error('"nullable" cannot be used without "type"');
+    }
+    if (schema.nullable === true)
+      types2.push("null");
+  }
+  return types2;
+}
+dataType.getSchemaTypes = getSchemaTypes;
+function getJSONTypes(ts) {
+  const types2 = Array.isArray(ts) ? ts : ts ? [ts] : [];
+  if (types2.every(rules_1.isJSONType))
+    return types2;
+  throw new Error("type must be JSONType or JSONType[]: " + types2.join(","));
+}
+dataType.getJSONTypes = getJSONTypes;
+function coerceAndCheckDataType(it, types2) {
+  const { gen, data, opts } = it;
+  const coerceTo = coerceToTypes(types2, opts.coerceTypes);
+  const checkTypes = types2.length > 0 && !(coerceTo.length === 0 && types2.length === 1 && (0, applicability_1$1.schemaHasRulesForType)(it, types2[0]));
+  if (checkTypes) {
+    const wrongType = checkDataTypes(types2, data, opts.strictNumbers, DataType.Wrong);
+    gen.if(wrongType, () => {
+      if (coerceTo.length)
+        coerceData(it, types2, coerceTo);
+      else
+        reportTypeError(it);
+    });
+  }
+  return checkTypes;
+}
+dataType.coerceAndCheckDataType = coerceAndCheckDataType;
+const COERCIBLE = /* @__PURE__ */ new Set(["string", "number", "integer", "boolean", "null"]);
+function coerceToTypes(types2, coerceTypes) {
+  return coerceTypes ? types2.filter((t2) => COERCIBLE.has(t2) || coerceTypes === "array" && t2 === "array") : [];
+}
+function coerceData(it, types2, coerceTo) {
+  const { gen, data, opts } = it;
+  const dataType2 = gen.let("dataType", (0, codegen_1$s._)`typeof ${data}`);
+  const coerced = gen.let("coerced", (0, codegen_1$s._)`undefined`);
+  if (opts.coerceTypes === "array") {
+    gen.if((0, codegen_1$s._)`${dataType2} == 'object' && Array.isArray(${data}) && ${data}.length == 1`, () => gen.assign(data, (0, codegen_1$s._)`${data}[0]`).assign(dataType2, (0, codegen_1$s._)`typeof ${data}`).if(checkDataTypes(types2, data, opts.strictNumbers), () => gen.assign(coerced, data)));
+  }
+  gen.if((0, codegen_1$s._)`${coerced} !== undefined`);
+  for (const t2 of coerceTo) {
+    if (COERCIBLE.has(t2) || t2 === "array" && opts.coerceTypes === "array") {
+      coerceSpecificType(t2);
+    }
+  }
+  gen.else();
+  reportTypeError(it);
+  gen.endIf();
+  gen.if((0, codegen_1$s._)`${coerced} !== undefined`, () => {
+    gen.assign(data, coerced);
+    assignParentData(it, coerced);
+  });
+  function coerceSpecificType(t2) {
+    switch (t2) {
+      case "string":
+        gen.elseIf((0, codegen_1$s._)`${dataType2} == "number" || ${dataType2} == "boolean"`).assign(coerced, (0, codegen_1$s._)`"" + ${data}`).elseIf((0, codegen_1$s._)`${data} === null`).assign(coerced, (0, codegen_1$s._)`""`);
+        return;
+      case "number":
+        gen.elseIf((0, codegen_1$s._)`${dataType2} == "boolean" || ${data} === null
+              || (${dataType2} == "string" && ${data} && ${data} == +${data})`).assign(coerced, (0, codegen_1$s._)`+${data}`);
+        return;
+      case "integer":
+        gen.elseIf((0, codegen_1$s._)`${dataType2} === "boolean" || ${data} === null
+              || (${dataType2} === "string" && ${data} && ${data} == +${data} && !(${data} % 1))`).assign(coerced, (0, codegen_1$s._)`+${data}`);
+        return;
+      case "boolean":
+        gen.elseIf((0, codegen_1$s._)`${data} === "false" || ${data} === 0 || ${data} === null`).assign(coerced, false).elseIf((0, codegen_1$s._)`${data} === "true" || ${data} === 1`).assign(coerced, true);
+        return;
+      case "null":
+        gen.elseIf((0, codegen_1$s._)`${data} === "" || ${data} === 0 || ${data} === false`);
+        gen.assign(coerced, null);
+        return;
+      case "array":
+        gen.elseIf((0, codegen_1$s._)`${dataType2} === "string" || ${dataType2} === "number"
+              || ${dataType2} === "boolean" || ${data} === null`).assign(coerced, (0, codegen_1$s._)`[${data}]`);
+    }
+  }
+}
+function assignParentData({ gen, parentData, parentDataProperty }, expr) {
+  gen.if((0, codegen_1$s._)`${parentData} !== undefined`, () => gen.assign((0, codegen_1$s._)`${parentData}[${parentDataProperty}]`, expr));
+}
+function checkDataType(dataType2, data, strictNums, correct = DataType.Correct) {
+  const EQ = correct === DataType.Correct ? codegen_1$s.operators.EQ : codegen_1$s.operators.NEQ;
+  let cond;
+  switch (dataType2) {
+    case "null":
+      return (0, codegen_1$s._)`${data} ${EQ} null`;
+    case "array":
+      cond = (0, codegen_1$s._)`Array.isArray(${data})`;
+      break;
+    case "object":
+      cond = (0, codegen_1$s._)`${data} && typeof ${data} == "object" && !Array.isArray(${data})`;
+      break;
+    case "integer":
+      cond = numCond((0, codegen_1$s._)`!(${data} % 1) && !isNaN(${data})`);
+      break;
+    case "number":
+      cond = numCond();
+      break;
+    default:
+      return (0, codegen_1$s._)`typeof ${data} ${EQ} ${dataType2}`;
+  }
+  return correct === DataType.Correct ? cond : (0, codegen_1$s.not)(cond);
+  function numCond(_cond = codegen_1$s.nil) {
+    return (0, codegen_1$s.and)((0, codegen_1$s._)`typeof ${data} == "number"`, _cond, strictNums ? (0, codegen_1$s._)`isFinite(${data})` : codegen_1$s.nil);
+  }
+}
+dataType.checkDataType = checkDataType;
+function checkDataTypes(dataTypes, data, strictNums, correct) {
+  if (dataTypes.length === 1) {
+    return checkDataType(dataTypes[0], data, strictNums, correct);
+  }
+  let cond;
+  const types2 = (0, util_1$r.toHash)(dataTypes);
+  if (types2.array && types2.object) {
+    const notObj = (0, codegen_1$s._)`typeof ${data} != "object"`;
+    cond = types2.null ? notObj : (0, codegen_1$s._)`!${data} || ${notObj}`;
+    delete types2.null;
+    delete types2.array;
+    delete types2.object;
+  } else {
+    cond = codegen_1$s.nil;
+  }
+  if (types2.number)
+    delete types2.integer;
+  for (const t2 in types2)
+    cond = (0, codegen_1$s.and)(cond, checkDataType(t2, data, strictNums, correct));
+  return cond;
+}
+dataType.checkDataTypes = checkDataTypes;
+const typeError = {
+  message: ({ schema }) => `must be ${schema}`,
+  params: ({ schema, schemaValue }) => typeof schema == "string" ? (0, codegen_1$s._)`{type: ${schema}}` : (0, codegen_1$s._)`{type: ${schemaValue}}`
+};
+function reportTypeError(it) {
+  const cxt = getTypeErrorContext(it);
+  (0, errors_1$2.reportError)(cxt, typeError);
+}
+dataType.reportTypeError = reportTypeError;
+function getTypeErrorContext(it) {
+  const { gen, data, schema } = it;
+  const schemaCode = (0, util_1$r.schemaRefOrVal)(it, schema, "type");
+  return {
+    gen,
+    keyword: "type",
+    data,
+    schema: schema.type,
+    schemaCode,
+    schemaValue: schemaCode,
+    parentSchema: schema,
+    params: {},
+    it
+  };
+}
+var defaults = {};
+Object.defineProperty(defaults, "__esModule", { value: true });
+defaults.assignDefaults = void 0;
+const codegen_1$r = codegen;
+const util_1$q = util;
+function assignDefaults(it, ty) {
+  const { properties: properties2, items: items2 } = it.schema;
+  if (ty === "object" && properties2) {
+    for (const key in properties2) {
+      assignDefault(it, key, properties2[key].default);
+    }
+  } else if (ty === "array" && Array.isArray(items2)) {
+    items2.forEach((sch, i) => assignDefault(it, i, sch.default));
+  }
+}
+defaults.assignDefaults = assignDefaults;
+function assignDefault(it, prop, defaultValue) {
+  const { gen, compositeRule, data, opts } = it;
+  if (defaultValue === void 0)
+    return;
+  const childData = (0, codegen_1$r._)`${data}${(0, codegen_1$r.getProperty)(prop)}`;
+  if (compositeRule) {
+    (0, util_1$q.checkStrictMode)(it, `default is ignored for: ${childData}`);
+    return;
+  }
+  let condition = (0, codegen_1$r._)`${childData} === undefined`;
+  if (opts.useDefaults === "empty") {
+    condition = (0, codegen_1$r._)`${condition} || ${childData} === null || ${childData} === ""`;
+  }
+  gen.if(condition, (0, codegen_1$r._)`${childData} = ${(0, codegen_1$r.stringify)(defaultValue)}`);
+}
+var keyword = {};
+var code = {};
+Object.defineProperty(code, "__esModule", { value: true });
+code.validateUnion = code.validateArray = code.usePattern = code.callValidateCode = code.schemaProperties = code.allSchemaProperties = code.noPropertyInData = code.propertyInData = code.isOwnProperty = code.hasPropFunc = code.reportMissingProp = code.checkMissingProp = code.checkReportMissingProp = void 0;
+const codegen_1$q = codegen;
+const util_1$p = util;
+const names_1$5 = names$1;
+const util_2$1 = util;
+function checkReportMissingProp(cxt, prop) {
+  const { gen, data, it } = cxt;
+  gen.if(noPropertyInData(gen, data, prop, it.opts.ownProperties), () => {
+    cxt.setParams({ missingProperty: (0, codegen_1$q._)`${prop}` }, true);
+    cxt.error();
+  });
+}
+code.checkReportMissingProp = checkReportMissingProp;
+function checkMissingProp({ gen, data, it: { opts } }, properties2, missing) {
+  return (0, codegen_1$q.or)(...properties2.map((prop) => (0, codegen_1$q.and)(noPropertyInData(gen, data, prop, opts.ownProperties), (0, codegen_1$q._)`${missing} = ${prop}`)));
+}
+code.checkMissingProp = checkMissingProp;
+function reportMissingProp(cxt, missing) {
+  cxt.setParams({ missingProperty: missing }, true);
+  cxt.error();
+}
+code.reportMissingProp = reportMissingProp;
+function hasPropFunc(gen) {
+  return gen.scopeValue("func", {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
+    ref: Object.prototype.hasOwnProperty,
+    code: (0, codegen_1$q._)`Object.prototype.hasOwnProperty`
+  });
+}
+code.hasPropFunc = hasPropFunc;
+function isOwnProperty(gen, data, property) {
+  return (0, codegen_1$q._)`${hasPropFunc(gen)}.call(${data}, ${property})`;
+}
+code.isOwnProperty = isOwnProperty;
+function propertyInData(gen, data, property, ownProperties) {
+  const cond = (0, codegen_1$q._)`${data}${(0, codegen_1$q.getProperty)(property)} !== undefined`;
+  return ownProperties ? (0, codegen_1$q._)`${cond} && ${isOwnProperty(gen, data, property)}` : cond;
+}
+code.propertyInData = propertyInData;
+function noPropertyInData(gen, data, property, ownProperties) {
+  const cond = (0, codegen_1$q._)`${data}${(0, codegen_1$q.getProperty)(property)} === undefined`;
+  return ownProperties ? (0, codegen_1$q.or)(cond, (0, codegen_1$q.not)(isOwnProperty(gen, data, property))) : cond;
+}
+code.noPropertyInData = noPropertyInData;
+function allSchemaProperties(schemaMap) {
+  return schemaMap ? Object.keys(schemaMap).filter((p) => p !== "__proto__") : [];
+}
+code.allSchemaProperties = allSchemaProperties;
+function schemaProperties(it, schemaMap) {
+  return allSchemaProperties(schemaMap).filter((p) => !(0, util_1$p.alwaysValidSchema)(it, schemaMap[p]));
+}
+code.schemaProperties = schemaProperties;
+function callValidateCode({ schemaCode, data, it: { gen, topSchemaRef, schemaPath, errorPath }, it }, func, context, passSchema) {
+  const dataAndSchema = passSchema ? (0, codegen_1$q._)`${schemaCode}, ${data}, ${topSchemaRef}${schemaPath}` : data;
+  const valCxt = [
+    [names_1$5.default.instancePath, (0, codegen_1$q.strConcat)(names_1$5.default.instancePath, errorPath)],
+    [names_1$5.default.parentData, it.parentData],
+    [names_1$5.default.parentDataProperty, it.parentDataProperty],
+    [names_1$5.default.rootData, names_1$5.default.rootData]
+  ];
+  if (it.opts.dynamicRef)
+    valCxt.push([names_1$5.default.dynamicAnchors, names_1$5.default.dynamicAnchors]);
+  const args = (0, codegen_1$q._)`${dataAndSchema}, ${gen.object(...valCxt)}`;
+  return context !== codegen_1$q.nil ? (0, codegen_1$q._)`${func}.call(${context}, ${args})` : (0, codegen_1$q._)`${func}(${args})`;
+}
+code.callValidateCode = callValidateCode;
+const newRegExp = (0, codegen_1$q._)`new RegExp`;
+function usePattern({ gen, it: { opts } }, pattern2) {
+  const u2 = opts.unicodeRegExp ? "u" : "";
+  const { regExp } = opts.code;
+  const rx = regExp(pattern2, u2);
+  return gen.scopeValue("pattern", {
+    key: rx.toString(),
+    ref: rx,
+    code: (0, codegen_1$q._)`${regExp.code === "new RegExp" ? newRegExp : (0, util_2$1.useFunc)(gen, regExp)}(${pattern2}, ${u2})`
+  });
+}
+code.usePattern = usePattern;
+function validateArray(cxt) {
+  const { gen, data, keyword: keyword2, it } = cxt;
+  const valid2 = gen.name("valid");
+  if (it.allErrors) {
+    const validArr = gen.let("valid", true);
+    validateItems(() => gen.assign(validArr, false));
+    return validArr;
+  }
+  gen.var(valid2, true);
+  validateItems(() => gen.break());
+  return valid2;
+  function validateItems(notValid) {
+    const len = gen.const("len", (0, codegen_1$q._)`${data}.length`);
+    gen.forRange("i", 0, len, (i) => {
+      cxt.subschema({
+        keyword: keyword2,
+        dataProp: i,
+        dataPropType: util_1$p.Type.Num
+      }, valid2);
+      gen.if((0, codegen_1$q.not)(valid2), notValid);
+    });
+  }
+}
+code.validateArray = validateArray;
+function validateUnion(cxt) {
+  const { gen, schema, keyword: keyword2, it } = cxt;
+  if (!Array.isArray(schema))
+    throw new Error("ajv implementation error");
+  const alwaysValid = schema.some((sch) => (0, util_1$p.alwaysValidSchema)(it, sch));
+  if (alwaysValid && !it.opts.unevaluated)
+    return;
+  const valid2 = gen.let("valid", false);
+  const schValid = gen.name("_valid");
+  gen.block(() => schema.forEach((_sch, i) => {
+    const schCxt = cxt.subschema({
+      keyword: keyword2,
+      schemaProp: i,
+      compositeRule: true
+    }, schValid);
+    gen.assign(valid2, (0, codegen_1$q._)`${valid2} || ${schValid}`);
+    const merged = cxt.mergeValidEvaluated(schCxt, schValid);
+    if (!merged)
+      gen.if((0, codegen_1$q.not)(valid2));
+  }));
+  cxt.result(valid2, () => cxt.reset(), () => cxt.error(true));
+}
+code.validateUnion = validateUnion;
+Object.defineProperty(keyword, "__esModule", { value: true });
+keyword.validateKeywordUsage = keyword.validSchemaType = keyword.funcKeywordCode = keyword.macroKeywordCode = void 0;
+const codegen_1$p = codegen;
+const names_1$4 = names$1;
+const code_1$9 = code;
+const errors_1$1 = errors;
+function macroKeywordCode(cxt, def2) {
+  const { gen, keyword: keyword2, schema, parentSchema, it } = cxt;
+  const macroSchema = def2.macro.call(it.self, schema, parentSchema, it);
+  const schemaRef = useKeyword(gen, keyword2, macroSchema);
+  if (it.opts.validateSchema !== false)
+    it.self.validateSchema(macroSchema, true);
+  const valid2 = gen.name("valid");
+  cxt.subschema({
+    schema: macroSchema,
+    schemaPath: codegen_1$p.nil,
+    errSchemaPath: `${it.errSchemaPath}/${keyword2}`,
+    topSchemaRef: schemaRef,
+    compositeRule: true
+  }, valid2);
+  cxt.pass(valid2, () => cxt.error(true));
+}
+keyword.macroKeywordCode = macroKeywordCode;
+function funcKeywordCode(cxt, def2) {
+  var _a;
+  const { gen, keyword: keyword2, schema, parentSchema, $data, it } = cxt;
+  checkAsyncKeyword(it, def2);
+  const validate2 = !$data && def2.compile ? def2.compile.call(it.self, schema, parentSchema, it) : def2.validate;
+  const validateRef = useKeyword(gen, keyword2, validate2);
+  const valid2 = gen.let("valid");
+  cxt.block$data(valid2, validateKeyword);
+  cxt.ok((_a = def2.valid) !== null && _a !== void 0 ? _a : valid2);
+  function validateKeyword() {
+    if (def2.errors === false) {
+      assignValid();
+      if (def2.modifying)
+        modifyData(cxt);
+      reportErrs(() => cxt.error());
+    } else {
+      const ruleErrs = def2.async ? validateAsync() : validateSync();
+      if (def2.modifying)
+        modifyData(cxt);
+      reportErrs(() => addErrs(cxt, ruleErrs));
+    }
+  }
+  function validateAsync() {
+    const ruleErrs = gen.let("ruleErrs", null);
+    gen.try(() => assignValid((0, codegen_1$p._)`await `), (e) => gen.assign(valid2, false).if((0, codegen_1$p._)`${e} instanceof ${it.ValidationError}`, () => gen.assign(ruleErrs, (0, codegen_1$p._)`${e}.errors`), () => gen.throw(e)));
+    return ruleErrs;
+  }
+  function validateSync() {
+    const validateErrs = (0, codegen_1$p._)`${validateRef}.errors`;
+    gen.assign(validateErrs, null);
+    assignValid(codegen_1$p.nil);
+    return validateErrs;
+  }
+  function assignValid(_await = def2.async ? (0, codegen_1$p._)`await ` : codegen_1$p.nil) {
+    const passCxt = it.opts.passContext ? names_1$4.default.this : names_1$4.default.self;
+    const passSchema = !("compile" in def2 && !$data || def2.schema === false);
+    gen.assign(valid2, (0, codegen_1$p._)`${_await}${(0, code_1$9.callValidateCode)(cxt, validateRef, passCxt, passSchema)}`, def2.modifying);
+  }
+  function reportErrs(errors2) {
+    var _a2;
+    gen.if((0, codegen_1$p.not)((_a2 = def2.valid) !== null && _a2 !== void 0 ? _a2 : valid2), errors2);
+  }
+}
+keyword.funcKeywordCode = funcKeywordCode;
+function modifyData(cxt) {
+  const { gen, data, it } = cxt;
+  gen.if(it.parentData, () => gen.assign(data, (0, codegen_1$p._)`${it.parentData}[${it.parentDataProperty}]`));
+}
+function addErrs(cxt, errs) {
+  const { gen } = cxt;
+  gen.if((0, codegen_1$p._)`Array.isArray(${errs})`, () => {
+    gen.assign(names_1$4.default.vErrors, (0, codegen_1$p._)`${names_1$4.default.vErrors} === null ? ${errs} : ${names_1$4.default.vErrors}.concat(${errs})`).assign(names_1$4.default.errors, (0, codegen_1$p._)`${names_1$4.default.vErrors}.length`);
+    (0, errors_1$1.extendErrors)(cxt);
+  }, () => cxt.error());
+}
+function checkAsyncKeyword({ schemaEnv }, def2) {
+  if (def2.async && !schemaEnv.$async)
+    throw new Error("async keyword in sync schema");
+}
+function useKeyword(gen, keyword2, result) {
+  if (result === void 0)
+    throw new Error(`keyword "${keyword2}" failed to compile`);
+  return gen.scopeValue("keyword", typeof result == "function" ? { ref: result } : { ref: result, code: (0, codegen_1$p.stringify)(result) });
+}
+function validSchemaType(schema, schemaType, allowUndefined = false) {
+  return !schemaType.length || schemaType.some((st) => st === "array" ? Array.isArray(schema) : st === "object" ? schema && typeof schema == "object" && !Array.isArray(schema) : typeof schema == st || allowUndefined && typeof schema == "undefined");
+}
+keyword.validSchemaType = validSchemaType;
+function validateKeywordUsage({ schema, opts, self: self2, errSchemaPath }, def2, keyword2) {
+  if (Array.isArray(def2.keyword) ? !def2.keyword.includes(keyword2) : def2.keyword !== keyword2) {
+    throw new Error("ajv implementation error");
+  }
+  const deps = def2.dependencies;
+  if (deps === null || deps === void 0 ? void 0 : deps.some((kwd) => !Object.prototype.hasOwnProperty.call(schema, kwd))) {
+    throw new Error(`parent schema must have dependencies of ${keyword2}: ${deps.join(",")}`);
+  }
+  if (def2.validateSchema) {
+    const valid2 = def2.validateSchema(schema[keyword2]);
+    if (!valid2) {
+      const msg = `keyword "${keyword2}" value is invalid at path "${errSchemaPath}": ` + self2.errorsText(def2.validateSchema.errors);
+      if (opts.validateSchema === "log")
+        self2.logger.error(msg);
+      else
+        throw new Error(msg);
+    }
+  }
+}
+keyword.validateKeywordUsage = validateKeywordUsage;
+var subschema = {};
+Object.defineProperty(subschema, "__esModule", { value: true });
+subschema.extendSubschemaMode = subschema.extendSubschemaData = subschema.getSubschema = void 0;
+const codegen_1$o = codegen;
+const util_1$o = util;
+function getSubschema(it, { keyword: keyword2, schemaProp, schema, schemaPath, errSchemaPath, topSchemaRef }) {
+  if (keyword2 !== void 0 && schema !== void 0) {
+    throw new Error('both "keyword" and "schema" passed, only one allowed');
+  }
+  if (keyword2 !== void 0) {
+    const sch = it.schema[keyword2];
+    return schemaProp === void 0 ? {
+      schema: sch,
+      schemaPath: (0, codegen_1$o._)`${it.schemaPath}${(0, codegen_1$o.getProperty)(keyword2)}`,
+      errSchemaPath: `${it.errSchemaPath}/${keyword2}`
+    } : {
+      schema: sch[schemaProp],
+      schemaPath: (0, codegen_1$o._)`${it.schemaPath}${(0, codegen_1$o.getProperty)(keyword2)}${(0, codegen_1$o.getProperty)(schemaProp)}`,
+      errSchemaPath: `${it.errSchemaPath}/${keyword2}/${(0, util_1$o.escapeFragment)(schemaProp)}`
+    };
+  }
+  if (schema !== void 0) {
+    if (schemaPath === void 0 || errSchemaPath === void 0 || topSchemaRef === void 0) {
+      throw new Error('"schemaPath", "errSchemaPath" and "topSchemaRef" are required with "schema"');
+    }
+    return {
+      schema,
+      schemaPath,
+      topSchemaRef,
+      errSchemaPath
+    };
+  }
+  throw new Error('either "keyword" or "schema" must be passed');
+}
+subschema.getSubschema = getSubschema;
+function extendSubschemaData(subschema2, it, { dataProp, dataPropType: dpType, data, dataTypes, propertyName }) {
+  if (data !== void 0 && dataProp !== void 0) {
+    throw new Error('both "data" and "dataProp" passed, only one allowed');
+  }
+  const { gen } = it;
+  if (dataProp !== void 0) {
+    const { errorPath, dataPathArr, opts } = it;
+    const nextData = gen.let("data", (0, codegen_1$o._)`${it.data}${(0, codegen_1$o.getProperty)(dataProp)}`, true);
+    dataContextProps(nextData);
+    subschema2.errorPath = (0, codegen_1$o.str)`${errorPath}${(0, util_1$o.getErrorPath)(dataProp, dpType, opts.jsPropertySyntax)}`;
+    subschema2.parentDataProperty = (0, codegen_1$o._)`${dataProp}`;
+    subschema2.dataPathArr = [...dataPathArr, subschema2.parentDataProperty];
+  }
+  if (data !== void 0) {
+    const nextData = data instanceof codegen_1$o.Name ? data : gen.let("data", data, true);
+    dataContextProps(nextData);
+    if (propertyName !== void 0)
+      subschema2.propertyName = propertyName;
+  }
+  if (dataTypes)
+    subschema2.dataTypes = dataTypes;
+  function dataContextProps(_nextData) {
+    subschema2.data = _nextData;
+    subschema2.dataLevel = it.dataLevel + 1;
+    subschema2.dataTypes = [];
+    it.definedProperties = /* @__PURE__ */ new Set();
+    subschema2.parentData = it.data;
+    subschema2.dataNames = [...it.dataNames, _nextData];
+  }
+}
+subschema.extendSubschemaData = extendSubschemaData;
+function extendSubschemaMode(subschema2, { jtdDiscriminator, jtdMetadata, compositeRule, createErrors, allErrors }) {
+  if (compositeRule !== void 0)
+    subschema2.compositeRule = compositeRule;
+  if (createErrors !== void 0)
+    subschema2.createErrors = createErrors;
+  if (allErrors !== void 0)
+    subschema2.allErrors = allErrors;
+  subschema2.jtdDiscriminator = jtdDiscriminator;
+  subschema2.jtdMetadata = jtdMetadata;
+}
+subschema.extendSubschemaMode = extendSubschemaMode;
+var resolve$2 = {};
+var fastDeepEqual = function equal(a, b) {
+  if (a === b) return true;
+  if (a && b && typeof a == "object" && typeof b == "object") {
+    if (a.constructor !== b.constructor) return false;
+    var length, i, keys;
+    if (Array.isArray(a)) {
+      length = a.length;
+      if (length != b.length) return false;
+      for (i = length; i-- !== 0; )
+        if (!equal(a[i], b[i])) return false;
+      return true;
+    }
+    if (a.constructor === RegExp) return a.source === b.source && a.flags === b.flags;
+    if (a.valueOf !== Object.prototype.valueOf) return a.valueOf() === b.valueOf();
+    if (a.toString !== Object.prototype.toString) return a.toString() === b.toString();
+    keys = Object.keys(a);
+    length = keys.length;
+    if (length !== Object.keys(b).length) return false;
+    for (i = length; i-- !== 0; )
+      if (!Object.prototype.hasOwnProperty.call(b, keys[i])) return false;
+    for (i = length; i-- !== 0; ) {
+      var key = keys[i];
+      if (!equal(a[key], b[key])) return false;
+    }
+    return true;
+  }
+  return a !== a && b !== b;
+};
+var jsonSchemaTraverse = { exports: {} };
+var traverse$1 = jsonSchemaTraverse.exports = function(schema, opts, cb) {
+  if (typeof opts == "function") {
+    cb = opts;
+    opts = {};
+  }
+  cb = opts.cb || cb;
+  var pre = typeof cb == "function" ? cb : cb.pre || function() {
+  };
+  var post = cb.post || function() {
+  };
+  _traverse(opts, pre, post, schema, "", schema);
+};
+traverse$1.keywords = {
+  additionalItems: true,
+  items: true,
+  contains: true,
+  additionalProperties: true,
+  propertyNames: true,
+  not: true,
+  if: true,
+  then: true,
+  else: true
+};
+traverse$1.arrayKeywords = {
+  items: true,
+  allOf: true,
+  anyOf: true,
+  oneOf: true
+};
+traverse$1.propsKeywords = {
+  $defs: true,
+  definitions: true,
+  properties: true,
+  patternProperties: true,
+  dependencies: true
+};
+traverse$1.skipKeywords = {
+  default: true,
+  enum: true,
+  const: true,
+  required: true,
+  maximum: true,
+  minimum: true,
+  exclusiveMaximum: true,
+  exclusiveMinimum: true,
+  multipleOf: true,
+  maxLength: true,
+  minLength: true,
+  pattern: true,
+  format: true,
+  maxItems: true,
+  minItems: true,
+  uniqueItems: true,
+  maxProperties: true,
+  minProperties: true
+};
+function _traverse(opts, pre, post, schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex) {
+  if (schema && typeof schema == "object" && !Array.isArray(schema)) {
+    pre(schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
+    for (var key in schema) {
+      var sch = schema[key];
+      if (Array.isArray(sch)) {
+        if (key in traverse$1.arrayKeywords) {
+          for (var i = 0; i < sch.length; i++)
+            _traverse(opts, pre, post, sch[i], jsonPtr + "/" + key + "/" + i, rootSchema, jsonPtr, key, schema, i);
+        }
+      } else if (key in traverse$1.propsKeywords) {
+        if (sch && typeof sch == "object") {
+          for (var prop in sch)
+            _traverse(opts, pre, post, sch[prop], jsonPtr + "/" + key + "/" + escapeJsonPtr(prop), rootSchema, jsonPtr, key, schema, prop);
+        }
+      } else if (key in traverse$1.keywords || opts.allKeys && !(key in traverse$1.skipKeywords)) {
+        _traverse(opts, pre, post, sch, jsonPtr + "/" + key, rootSchema, jsonPtr, key, schema);
+      }
+    }
+    post(schema, jsonPtr, rootSchema, parentJsonPtr, parentKeyword, parentSchema, keyIndex);
+  }
+}
+function escapeJsonPtr(str) {
+  return str.replace(/~/g, "~0").replace(/\//g, "~1");
+}
+var jsonSchemaTraverseExports = jsonSchemaTraverse.exports;
+Object.defineProperty(resolve$2, "__esModule", { value: true });
+resolve$2.getSchemaRefs = resolve$2.resolveUrl = resolve$2.normalizeId = resolve$2._getFullPath = resolve$2.getFullPath = resolve$2.inlineRef = void 0;
+const util_1$n = util;
+const equal$3 = fastDeepEqual;
+const traverse = jsonSchemaTraverseExports;
+const SIMPLE_INLINED = /* @__PURE__ */ new Set([
+  "type",
+  "format",
+  "pattern",
+  "maxLength",
+  "minLength",
+  "maxProperties",
+  "minProperties",
+  "maxItems",
+  "minItems",
+  "maximum",
+  "minimum",
+  "uniqueItems",
+  "multipleOf",
+  "required",
+  "enum",
+  "const"
+]);
+function inlineRef(schema, limit2 = true) {
+  if (typeof schema == "boolean")
+    return true;
+  if (limit2 === true)
+    return !hasRef(schema);
+  if (!limit2)
+    return false;
+  return countKeys(schema) <= limit2;
+}
+resolve$2.inlineRef = inlineRef;
+const REF_KEYWORDS = /* @__PURE__ */ new Set([
+  "$ref",
+  "$recursiveRef",
+  "$recursiveAnchor",
+  "$dynamicRef",
+  "$dynamicAnchor"
+]);
+function hasRef(schema) {
+  for (const key in schema) {
+    if (REF_KEYWORDS.has(key))
+      return true;
+    const sch = schema[key];
+    if (Array.isArray(sch) && sch.some(hasRef))
+      return true;
+    if (typeof sch == "object" && hasRef(sch))
+      return true;
+  }
+  return false;
+}
+function countKeys(schema) {
+  let count = 0;
+  for (const key in schema) {
+    if (key === "$ref")
+      return Infinity;
+    count++;
+    if (SIMPLE_INLINED.has(key))
+      continue;
+    if (typeof schema[key] == "object") {
+      (0, util_1$n.eachItem)(schema[key], (sch) => count += countKeys(sch));
+    }
+    if (count === Infinity)
+      return Infinity;
+  }
+  return count;
+}
+function getFullPath(resolver, id2 = "", normalize2) {
+  if (normalize2 !== false)
+    id2 = normalizeId(id2);
+  const p = resolver.parse(id2);
+  return _getFullPath(resolver, p);
+}
+resolve$2.getFullPath = getFullPath;
+function _getFullPath(resolver, p) {
+  const serialized = resolver.serialize(p);
+  return serialized.split("#")[0] + "#";
+}
+resolve$2._getFullPath = _getFullPath;
+const TRAILING_SLASH_HASH = /#\/?$/;
+function normalizeId(id2) {
+  return id2 ? id2.replace(TRAILING_SLASH_HASH, "") : "";
+}
+resolve$2.normalizeId = normalizeId;
+function resolveUrl(resolver, baseId, id2) {
+  id2 = normalizeId(id2);
+  return resolver.resolve(baseId, id2);
+}
+resolve$2.resolveUrl = resolveUrl;
+const ANCHOR = /^[a-z_][-a-z0-9._]*$/i;
+function getSchemaRefs(schema, baseId) {
+  if (typeof schema == "boolean")
+    return {};
+  const { schemaId, uriResolver } = this.opts;
+  const schId = normalizeId(schema[schemaId] || baseId);
+  const baseIds = { "": schId };
+  const pathPrefix = getFullPath(uriResolver, schId, false);
+  const localRefs = {};
+  const schemaRefs = /* @__PURE__ */ new Set();
+  traverse(schema, { allKeys: true }, (sch, jsonPtr, _, parentJsonPtr) => {
+    if (parentJsonPtr === void 0)
+      return;
+    const fullPath = pathPrefix + jsonPtr;
+    let innerBaseId = baseIds[parentJsonPtr];
+    if (typeof sch[schemaId] == "string")
+      innerBaseId = addRef.call(this, sch[schemaId]);
+    addAnchor.call(this, sch.$anchor);
+    addAnchor.call(this, sch.$dynamicAnchor);
+    baseIds[jsonPtr] = innerBaseId;
+    function addRef(ref2) {
+      const _resolve = this.opts.uriResolver.resolve;
+      ref2 = normalizeId(innerBaseId ? _resolve(innerBaseId, ref2) : ref2);
+      if (schemaRefs.has(ref2))
+        throw ambiguos(ref2);
+      schemaRefs.add(ref2);
+      let schOrRef = this.refs[ref2];
+      if (typeof schOrRef == "string")
+        schOrRef = this.refs[schOrRef];
+      if (typeof schOrRef == "object") {
+        checkAmbiguosRef(sch, schOrRef.schema, ref2);
+      } else if (ref2 !== normalizeId(fullPath)) {
+        if (ref2[0] === "#") {
+          checkAmbiguosRef(sch, localRefs[ref2], ref2);
+          localRefs[ref2] = sch;
+        } else {
+          this.refs[ref2] = fullPath;
+        }
+      }
+      return ref2;
+    }
+    function addAnchor(anchor) {
+      if (typeof anchor == "string") {
+        if (!ANCHOR.test(anchor))
+          throw new Error(`invalid anchor "${anchor}"`);
+        addRef.call(this, `#${anchor}`);
+      }
+    }
+  });
+  return localRefs;
+  function checkAmbiguosRef(sch1, sch2, ref2) {
+    if (sch2 !== void 0 && !equal$3(sch1, sch2))
+      throw ambiguos(ref2);
+  }
+  function ambiguos(ref2) {
+    return new Error(`reference "${ref2}" resolves to more than one schema`);
+  }
+}
+resolve$2.getSchemaRefs = getSchemaRefs;
+Object.defineProperty(validate, "__esModule", { value: true });
+validate.getData = validate.KeywordCxt = validate.validateFunctionCode = void 0;
+const boolSchema_1 = boolSchema;
+const dataType_1$1 = dataType;
+const applicability_1 = applicability;
+const dataType_2 = dataType;
+const defaults_1 = defaults;
+const keyword_1 = keyword;
+const subschema_1 = subschema;
+const codegen_1$n = codegen;
+const names_1$3 = names$1;
+const resolve_1$2 = resolve$2;
+const util_1$m = util;
+const errors_1 = errors;
+function validateFunctionCode(it) {
+  if (isSchemaObj(it)) {
+    checkKeywords(it);
+    if (schemaCxtHasRules(it)) {
+      topSchemaObjCode(it);
+      return;
+    }
+  }
+  validateFunction(it, () => (0, boolSchema_1.topBoolOrEmptySchema)(it));
+}
+validate.validateFunctionCode = validateFunctionCode;
+function validateFunction({ gen, validateName, schema, schemaEnv, opts }, body) {
+  if (opts.code.es5) {
+    gen.func(validateName, (0, codegen_1$n._)`${names_1$3.default.data}, ${names_1$3.default.valCxt}`, schemaEnv.$async, () => {
+      gen.code((0, codegen_1$n._)`"use strict"; ${funcSourceUrl(schema, opts)}`);
+      destructureValCxtES5(gen, opts);
+      gen.code(body);
+    });
+  } else {
+    gen.func(validateName, (0, codegen_1$n._)`${names_1$3.default.data}, ${destructureValCxt(opts)}`, schemaEnv.$async, () => gen.code(funcSourceUrl(schema, opts)).code(body));
+  }
+}
+function destructureValCxt(opts) {
+  return (0, codegen_1$n._)`{${names_1$3.default.instancePath}="", ${names_1$3.default.parentData}, ${names_1$3.default.parentDataProperty}, ${names_1$3.default.rootData}=${names_1$3.default.data}${opts.dynamicRef ? (0, codegen_1$n._)`, ${names_1$3.default.dynamicAnchors}={}` : codegen_1$n.nil}}={}`;
+}
+function destructureValCxtES5(gen, opts) {
+  gen.if(names_1$3.default.valCxt, () => {
+    gen.var(names_1$3.default.instancePath, (0, codegen_1$n._)`${names_1$3.default.valCxt}.${names_1$3.default.instancePath}`);
+    gen.var(names_1$3.default.parentData, (0, codegen_1$n._)`${names_1$3.default.valCxt}.${names_1$3.default.parentData}`);
+    gen.var(names_1$3.default.parentDataProperty, (0, codegen_1$n._)`${names_1$3.default.valCxt}.${names_1$3.default.parentDataProperty}`);
+    gen.var(names_1$3.default.rootData, (0, codegen_1$n._)`${names_1$3.default.valCxt}.${names_1$3.default.rootData}`);
+    if (opts.dynamicRef)
+      gen.var(names_1$3.default.dynamicAnchors, (0, codegen_1$n._)`${names_1$3.default.valCxt}.${names_1$3.default.dynamicAnchors}`);
+  }, () => {
+    gen.var(names_1$3.default.instancePath, (0, codegen_1$n._)`""`);
+    gen.var(names_1$3.default.parentData, (0, codegen_1$n._)`undefined`);
+    gen.var(names_1$3.default.parentDataProperty, (0, codegen_1$n._)`undefined`);
+    gen.var(names_1$3.default.rootData, names_1$3.default.data);
+    if (opts.dynamicRef)
+      gen.var(names_1$3.default.dynamicAnchors, (0, codegen_1$n._)`{}`);
+  });
+}
+function topSchemaObjCode(it) {
+  const { schema, opts, gen } = it;
+  validateFunction(it, () => {
+    if (opts.$comment && schema.$comment)
+      commentKeyword(it);
+    checkNoDefault(it);
+    gen.let(names_1$3.default.vErrors, null);
+    gen.let(names_1$3.default.errors, 0);
+    if (opts.unevaluated)
+      resetEvaluated(it);
+    typeAndKeywords(it);
+    returnResults(it);
+  });
+  return;
+}
+function resetEvaluated(it) {
+  const { gen, validateName } = it;
+  it.evaluated = gen.const("evaluated", (0, codegen_1$n._)`${validateName}.evaluated`);
+  gen.if((0, codegen_1$n._)`${it.evaluated}.dynamicProps`, () => gen.assign((0, codegen_1$n._)`${it.evaluated}.props`, (0, codegen_1$n._)`undefined`));
+  gen.if((0, codegen_1$n._)`${it.evaluated}.dynamicItems`, () => gen.assign((0, codegen_1$n._)`${it.evaluated}.items`, (0, codegen_1$n._)`undefined`));
+}
+function funcSourceUrl(schema, opts) {
+  const schId = typeof schema == "object" && schema[opts.schemaId];
+  return schId && (opts.code.source || opts.code.process) ? (0, codegen_1$n._)`/*# sourceURL=${schId} */` : codegen_1$n.nil;
+}
+function subschemaCode(it, valid2) {
+  if (isSchemaObj(it)) {
+    checkKeywords(it);
+    if (schemaCxtHasRules(it)) {
+      subSchemaObjCode(it, valid2);
+      return;
+    }
+  }
+  (0, boolSchema_1.boolOrEmptySchema)(it, valid2);
+}
+function schemaCxtHasRules({ schema, self: self2 }) {
+  if (typeof schema == "boolean")
+    return !schema;
+  for (const key in schema)
+    if (self2.RULES.all[key])
+      return true;
+  return false;
+}
+function isSchemaObj(it) {
+  return typeof it.schema != "boolean";
+}
+function subSchemaObjCode(it, valid2) {
+  const { schema, gen, opts } = it;
+  if (opts.$comment && schema.$comment)
+    commentKeyword(it);
+  updateContext(it);
+  checkAsyncSchema(it);
+  const errsCount = gen.const("_errs", names_1$3.default.errors);
+  typeAndKeywords(it, errsCount);
+  gen.var(valid2, (0, codegen_1$n._)`${errsCount} === ${names_1$3.default.errors}`);
+}
+function checkKeywords(it) {
+  (0, util_1$m.checkUnknownRules)(it);
+  checkRefsAndKeywords(it);
+}
+function typeAndKeywords(it, errsCount) {
+  if (it.opts.jtd)
+    return schemaKeywords(it, [], false, errsCount);
+  const types2 = (0, dataType_1$1.getSchemaTypes)(it.schema);
+  const checkedTypes = (0, dataType_1$1.coerceAndCheckDataType)(it, types2);
+  schemaKeywords(it, types2, !checkedTypes, errsCount);
+}
+function checkRefsAndKeywords(it) {
+  const { schema, errSchemaPath, opts, self: self2 } = it;
+  if (schema.$ref && opts.ignoreKeywordsWithRef && (0, util_1$m.schemaHasRulesButRef)(schema, self2.RULES)) {
+    self2.logger.warn(`$ref: keywords ignored in schema at path "${errSchemaPath}"`);
+  }
+}
+function checkNoDefault(it) {
+  const { schema, opts } = it;
+  if (schema.default !== void 0 && opts.useDefaults && opts.strictSchema) {
+    (0, util_1$m.checkStrictMode)(it, "default is ignored in the schema root");
+  }
+}
+function updateContext(it) {
+  const schId = it.schema[it.opts.schemaId];
+  if (schId)
+    it.baseId = (0, resolve_1$2.resolveUrl)(it.opts.uriResolver, it.baseId, schId);
+}
+function checkAsyncSchema(it) {
+  if (it.schema.$async && !it.schemaEnv.$async)
+    throw new Error("async schema in sync schema");
+}
+function commentKeyword({ gen, schemaEnv, schema, errSchemaPath, opts }) {
+  const msg = schema.$comment;
+  if (opts.$comment === true) {
+    gen.code((0, codegen_1$n._)`${names_1$3.default.self}.logger.log(${msg})`);
+  } else if (typeof opts.$comment == "function") {
+    const schemaPath = (0, codegen_1$n.str)`${errSchemaPath}/$comment`;
+    const rootName = gen.scopeValue("root", { ref: schemaEnv.root });
+    gen.code((0, codegen_1$n._)`${names_1$3.default.self}.opts.$comment(${msg}, ${schemaPath}, ${rootName}.schema)`);
+  }
+}
+function returnResults(it) {
+  const { gen, schemaEnv, validateName, ValidationError: ValidationError2, opts } = it;
+  if (schemaEnv.$async) {
+    gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === 0`, () => gen.return(names_1$3.default.data), () => gen.throw((0, codegen_1$n._)`new ${ValidationError2}(${names_1$3.default.vErrors})`));
+  } else {
+    gen.assign((0, codegen_1$n._)`${validateName}.errors`, names_1$3.default.vErrors);
+    if (opts.unevaluated)
+      assignEvaluated(it);
+    gen.return((0, codegen_1$n._)`${names_1$3.default.errors} === 0`);
+  }
+}
+function assignEvaluated({ gen, evaluated, props, items: items2 }) {
+  if (props instanceof codegen_1$n.Name)
+    gen.assign((0, codegen_1$n._)`${evaluated}.props`, props);
+  if (items2 instanceof codegen_1$n.Name)
+    gen.assign((0, codegen_1$n._)`${evaluated}.items`, items2);
+}
+function schemaKeywords(it, types2, typeErrors, errsCount) {
+  const { gen, schema, data, allErrors, opts, self: self2 } = it;
+  const { RULES } = self2;
+  if (schema.$ref && (opts.ignoreKeywordsWithRef || !(0, util_1$m.schemaHasRulesButRef)(schema, RULES))) {
+    gen.block(() => keywordCode(it, "$ref", RULES.all.$ref.definition));
+    return;
+  }
+  if (!opts.jtd)
+    checkStrictTypes(it, types2);
+  gen.block(() => {
+    for (const group of RULES.rules)
+      groupKeywords(group);
+    groupKeywords(RULES.post);
+  });
+  function groupKeywords(group) {
+    if (!(0, applicability_1.shouldUseGroup)(schema, group))
+      return;
+    if (group.type) {
+      gen.if((0, dataType_2.checkDataType)(group.type, data, opts.strictNumbers));
+      iterateKeywords(it, group);
+      if (types2.length === 1 && types2[0] === group.type && typeErrors) {
+        gen.else();
+        (0, dataType_2.reportTypeError)(it);
+      }
+      gen.endIf();
+    } else {
+      iterateKeywords(it, group);
+    }
+    if (!allErrors)
+      gen.if((0, codegen_1$n._)`${names_1$3.default.errors} === ${errsCount || 0}`);
+  }
+}
+function iterateKeywords(it, group) {
+  const { gen, schema, opts: { useDefaults } } = it;
+  if (useDefaults)
+    (0, defaults_1.assignDefaults)(it, group.type);
+  gen.block(() => {
+    for (const rule of group.rules) {
+      if ((0, applicability_1.shouldUseRule)(schema, rule)) {
+        keywordCode(it, rule.keyword, rule.definition, group.type);
+      }
+    }
+  });
+}
+function checkStrictTypes(it, types2) {
+  if (it.schemaEnv.meta || !it.opts.strictTypes)
+    return;
+  checkContextTypes(it, types2);
+  if (!it.opts.allowUnionTypes)
+    checkMultipleTypes(it, types2);
+  checkKeywordTypes(it, it.dataTypes);
+}
+function checkContextTypes(it, types2) {
+  if (!types2.length)
+    return;
+  if (!it.dataTypes.length) {
+    it.dataTypes = types2;
+    return;
+  }
+  types2.forEach((t2) => {
+    if (!includesType(it.dataTypes, t2)) {
+      strictTypesError(it, `type "${t2}" not allowed by context "${it.dataTypes.join(",")}"`);
+    }
+  });
+  narrowSchemaTypes(it, types2);
+}
+function checkMultipleTypes(it, ts) {
+  if (ts.length > 1 && !(ts.length === 2 && ts.includes("null"))) {
+    strictTypesError(it, "use allowUnionTypes to allow union type keyword");
+  }
+}
+function checkKeywordTypes(it, ts) {
+  const rules2 = it.self.RULES.all;
+  for (const keyword2 in rules2) {
+    const rule = rules2[keyword2];
+    if (typeof rule == "object" && (0, applicability_1.shouldUseRule)(it.schema, rule)) {
+      const { type: type2 } = rule.definition;
+      if (type2.length && !type2.some((t2) => hasApplicableType(ts, t2))) {
+        strictTypesError(it, `missing type "${type2.join(",")}" for keyword "${keyword2}"`);
+      }
+    }
+  }
+}
+function hasApplicableType(schTs, kwdT) {
+  return schTs.includes(kwdT) || kwdT === "number" && schTs.includes("integer");
+}
+function includesType(ts, t2) {
+  return ts.includes(t2) || t2 === "integer" && ts.includes("number");
+}
+function narrowSchemaTypes(it, withTypes) {
+  const ts = [];
+  for (const t2 of it.dataTypes) {
+    if (includesType(withTypes, t2))
+      ts.push(t2);
+    else if (withTypes.includes("integer") && t2 === "number")
+      ts.push("integer");
+  }
+  it.dataTypes = ts;
+}
+function strictTypesError(it, msg) {
+  const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+  msg += ` at "${schemaPath}" (strictTypes)`;
+  (0, util_1$m.checkStrictMode)(it, msg, it.opts.strictTypes);
+}
+class KeywordCxt {
+  constructor(it, def2, keyword2) {
+    (0, keyword_1.validateKeywordUsage)(it, def2, keyword2);
+    this.gen = it.gen;
+    this.allErrors = it.allErrors;
+    this.keyword = keyword2;
+    this.data = it.data;
+    this.schema = it.schema[keyword2];
+    this.$data = def2.$data && it.opts.$data && this.schema && this.schema.$data;
+    this.schemaValue = (0, util_1$m.schemaRefOrVal)(it, this.schema, keyword2, this.$data);
+    this.schemaType = def2.schemaType;
+    this.parentSchema = it.schema;
+    this.params = {};
+    this.it = it;
+    this.def = def2;
+    if (this.$data) {
+      this.schemaCode = it.gen.const("vSchema", getData(this.$data, it));
+    } else {
+      this.schemaCode = this.schemaValue;
+      if (!(0, keyword_1.validSchemaType)(this.schema, def2.schemaType, def2.allowUndefined)) {
+        throw new Error(`${keyword2} value must be ${JSON.stringify(def2.schemaType)}`);
+      }
+    }
+    if ("code" in def2 ? def2.trackErrors : def2.errors !== false) {
+      this.errsCount = it.gen.const("_errs", names_1$3.default.errors);
+    }
+  }
+  result(condition, successAction, failAction) {
+    this.failResult((0, codegen_1$n.not)(condition), successAction, failAction);
+  }
+  failResult(condition, successAction, failAction) {
+    this.gen.if(condition);
+    if (failAction)
+      failAction();
+    else
+      this.error();
+    if (successAction) {
+      this.gen.else();
+      successAction();
+      if (this.allErrors)
+        this.gen.endIf();
+    } else {
+      if (this.allErrors)
+        this.gen.endIf();
+      else
+        this.gen.else();
+    }
+  }
+  pass(condition, failAction) {
+    this.failResult((0, codegen_1$n.not)(condition), void 0, failAction);
+  }
+  fail(condition) {
+    if (condition === void 0) {
+      this.error();
+      if (!this.allErrors)
+        this.gen.if(false);
+      return;
+    }
+    this.gen.if(condition);
+    this.error();
+    if (this.allErrors)
+      this.gen.endIf();
+    else
+      this.gen.else();
+  }
+  fail$data(condition) {
+    if (!this.$data)
+      return this.fail(condition);
+    const { schemaCode } = this;
+    this.fail((0, codegen_1$n._)`${schemaCode} !== undefined && (${(0, codegen_1$n.or)(this.invalid$data(), condition)})`);
+  }
+  error(append, errorParams, errorPaths) {
+    if (errorParams) {
+      this.setParams(errorParams);
+      this._error(append, errorPaths);
+      this.setParams({});
+      return;
+    }
+    this._error(append, errorPaths);
+  }
+  _error(append, errorPaths) {
+    (append ? errors_1.reportExtraError : errors_1.reportError)(this, this.def.error, errorPaths);
+  }
+  $dataError() {
+    (0, errors_1.reportError)(this, this.def.$dataError || errors_1.keyword$DataError);
+  }
+  reset() {
+    if (this.errsCount === void 0)
+      throw new Error('add "trackErrors" to keyword definition');
+    (0, errors_1.resetErrorsCount)(this.gen, this.errsCount);
+  }
+  ok(cond) {
+    if (!this.allErrors)
+      this.gen.if(cond);
+  }
+  setParams(obj, assign) {
+    if (assign)
+      Object.assign(this.params, obj);
+    else
+      this.params = obj;
+  }
+  block$data(valid2, codeBlock, $dataValid = codegen_1$n.nil) {
+    this.gen.block(() => {
+      this.check$data(valid2, $dataValid);
+      codeBlock();
+    });
+  }
+  check$data(valid2 = codegen_1$n.nil, $dataValid = codegen_1$n.nil) {
+    if (!this.$data)
+      return;
+    const { gen, schemaCode, schemaType, def: def2 } = this;
+    gen.if((0, codegen_1$n.or)((0, codegen_1$n._)`${schemaCode} === undefined`, $dataValid));
+    if (valid2 !== codegen_1$n.nil)
+      gen.assign(valid2, true);
+    if (schemaType.length || def2.validateSchema) {
+      gen.elseIf(this.invalid$data());
+      this.$dataError();
+      if (valid2 !== codegen_1$n.nil)
+        gen.assign(valid2, false);
+    }
+    gen.else();
+  }
+  invalid$data() {
+    const { gen, schemaCode, schemaType, def: def2, it } = this;
+    return (0, codegen_1$n.or)(wrong$DataType(), invalid$DataSchema());
+    function wrong$DataType() {
+      if (schemaType.length) {
+        if (!(schemaCode instanceof codegen_1$n.Name))
+          throw new Error("ajv implementation error");
+        const st = Array.isArray(schemaType) ? schemaType : [schemaType];
+        return (0, codegen_1$n._)`${(0, dataType_2.checkDataTypes)(st, schemaCode, it.opts.strictNumbers, dataType_2.DataType.Wrong)}`;
+      }
+      return codegen_1$n.nil;
+    }
+    function invalid$DataSchema() {
+      if (def2.validateSchema) {
+        const validateSchemaRef = gen.scopeValue("validate$data", { ref: def2.validateSchema });
+        return (0, codegen_1$n._)`!${validateSchemaRef}(${schemaCode})`;
+      }
+      return codegen_1$n.nil;
+    }
+  }
+  subschema(appl, valid2) {
+    const subschema2 = (0, subschema_1.getSubschema)(this.it, appl);
+    (0, subschema_1.extendSubschemaData)(subschema2, this.it, appl);
+    (0, subschema_1.extendSubschemaMode)(subschema2, appl);
+    const nextContext = { ...this.it, ...subschema2, items: void 0, props: void 0 };
+    subschemaCode(nextContext, valid2);
+    return nextContext;
+  }
+  mergeEvaluated(schemaCxt, toName) {
+    const { it, gen } = this;
+    if (!it.opts.unevaluated)
+      return;
+    if (it.props !== true && schemaCxt.props !== void 0) {
+      it.props = util_1$m.mergeEvaluated.props(gen, schemaCxt.props, it.props, toName);
+    }
+    if (it.items !== true && schemaCxt.items !== void 0) {
+      it.items = util_1$m.mergeEvaluated.items(gen, schemaCxt.items, it.items, toName);
+    }
+  }
+  mergeValidEvaluated(schemaCxt, valid2) {
+    const { it, gen } = this;
+    if (it.opts.unevaluated && (it.props !== true || it.items !== true)) {
+      gen.if(valid2, () => this.mergeEvaluated(schemaCxt, codegen_1$n.Name));
+      return true;
+    }
+  }
+}
+validate.KeywordCxt = KeywordCxt;
+function keywordCode(it, keyword2, def2, ruleType) {
+  const cxt = new KeywordCxt(it, def2, keyword2);
+  if ("code" in def2) {
+    def2.code(cxt, ruleType);
+  } else if (cxt.$data && def2.validate) {
+    (0, keyword_1.funcKeywordCode)(cxt, def2);
+  } else if ("macro" in def2) {
+    (0, keyword_1.macroKeywordCode)(cxt, def2);
+  } else if (def2.compile || def2.validate) {
+    (0, keyword_1.funcKeywordCode)(cxt, def2);
+  }
+}
+const JSON_POINTER = /^\/(?:[^~]|~0|~1)*$/;
+const RELATIVE_JSON_POINTER = /^([0-9]+)(#|\/(?:[^~]|~0|~1)*)?$/;
+function getData($data, { dataLevel, dataNames, dataPathArr }) {
+  let jsonPointer;
+  let data;
+  if ($data === "")
+    return names_1$3.default.rootData;
+  if ($data[0] === "/") {
+    if (!JSON_POINTER.test($data))
+      throw new Error(`Invalid JSON-pointer: ${$data}`);
+    jsonPointer = $data;
+    data = names_1$3.default.rootData;
+  } else {
+    const matches = RELATIVE_JSON_POINTER.exec($data);
+    if (!matches)
+      throw new Error(`Invalid JSON-pointer: ${$data}`);
+    const up = +matches[1];
+    jsonPointer = matches[2];
+    if (jsonPointer === "#") {
+      if (up >= dataLevel)
+        throw new Error(errorMsg("property/index", up));
+      return dataPathArr[dataLevel - up];
+    }
+    if (up > dataLevel)
+      throw new Error(errorMsg("data", up));
+    data = dataNames[dataLevel - up];
+    if (!jsonPointer)
+      return data;
+  }
+  let expr = data;
+  const segments = jsonPointer.split("/");
+  for (const segment of segments) {
+    if (segment) {
+      data = (0, codegen_1$n._)`${data}${(0, codegen_1$n.getProperty)((0, util_1$m.unescapeJsonPointer)(segment))}`;
+      expr = (0, codegen_1$n._)`${expr} && ${data}`;
+    }
+  }
+  return expr;
+  function errorMsg(pointerType, up) {
+    return `Cannot access ${pointerType} ${up} levels up, current level is ${dataLevel}`;
+  }
+}
+validate.getData = getData;
+var validation_error = {};
+Object.defineProperty(validation_error, "__esModule", { value: true });
+class ValidationError extends Error {
+  constructor(errors2) {
+    super("validation failed");
+    this.errors = errors2;
+    this.ajv = this.validation = true;
+  }
+}
+validation_error.default = ValidationError;
+var ref_error = {};
+Object.defineProperty(ref_error, "__esModule", { value: true });
+const resolve_1$1 = resolve$2;
+class MissingRefError extends Error {
+  constructor(resolver, baseId, ref2, msg) {
+    super(msg || `can't resolve reference ${ref2} from id ${baseId}`);
+    this.missingRef = (0, resolve_1$1.resolveUrl)(resolver, baseId, ref2);
+    this.missingSchema = (0, resolve_1$1.normalizeId)((0, resolve_1$1.getFullPath)(resolver, this.missingRef));
+  }
+}
+ref_error.default = MissingRefError;
+var compile = {};
+Object.defineProperty(compile, "__esModule", { value: true });
+compile.resolveSchema = compile.getCompilingSchema = compile.resolveRef = compile.compileSchema = compile.SchemaEnv = void 0;
+const codegen_1$m = codegen;
+const validation_error_1 = validation_error;
+const names_1$2 = names$1;
+const resolve_1 = resolve$2;
+const util_1$l = util;
+const validate_1$1 = validate;
+class SchemaEnv {
+  constructor(env2) {
+    var _a;
+    this.refs = {};
+    this.dynamicAnchors = {};
+    let schema;
+    if (typeof env2.schema == "object")
+      schema = env2.schema;
+    this.schema = env2.schema;
+    this.schemaId = env2.schemaId;
+    this.root = env2.root || this;
+    this.baseId = (_a = env2.baseId) !== null && _a !== void 0 ? _a : (0, resolve_1.normalizeId)(schema === null || schema === void 0 ? void 0 : schema[env2.schemaId || "$id"]);
+    this.schemaPath = env2.schemaPath;
+    this.localRefs = env2.localRefs;
+    this.meta = env2.meta;
+    this.$async = schema === null || schema === void 0 ? void 0 : schema.$async;
+    this.refs = {};
+  }
+}
+compile.SchemaEnv = SchemaEnv;
+function compileSchema(sch) {
+  const _sch = getCompilingSchema.call(this, sch);
+  if (_sch)
+    return _sch;
+  const rootId = (0, resolve_1.getFullPath)(this.opts.uriResolver, sch.root.baseId);
+  const { es5, lines } = this.opts.code;
+  const { ownProperties } = this.opts;
+  const gen = new codegen_1$m.CodeGen(this.scope, { es5, lines, ownProperties });
+  let _ValidationError;
+  if (sch.$async) {
+    _ValidationError = gen.scopeValue("Error", {
+      ref: validation_error_1.default,
+      code: (0, codegen_1$m._)`require("ajv/dist/runtime/validation_error").default`
+    });
+  }
+  const validateName = gen.scopeName("validate");
+  sch.validateName = validateName;
+  const schemaCxt = {
+    gen,
+    allErrors: this.opts.allErrors,
+    data: names_1$2.default.data,
+    parentData: names_1$2.default.parentData,
+    parentDataProperty: names_1$2.default.parentDataProperty,
+    dataNames: [names_1$2.default.data],
+    dataPathArr: [codegen_1$m.nil],
+    // TODO can its length be used as dataLevel if nil is removed?
+    dataLevel: 0,
+    dataTypes: [],
+    definedProperties: /* @__PURE__ */ new Set(),
+    topSchemaRef: gen.scopeValue("schema", this.opts.code.source === true ? { ref: sch.schema, code: (0, codegen_1$m.stringify)(sch.schema) } : { ref: sch.schema }),
+    validateName,
+    ValidationError: _ValidationError,
+    schema: sch.schema,
+    schemaEnv: sch,
+    rootId,
+    baseId: sch.baseId || rootId,
+    schemaPath: codegen_1$m.nil,
+    errSchemaPath: sch.schemaPath || (this.opts.jtd ? "" : "#"),
+    errorPath: (0, codegen_1$m._)`""`,
+    opts: this.opts,
+    self: this
+  };
+  let sourceCode;
+  try {
+    this._compilations.add(sch);
+    (0, validate_1$1.validateFunctionCode)(schemaCxt);
+    gen.optimize(this.opts.code.optimize);
+    const validateCode = gen.toString();
+    sourceCode = `${gen.scopeRefs(names_1$2.default.scope)}return ${validateCode}`;
+    if (this.opts.code.process)
+      sourceCode = this.opts.code.process(sourceCode, sch);
+    const makeValidate = new Function(`${names_1$2.default.self}`, `${names_1$2.default.scope}`, sourceCode);
+    const validate2 = makeValidate(this, this.scope.get());
+    this.scope.value(validateName, { ref: validate2 });
+    validate2.errors = null;
+    validate2.schema = sch.schema;
+    validate2.schemaEnv = sch;
+    if (sch.$async)
+      validate2.$async = true;
+    if (this.opts.code.source === true) {
+      validate2.source = { validateName, validateCode, scopeValues: gen._values };
+    }
+    if (this.opts.unevaluated) {
+      const { props, items: items2 } = schemaCxt;
+      validate2.evaluated = {
+        props: props instanceof codegen_1$m.Name ? void 0 : props,
+        items: items2 instanceof codegen_1$m.Name ? void 0 : items2,
+        dynamicProps: props instanceof codegen_1$m.Name,
+        dynamicItems: items2 instanceof codegen_1$m.Name
+      };
+      if (validate2.source)
+        validate2.source.evaluated = (0, codegen_1$m.stringify)(validate2.evaluated);
+    }
+    sch.validate = validate2;
+    return sch;
+  } catch (e) {
+    delete sch.validate;
+    delete sch.validateName;
+    if (sourceCode)
+      this.logger.error("Error compiling schema, function code:", sourceCode);
+    throw e;
+  } finally {
+    this._compilations.delete(sch);
+  }
+}
+compile.compileSchema = compileSchema;
+function resolveRef(root, baseId, ref2) {
+  var _a;
+  ref2 = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, ref2);
+  const schOrFunc = root.refs[ref2];
+  if (schOrFunc)
+    return schOrFunc;
+  let _sch = resolve$1.call(this, root, ref2);
+  if (_sch === void 0) {
+    const schema = (_a = root.localRefs) === null || _a === void 0 ? void 0 : _a[ref2];
+    const { schemaId } = this.opts;
+    if (schema)
+      _sch = new SchemaEnv({ schema, schemaId, root, baseId });
+  }
+  if (_sch === void 0)
+    return;
+  return root.refs[ref2] = inlineOrCompile.call(this, _sch);
+}
+compile.resolveRef = resolveRef;
+function inlineOrCompile(sch) {
+  if ((0, resolve_1.inlineRef)(sch.schema, this.opts.inlineRefs))
+    return sch.schema;
+  return sch.validate ? sch : compileSchema.call(this, sch);
+}
+function getCompilingSchema(schEnv) {
+  for (const sch of this._compilations) {
+    if (sameSchemaEnv(sch, schEnv))
+      return sch;
+  }
+}
+compile.getCompilingSchema = getCompilingSchema;
+function sameSchemaEnv(s1, s2) {
+  return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
+}
+function resolve$1(root, ref2) {
+  let sch;
+  while (typeof (sch = this.refs[ref2]) == "string")
+    ref2 = sch;
+  return sch || this.schemas[ref2] || resolveSchema.call(this, root, ref2);
+}
+function resolveSchema(root, ref2) {
+  const p = this.opts.uriResolver.parse(ref2);
+  const refPath = (0, resolve_1._getFullPath)(this.opts.uriResolver, p);
+  let baseId = (0, resolve_1.getFullPath)(this.opts.uriResolver, root.baseId, void 0);
+  if (Object.keys(root.schema).length > 0 && refPath === baseId) {
+    return getJsonPointer.call(this, p, root);
+  }
+  const id2 = (0, resolve_1.normalizeId)(refPath);
+  const schOrRef = this.refs[id2] || this.schemas[id2];
+  if (typeof schOrRef == "string") {
+    const sch = resolveSchema.call(this, root, schOrRef);
+    if (typeof (sch === null || sch === void 0 ? void 0 : sch.schema) !== "object")
+      return;
+    return getJsonPointer.call(this, p, sch);
+  }
+  if (typeof (schOrRef === null || schOrRef === void 0 ? void 0 : schOrRef.schema) !== "object")
+    return;
+  if (!schOrRef.validate)
+    compileSchema.call(this, schOrRef);
+  if (id2 === (0, resolve_1.normalizeId)(ref2)) {
+    const { schema } = schOrRef;
+    const { schemaId } = this.opts;
+    const schId = schema[schemaId];
+    if (schId)
+      baseId = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schId);
+    return new SchemaEnv({ schema, schemaId, root, baseId });
+  }
+  return getJsonPointer.call(this, p, schOrRef);
+}
+compile.resolveSchema = resolveSchema;
+const PREVENT_SCOPE_CHANGE = /* @__PURE__ */ new Set([
+  "properties",
+  "patternProperties",
+  "enum",
+  "dependencies",
+  "definitions"
+]);
+function getJsonPointer(parsedRef, { baseId, schema, root }) {
+  var _a;
+  if (((_a = parsedRef.fragment) === null || _a === void 0 ? void 0 : _a[0]) !== "/")
+    return;
+  for (const part of parsedRef.fragment.slice(1).split("/")) {
+    if (typeof schema === "boolean")
+      return;
+    const partSchema = schema[(0, util_1$l.unescapeFragment)(part)];
+    if (partSchema === void 0)
+      return;
+    schema = partSchema;
+    const schId = typeof schema === "object" && schema[this.opts.schemaId];
+    if (!PREVENT_SCOPE_CHANGE.has(part) && schId) {
+      baseId = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schId);
+    }
+  }
+  let env2;
+  if (typeof schema != "boolean" && schema.$ref && !(0, util_1$l.schemaHasRulesButRef)(schema, this.RULES)) {
+    const $ref = (0, resolve_1.resolveUrl)(this.opts.uriResolver, baseId, schema.$ref);
+    env2 = resolveSchema.call(this, root, $ref);
+  }
+  const { schemaId } = this.opts;
+  env2 = env2 || new SchemaEnv({ schema, schemaId, root, baseId });
+  if (env2.schema !== env2.root.schema)
+    return env2;
+  return void 0;
+}
+const $id$1 = "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#";
+const description = "Meta-schema for $data reference (JSON AnySchema extension proposal)";
+const type$1 = "object";
+const required$1 = [
+  "$data"
+];
+const properties$2 = {
+  $data: {
+    type: "string",
+    anyOf: [
+      {
+        format: "relative-json-pointer"
+      },
+      {
+        format: "json-pointer"
+      }
+    ]
+  }
+};
+const additionalProperties$1 = false;
+const require$$9 = {
+  $id: $id$1,
+  description,
+  type: type$1,
+  required: required$1,
+  properties: properties$2,
+  additionalProperties: additionalProperties$1
+};
+var uri$1 = {};
+var fastUri$1 = { exports: {} };
+const isUUID$1 = RegExp.prototype.test.bind(/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/iu);
+const isIPv4$1 = RegExp.prototype.test.bind(/^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]\d|\d)$/u);
+const isHexPair = RegExp.prototype.test.bind(/^[\da-f]{2}$/iu);
+const isUnreserved = RegExp.prototype.test.bind(/^[\da-z\-._~]$/iu);
+const isPathCharacter = RegExp.prototype.test.bind(/^[\da-z\-._~!$&'()*+,;=:@/]$/iu);
+function stringArrayToHexStripped(input) {
+  let acc = "";
+  let code2 = 0;
+  let i = 0;
+  for (i = 0; i < input.length; i++) {
+    code2 = input[i].charCodeAt(0);
+    if (code2 === 48) {
+      continue;
+    }
+    if (!(code2 >= 48 && code2 <= 57 || code2 >= 65 && code2 <= 70 || code2 >= 97 && code2 <= 102)) {
+      return "";
+    }
+    acc += input[i];
+    break;
+  }
+  for (i += 1; i < input.length; i++) {
+    code2 = input[i].charCodeAt(0);
+    if (!(code2 >= 48 && code2 <= 57 || code2 >= 65 && code2 <= 70 || code2 >= 97 && code2 <= 102)) {
+      return "";
+    }
+    acc += input[i];
+  }
+  return acc;
+}
+const nonSimpleDomain$1 = RegExp.prototype.test.bind(/[^!"$&'()*+,\-.;=_`a-z{}~]/u);
+function consumeIsZone(buffer) {
+  buffer.length = 0;
+  return true;
+}
+function consumeHextets(buffer, address, output) {
+  if (buffer.length) {
+    const hex = stringArrayToHexStripped(buffer);
+    if (hex !== "") {
+      address.push(hex);
+    } else {
+      output.error = true;
+      return false;
+    }
+    buffer.length = 0;
+  }
+  return true;
+}
+function getIPV6(input) {
+  let tokenCount = 0;
+  const output = { error: false, address: "", zone: "" };
+  const address = [];
+  const buffer = [];
+  let endipv6Encountered = false;
+  let endIpv6 = false;
+  let consume = consumeHextets;
+  for (let i = 0; i < input.length; i++) {
+    const cursor = input[i];
+    if (cursor === "[" || cursor === "]") {
+      continue;
+    }
+    if (cursor === ":") {
+      if (endipv6Encountered === true) {
+        endIpv6 = true;
+      }
+      if (!consume(buffer, address, output)) {
+        break;
+      }
+      if (++tokenCount > 7) {
+        output.error = true;
+        break;
+      }
+      if (i > 0 && input[i - 1] === ":") {
+        endipv6Encountered = true;
+      }
+      address.push(":");
+      continue;
+    } else if (cursor === "%") {
+      if (!consume(buffer, address, output)) {
+        break;
+      }
+      consume = consumeIsZone;
+    } else {
+      buffer.push(cursor);
+      continue;
+    }
+  }
+  if (buffer.length) {
+    if (consume === consumeIsZone) {
+      output.zone = buffer.join("");
+    } else if (endIpv6) {
+      address.push(buffer.join(""));
+    } else {
+      address.push(stringArrayToHexStripped(buffer));
+    }
+  }
+  output.address = address.join("");
+  return output;
+}
+function normalizeIPv6$1(host) {
+  if (findToken(host, ":") < 2) {
+    return { host, isIPV6: false };
+  }
+  const ipv6 = getIPV6(host);
+  if (!ipv6.error) {
+    let newHost = ipv6.address;
+    let escapedHost = ipv6.address;
+    if (ipv6.zone) {
+      newHost += "%" + ipv6.zone;
+      escapedHost += "%25" + ipv6.zone;
+    }
+    return { host: newHost, isIPV6: true, escapedHost };
+  } else {
+    return { host, isIPV6: false };
+  }
+}
+function findToken(str, token) {
+  let ind = 0;
+  for (let i = 0; i < str.length; i++) {
+    if (str[i] === token) ind++;
+  }
+  return ind;
+}
+function removeDotSegments$1(path2) {
+  let input = path2;
+  const output = [];
+  let nextSlash = -1;
+  let len = 0;
+  while (len = input.length) {
+    if (len === 1) {
+      if (input === ".") {
+        break;
+      } else if (input === "/") {
+        output.push("/");
+        break;
+      } else {
+        output.push(input);
+        break;
+      }
+    } else if (len === 2) {
+      if (input[0] === ".") {
+        if (input[1] === ".") {
+          break;
+        } else if (input[1] === "/") {
+          input = input.slice(2);
+          continue;
+        }
+      } else if (input[0] === "/") {
+        if (input[1] === "." || input[1] === "/") {
+          output.push("/");
+          break;
+        }
+      }
+    } else if (len === 3) {
+      if (input === "/..") {
+        if (output.length !== 0) {
+          output.pop();
+        }
+        output.push("/");
+        break;
+      }
+    }
+    if (input[0] === ".") {
+      if (input[1] === ".") {
+        if (input[2] === "/") {
+          input = input.slice(3);
+          continue;
+        }
+      } else if (input[1] === "/") {
+        input = input.slice(2);
+        continue;
+      }
+    } else if (input[0] === "/") {
+      if (input[1] === ".") {
+        if (input[2] === "/") {
+          input = input.slice(2);
+          continue;
+        } else if (input[2] === ".") {
+          if (input[3] === "/") {
+            input = input.slice(3);
+            if (output.length !== 0) {
+              output.pop();
+            }
+            continue;
+          }
+        }
+      }
+    }
+    if ((nextSlash = input.indexOf("/", 1)) === -1) {
+      output.push(input);
+      break;
+    } else {
+      output.push(input.slice(0, nextSlash));
+      input = input.slice(nextSlash);
+    }
+  }
+  return output.join("");
+}
+const HOST_DELIMS = { "@": "%40", "/": "%2F", "?": "%3F", "#": "%23", ":": "%3A" };
+const HOST_DELIM_RE = /[@/?#:]/g;
+const HOST_DELIM_NO_COLON_RE = /[@/?#]/g;
+function reescapeHostDelimiters$1(host, isIP) {
+  const re2 = isIP ? HOST_DELIM_NO_COLON_RE : HOST_DELIM_RE;
+  re2.lastIndex = 0;
+  return host.replace(re2, (ch) => HOST_DELIMS[ch]);
+}
+function normalizePercentEncoding$1(input, decodeUnreserved = false) {
+  if (input.indexOf("%") === -1) {
+    return input;
+  }
+  let output = "";
+  for (let i = 0; i < input.length; i++) {
+    if (input[i] === "%" && i + 2 < input.length) {
+      const hex = input.slice(i + 1, i + 3);
+      if (isHexPair(hex)) {
+        const normalizedHex = hex.toUpperCase();
+        const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
+        if (decodeUnreserved && isUnreserved(decoded)) {
+          output += decoded;
+        } else {
+          output += "%" + normalizedHex;
+        }
+        i += 2;
+        continue;
+      }
+    }
+    output += input[i];
+  }
+  return output;
+}
+function normalizePathEncoding$1(input) {
+  let output = "";
+  for (let i = 0; i < input.length; i++) {
+    if (input[i] === "%" && i + 2 < input.length) {
+      const hex = input.slice(i + 1, i + 3);
+      if (isHexPair(hex)) {
+        const normalizedHex = hex.toUpperCase();
+        const decoded = String.fromCharCode(parseInt(normalizedHex, 16));
+        if (decoded !== "." && isUnreserved(decoded)) {
+          output += decoded;
+        } else {
+          output += "%" + normalizedHex;
+        }
+        i += 2;
+        continue;
+      }
+    }
+    if (isPathCharacter(input[i])) {
+      output += input[i];
+    } else {
+      output += escape(input[i]);
+    }
+  }
+  return output;
+}
+function escapePreservingEscapes$1(input) {
+  let output = "";
+  for (let i = 0; i < input.length; i++) {
+    if (input[i] === "%" && i + 2 < input.length) {
+      const hex = input.slice(i + 1, i + 3);
+      if (isHexPair(hex)) {
+        output += "%" + hex.toUpperCase();
+        i += 2;
+        continue;
+      }
+    }
+    output += escape(input[i]);
+  }
+  return output;
+}
+function recomposeAuthority$1(component) {
+  const uriTokens = [];
+  if (component.userinfo !== void 0) {
+    uriTokens.push(component.userinfo);
+    uriTokens.push("@");
+  }
+  if (component.host !== void 0) {
+    let host = unescape(component.host);
+    if (!isIPv4$1(host)) {
+      const ipV6res = normalizeIPv6$1(host);
+      if (ipV6res.isIPV6 === true) {
+        host = `[${ipV6res.escapedHost}]`;
+      } else {
+        host = reescapeHostDelimiters$1(host, false);
+      }
+    }
+    uriTokens.push(host);
+  }
+  if (typeof component.port === "number" || typeof component.port === "string") {
+    uriTokens.push(":");
+    uriTokens.push(String(component.port));
+  }
+  return uriTokens.length ? uriTokens.join("") : void 0;
+}
+var utils = {
+  nonSimpleDomain: nonSimpleDomain$1,
+  recomposeAuthority: recomposeAuthority$1,
+  reescapeHostDelimiters: reescapeHostDelimiters$1,
+  normalizePercentEncoding: normalizePercentEncoding$1,
+  normalizePathEncoding: normalizePathEncoding$1,
+  escapePreservingEscapes: escapePreservingEscapes$1,
+  removeDotSegments: removeDotSegments$1,
+  isIPv4: isIPv4$1,
+  isUUID: isUUID$1,
+  normalizeIPv6: normalizeIPv6$1
+};
+const { isUUID } = utils;
+const URN_REG = /([\da-z][\d\-a-z]{0,31}):((?:[\w!$'()*+,\-.:;=@]|%[\da-f]{2})+)/iu;
+function wsIsSecure(wsComponent) {
+  if (wsComponent.secure === true) {
+    return true;
+  } else if (wsComponent.secure === false) {
+    return false;
+  } else if (wsComponent.scheme) {
+    return wsComponent.scheme.length === 3 && (wsComponent.scheme[0] === "w" || wsComponent.scheme[0] === "W") && (wsComponent.scheme[1] === "s" || wsComponent.scheme[1] === "S") && (wsComponent.scheme[2] === "s" || wsComponent.scheme[2] === "S");
+  } else {
+    return false;
+  }
+}
+function httpParse(component) {
+  if (!component.host) {
+    component.error = component.error || "HTTP URIs must have a host.";
+  }
+  return component;
+}
+function httpSerialize(component) {
+  const secure = String(component.scheme).toLowerCase() === "https";
+  if (component.port === (secure ? 443 : 80) || component.port === "") {
+    component.port = void 0;
+  }
+  if (!component.path) {
+    component.path = "/";
+  }
+  return component;
+}
+function wsParse(wsComponent) {
+  wsComponent.secure = wsIsSecure(wsComponent);
+  wsComponent.resourceName = (wsComponent.path || "/") + (wsComponent.query ? "?" + wsComponent.query : "");
+  wsComponent.path = void 0;
+  wsComponent.query = void 0;
+  return wsComponent;
+}
+function wsSerialize(wsComponent) {
+  if (wsComponent.port === (wsIsSecure(wsComponent) ? 443 : 80) || wsComponent.port === "") {
+    wsComponent.port = void 0;
+  }
+  if (typeof wsComponent.secure === "boolean") {
+    wsComponent.scheme = wsComponent.secure ? "wss" : "ws";
+    wsComponent.secure = void 0;
+  }
+  if (wsComponent.resourceName) {
+    const [path2, query] = wsComponent.resourceName.split("?");
+    wsComponent.path = path2 && path2 !== "/" ? path2 : void 0;
+    wsComponent.query = query;
+    wsComponent.resourceName = void 0;
+  }
+  wsComponent.fragment = void 0;
+  return wsComponent;
+}
+function urnParse(urnComponent, options) {
+  if (!urnComponent.path) {
+    urnComponent.error = "URN can not be parsed";
+    return urnComponent;
+  }
+  const matches = urnComponent.path.match(URN_REG);
+  if (matches) {
+    const scheme = options.scheme || urnComponent.scheme || "urn";
+    urnComponent.nid = matches[1].toLowerCase();
+    urnComponent.nss = matches[2];
+    const urnScheme = `${scheme}:${options.nid || urnComponent.nid}`;
+    const schemeHandler = getSchemeHandler$1(urnScheme);
+    urnComponent.path = void 0;
+    if (schemeHandler) {
+      urnComponent = schemeHandler.parse(urnComponent, options);
+    }
+  } else {
+    urnComponent.error = urnComponent.error || "URN can not be parsed.";
+  }
+  return urnComponent;
+}
+function urnSerialize(urnComponent, options) {
+  if (urnComponent.nid === void 0) {
+    throw new Error("URN without nid cannot be serialized");
+  }
+  const scheme = options.scheme || urnComponent.scheme || "urn";
+  const nid = urnComponent.nid.toLowerCase();
+  const urnScheme = `${scheme}:${options.nid || nid}`;
+  const schemeHandler = getSchemeHandler$1(urnScheme);
+  if (schemeHandler) {
+    urnComponent = schemeHandler.serialize(urnComponent, options);
+  }
+  const uriComponent = urnComponent;
+  const nss = urnComponent.nss;
+  uriComponent.path = `${nid || options.nid}:${nss}`;
+  options.skipEscape = true;
+  return uriComponent;
+}
+function urnuuidParse(urnComponent, options) {
+  const uuidComponent = urnComponent;
+  uuidComponent.uuid = uuidComponent.nss;
+  uuidComponent.nss = void 0;
+  if (!options.tolerant && (!uuidComponent.uuid || !isUUID(uuidComponent.uuid))) {
+    uuidComponent.error = uuidComponent.error || "UUID is not valid.";
+  }
+  return uuidComponent;
+}
+function urnuuidSerialize(uuidComponent) {
+  const urnComponent = uuidComponent;
+  urnComponent.nss = (uuidComponent.uuid || "").toLowerCase();
+  return urnComponent;
+}
+const http = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "http",
+    domainHost: true,
+    parse: httpParse,
+    serialize: httpSerialize
+  }
+);
+const https = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "https",
+    domainHost: http.domainHost,
+    parse: httpParse,
+    serialize: httpSerialize
+  }
+);
+const ws = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "ws",
+    domainHost: true,
+    parse: wsParse,
+    serialize: wsSerialize
+  }
+);
+const wss = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "wss",
+    domainHost: ws.domainHost,
+    parse: ws.parse,
+    serialize: ws.serialize
+  }
+);
+const urn = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "urn",
+    parse: urnParse,
+    serialize: urnSerialize,
+    skipNormalize: true
+  }
+);
+const urnuuid = (
+  /** @type {SchemeHandler} */
+  {
+    scheme: "urn:uuid",
+    parse: urnuuidParse,
+    serialize: urnuuidSerialize,
+    skipNormalize: true
+  }
+);
+const SCHEMES$1 = (
+  /** @type {Record<SchemeName, SchemeHandler>} */
+  {
+    http,
+    https,
+    ws,
+    wss,
+    urn,
+    "urn:uuid": urnuuid
+  }
+);
+Object.setPrototypeOf(SCHEMES$1, null);
+function getSchemeHandler$1(scheme) {
+  return scheme && (SCHEMES$1[
+    /** @type {SchemeName} */
+    scheme
+  ] || SCHEMES$1[
+    /** @type {SchemeName} */
+    scheme.toLowerCase()
+  ]) || void 0;
+}
+var schemes = {
+  SCHEMES: SCHEMES$1,
+  getSchemeHandler: getSchemeHandler$1
+};
+const { normalizeIPv6, removeDotSegments, recomposeAuthority, normalizePercentEncoding, normalizePathEncoding, escapePreservingEscapes, reescapeHostDelimiters, isIPv4, nonSimpleDomain } = utils;
+const { SCHEMES, getSchemeHandler } = schemes;
+function normalize(uri2, options) {
+  if (typeof uri2 === "string") {
+    uri2 = /** @type {T} */
+    normalizeString(uri2, options);
+  } else if (typeof uri2 === "object") {
+    uri2 = /** @type {T} */
+    parse$8(serialize(uri2, options), options);
+  }
+  return uri2;
+}
+function resolve(baseURI, relativeURI, options) {
+  const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
+  const resolved = resolveComponent(parse$8(baseURI, schemelessOptions), parse$8(relativeURI, schemelessOptions), schemelessOptions, true);
+  schemelessOptions.skipEscape = true;
+  return serialize(resolved, schemelessOptions);
+}
+function resolveComponent(base, relative, options, skipNormalization) {
+  const target = {};
+  if (!skipNormalization) {
+    base = parse$8(serialize(base, options), options);
+    relative = parse$8(serialize(relative, options), options);
+  }
+  options = options || {};
+  if (!options.tolerant && relative.scheme) {
+    target.scheme = relative.scheme;
+    target.userinfo = relative.userinfo;
+    target.host = relative.host;
+    target.port = relative.port;
+    target.path = removeDotSegments(relative.path || "");
+    target.query = relative.query;
+  } else {
+    if (relative.userinfo !== void 0 || relative.host !== void 0 || relative.port !== void 0) {
+      target.userinfo = relative.userinfo;
+      target.host = relative.host;
+      target.port = relative.port;
+      target.path = removeDotSegments(relative.path || "");
+      target.query = relative.query;
+    } else {
+      if (!relative.path) {
+        target.path = base.path;
+        if (relative.query !== void 0) {
+          target.query = relative.query;
+        } else {
+          target.query = base.query;
+        }
+      } else {
+        if (relative.path[0] === "/") {
+          target.path = removeDotSegments(relative.path);
+        } else {
+          if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
+            target.path = "/" + relative.path;
+          } else if (!base.path) {
+            target.path = relative.path;
+          } else {
+            target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative.path;
+          }
+          target.path = removeDotSegments(target.path);
+        }
+        target.query = relative.query;
+      }
+      target.userinfo = base.userinfo;
+      target.host = base.host;
+      target.port = base.port;
+    }
+    target.scheme = base.scheme;
+  }
+  target.fragment = relative.fragment;
+  return target;
+}
+function equal$2(uriA, uriB, options) {
+  const normalizedA = normalizeComparableURI(uriA, options);
+  const normalizedB = normalizeComparableURI(uriB, options);
+  return normalizedA !== void 0 && normalizedB !== void 0 && normalizedA.toLowerCase() === normalizedB.toLowerCase();
+}
+function serialize(cmpts, opts) {
+  const component = {
+    host: cmpts.host,
+    scheme: cmpts.scheme,
+    userinfo: cmpts.userinfo,
+    port: cmpts.port,
+    path: cmpts.path,
+    query: cmpts.query,
+    nid: cmpts.nid,
+    nss: cmpts.nss,
+    uuid: cmpts.uuid,
+    fragment: cmpts.fragment,
+    reference: cmpts.reference,
+    resourceName: cmpts.resourceName,
+    secure: cmpts.secure,
+    error: ""
+  };
+  const options = Object.assign({}, opts);
+  const uriTokens = [];
+  const schemeHandler = getSchemeHandler(options.scheme || component.scheme);
+  if (schemeHandler && schemeHandler.serialize) schemeHandler.serialize(component, options);
+  if (component.path !== void 0) {
+    if (!options.skipEscape) {
+      component.path = escapePreservingEscapes(component.path);
+      if (component.scheme !== void 0) {
+        component.path = component.path.split("%3A").join(":");
+      }
+    } else {
+      component.path = normalizePercentEncoding(component.path);
+    }
+  }
+  if (options.reference !== "suffix" && component.scheme) {
+    uriTokens.push(component.scheme, ":");
+  }
+  const authority = recomposeAuthority(component);
+  if (authority !== void 0) {
+    if (options.reference !== "suffix") {
+      uriTokens.push("//");
+    }
+    uriTokens.push(authority);
+    if (component.path && component.path[0] !== "/") {
+      uriTokens.push("/");
+    }
+  }
+  if (component.path !== void 0) {
+    let s = component.path;
+    if (!options.absolutePath && (!schemeHandler || !schemeHandler.absolutePath)) {
+      s = removeDotSegments(s);
+    }
+    if (authority === void 0 && s[0] === "/" && s[1] === "/") {
+      s = "/%2F" + s.slice(2);
+    }
+    uriTokens.push(s);
+  }
+  if (component.query !== void 0) {
+    uriTokens.push("?", component.query);
+  }
+  if (component.fragment !== void 0) {
+    uriTokens.push("#", component.fragment);
+  }
+  return uriTokens.join("");
+}
+const URI_PARSE = /^(?:([^#/:?]+):)?(?:\/\/((?:([^#/?@]*)@)?(\[[^#/?\]]+\]|[^#/:?]*)(?::(\d*))?))?([^#?]*)(?:\?([^#]*))?(?:#((?:.|[\n\r])*))?/u;
+function getParseError(parsed, matches) {
+  if (matches[2] !== void 0 && parsed.path && parsed.path[0] !== "/") {
+    return 'URI path must start with "/" when authority is present.';
+  }
+  if (typeof parsed.port === "number" && (parsed.port < 0 || parsed.port > 65535)) {
+    return "URI port is malformed.";
+  }
+  return void 0;
+}
+function parseWithStatus(uri2, opts) {
+  const options = Object.assign({}, opts);
+  const parsed = {
+    scheme: void 0,
+    userinfo: void 0,
+    host: "",
+    port: void 0,
+    path: "",
+    query: void 0,
+    fragment: void 0
+  };
+  let malformedAuthorityOrPort = false;
+  let isIP = false;
+  if (options.reference === "suffix") {
+    if (options.scheme) {
+      uri2 = options.scheme + ":" + uri2;
+    } else {
+      uri2 = "//" + uri2;
+    }
+  }
+  const matches = uri2.match(URI_PARSE);
+  if (matches) {
+    parsed.scheme = matches[1];
+    parsed.userinfo = matches[3];
+    parsed.host = matches[4];
+    parsed.port = parseInt(matches[5], 10);
+    parsed.path = matches[6] || "";
+    parsed.query = matches[7];
+    parsed.fragment = matches[8];
+    if (isNaN(parsed.port)) {
+      parsed.port = matches[5];
+    }
+    const parseError = getParseError(parsed, matches);
+    if (parseError !== void 0) {
+      parsed.error = parsed.error || parseError;
+      malformedAuthorityOrPort = true;
+    }
+    if (parsed.host) {
+      const ipv4result = isIPv4(parsed.host);
+      if (ipv4result === false) {
+        const ipv6result = normalizeIPv6(parsed.host);
+        parsed.host = ipv6result.host.toLowerCase();
+        isIP = ipv6result.isIPV6;
+      } else {
+        isIP = true;
+      }
+    }
+    if (parsed.scheme === void 0 && parsed.userinfo === void 0 && parsed.host === void 0 && parsed.port === void 0 && parsed.query === void 0 && !parsed.path) {
+      parsed.reference = "same-document";
+    } else if (parsed.scheme === void 0) {
+      parsed.reference = "relative";
+    } else if (parsed.fragment === void 0) {
+      parsed.reference = "absolute";
+    } else {
+      parsed.reference = "uri";
+    }
+    if (options.reference && options.reference !== "suffix" && options.reference !== parsed.reference) {
+      parsed.error = parsed.error || "URI is not a " + options.reference + " reference.";
+    }
+    const schemeHandler = getSchemeHandler(options.scheme || parsed.scheme);
+    if (!options.unicodeSupport && (!schemeHandler || !schemeHandler.unicodeSupport)) {
+      if (parsed.host && (options.domainHost || schemeHandler && schemeHandler.domainHost) && isIP === false && nonSimpleDomain(parsed.host)) {
+        try {
+          parsed.host = URL.domainToASCII(parsed.host.toLowerCase());
+        } catch (e) {
+          parsed.error = parsed.error || "Host's domain name can not be converted to ASCII: " + e;
+        }
+      }
+    }
+    if (!schemeHandler || schemeHandler && !schemeHandler.skipNormalize) {
+      if (uri2.indexOf("%") !== -1) {
+        if (parsed.scheme !== void 0) {
+          parsed.scheme = unescape(parsed.scheme);
+        }
+        if (parsed.host !== void 0) {
+          parsed.host = reescapeHostDelimiters(unescape(parsed.host), isIP);
+        }
+      }
+      if (parsed.path) {
+        parsed.path = normalizePathEncoding(parsed.path);
+      }
+      if (parsed.fragment) {
+        try {
+          parsed.fragment = encodeURI(decodeURIComponent(parsed.fragment));
+        } catch {
+          parsed.error = parsed.error || "URI malformed";
+        }
+      }
+    }
+    if (schemeHandler && schemeHandler.parse) {
+      schemeHandler.parse(parsed, options);
+    }
+  } else {
+    parsed.error = parsed.error || "URI can not be parsed.";
+  }
+  return { parsed, malformedAuthorityOrPort };
+}
+function parse$8(uri2, opts) {
+  return parseWithStatus(uri2, opts).parsed;
+}
+function normalizeString(uri2, opts) {
+  return normalizeStringWithStatus(uri2, opts).normalized;
+}
+function normalizeStringWithStatus(uri2, opts) {
+  const { parsed, malformedAuthorityOrPort } = parseWithStatus(uri2, opts);
+  return {
+    normalized: malformedAuthorityOrPort ? uri2 : serialize(parsed, opts),
+    malformedAuthorityOrPort
+  };
+}
+function normalizeComparableURI(uri2, opts) {
+  if (typeof uri2 === "string") {
+    const { normalized, malformedAuthorityOrPort } = normalizeStringWithStatus(uri2, opts);
+    return malformedAuthorityOrPort ? void 0 : normalized;
+  }
+  if (typeof uri2 === "object") {
+    return serialize(uri2, opts);
+  }
+}
+const fastUri = {
+  SCHEMES,
+  normalize,
+  resolve,
+  resolveComponent,
+  equal: equal$2,
+  serialize,
+  parse: parse$8
+};
+fastUri$1.exports = fastUri;
+fastUri$1.exports.default = fastUri;
+fastUri$1.exports.fastUri = fastUri;
+var fastUriExports = fastUri$1.exports;
+Object.defineProperty(uri$1, "__esModule", { value: true });
+const uri = fastUriExports;
+uri.code = 'require("ajv/dist/runtime/uri").default';
+uri$1.default = uri;
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = void 0;
+  var validate_12 = validate;
+  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+    return validate_12.KeywordCxt;
+  } });
+  var codegen_12 = codegen;
+  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+    return codegen_12._;
+  } });
+  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+    return codegen_12.str;
+  } });
+  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+    return codegen_12.stringify;
+  } });
+  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+    return codegen_12.nil;
+  } });
+  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+    return codegen_12.Name;
+  } });
+  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+    return codegen_12.CodeGen;
+  } });
+  const validation_error_12 = validation_error;
+  const ref_error_12 = ref_error;
+  const rules_12 = rules;
+  const compile_12 = compile;
+  const codegen_2 = codegen;
+  const resolve_12 = resolve$2;
+  const dataType_12 = dataType;
+  const util_12 = util;
+  const $dataRefSchema = require$$9;
+  const uri_1 = uri$1;
+  const defaultRegExp = (str, flags) => new RegExp(str, flags);
+  defaultRegExp.code = "new RegExp";
+  const META_IGNORE_OPTIONS = ["removeAdditional", "useDefaults", "coerceTypes"];
+  const EXT_SCOPE_NAMES = /* @__PURE__ */ new Set([
+    "validate",
+    "serialize",
+    "parse",
+    "wrapper",
+    "root",
+    "schema",
+    "keyword",
+    "pattern",
+    "formats",
+    "validate$data",
+    "func",
+    "obj",
+    "Error"
+  ]);
+  const removedOptions = {
+    errorDataPath: "",
+    format: "`validateFormats: false` can be used instead.",
+    nullable: '"nullable" keyword is supported by default.',
+    jsonPointers: "Deprecated jsPropertySyntax can be used instead.",
+    extendRefs: "Deprecated ignoreKeywordsWithRef can be used instead.",
+    missingRefs: "Pass empty schema with $id that should be ignored to ajv.addSchema.",
+    processCode: "Use option `code: {process: (code, schemaEnv: object) => string}`",
+    sourceCode: "Use option `code: {source: true}`",
+    strictDefaults: "It is default now, see option `strict`.",
+    strictKeywords: "It is default now, see option `strict`.",
+    uniqueItems: '"uniqueItems" keyword is always validated.',
+    unknownFormats: "Disable strict mode or pass `true` to `ajv.addFormat` (or `formats` option).",
+    cache: "Map is used as cache, schema object as key.",
+    serialize: "Map is used as cache, schema object as key.",
+    ajvErrors: "It is default now."
+  };
+  const deprecatedOptions = {
+    ignoreKeywordsWithRef: "",
+    jsPropertySyntax: "",
+    unicode: '"minLength"/"maxLength" account for unicode characters by default.'
+  };
+  const MAX_EXPRESSION = 200;
+  function requiredOptions(o) {
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _x, _y, _z, _0;
+    const s = o.strict;
+    const _optz = (_a = o.code) === null || _a === void 0 ? void 0 : _a.optimize;
+    const optimize = _optz === true || _optz === void 0 ? 1 : _optz || 0;
+    const regExp = (_c = (_b = o.code) === null || _b === void 0 ? void 0 : _b.regExp) !== null && _c !== void 0 ? _c : defaultRegExp;
+    const uriResolver = (_d = o.uriResolver) !== null && _d !== void 0 ? _d : uri_1.default;
+    return {
+      strictSchema: (_f = (_e = o.strictSchema) !== null && _e !== void 0 ? _e : s) !== null && _f !== void 0 ? _f : true,
+      strictNumbers: (_h = (_g = o.strictNumbers) !== null && _g !== void 0 ? _g : s) !== null && _h !== void 0 ? _h : true,
+      strictTypes: (_k = (_j = o.strictTypes) !== null && _j !== void 0 ? _j : s) !== null && _k !== void 0 ? _k : "log",
+      strictTuples: (_m = (_l = o.strictTuples) !== null && _l !== void 0 ? _l : s) !== null && _m !== void 0 ? _m : "log",
+      strictRequired: (_p = (_o = o.strictRequired) !== null && _o !== void 0 ? _o : s) !== null && _p !== void 0 ? _p : false,
+      code: o.code ? { ...o.code, optimize, regExp } : { optimize, regExp },
+      loopRequired: (_q = o.loopRequired) !== null && _q !== void 0 ? _q : MAX_EXPRESSION,
+      loopEnum: (_r = o.loopEnum) !== null && _r !== void 0 ? _r : MAX_EXPRESSION,
+      meta: (_s = o.meta) !== null && _s !== void 0 ? _s : true,
+      messages: (_t = o.messages) !== null && _t !== void 0 ? _t : true,
+      inlineRefs: (_u = o.inlineRefs) !== null && _u !== void 0 ? _u : true,
+      schemaId: (_v = o.schemaId) !== null && _v !== void 0 ? _v : "$id",
+      addUsedSchema: (_w = o.addUsedSchema) !== null && _w !== void 0 ? _w : true,
+      validateSchema: (_x = o.validateSchema) !== null && _x !== void 0 ? _x : true,
+      validateFormats: (_y = o.validateFormats) !== null && _y !== void 0 ? _y : true,
+      unicodeRegExp: (_z = o.unicodeRegExp) !== null && _z !== void 0 ? _z : true,
+      int32range: (_0 = o.int32range) !== null && _0 !== void 0 ? _0 : true,
+      uriResolver
+    };
+  }
+  class Ajv {
+    constructor(opts = {}) {
+      this.schemas = {};
+      this.refs = {};
+      this.formats = /* @__PURE__ */ Object.create(null);
+      this._compilations = /* @__PURE__ */ new Set();
+      this._loading = {};
+      this._cache = /* @__PURE__ */ new Map();
+      opts = this.opts = { ...opts, ...requiredOptions(opts) };
+      const { es5, lines } = this.opts.code;
+      this.scope = new codegen_2.ValueScope({ scope: {}, prefixes: EXT_SCOPE_NAMES, es5, lines });
+      this.logger = getLogger(opts.logger);
+      const formatOpt = opts.validateFormats;
+      opts.validateFormats = false;
+      this.RULES = (0, rules_12.getRules)();
+      checkOptions.call(this, removedOptions, opts, "NOT SUPPORTED");
+      checkOptions.call(this, deprecatedOptions, opts, "DEPRECATED", "warn");
+      this._metaOpts = getMetaSchemaOptions.call(this);
+      if (opts.formats)
+        addInitialFormats.call(this);
+      this._addVocabularies();
+      this._addDefaultMetaSchema();
+      if (opts.keywords)
+        addInitialKeywords.call(this, opts.keywords);
+      if (typeof opts.meta == "object")
+        this.addMetaSchema(opts.meta);
+      addInitialSchemas.call(this);
+      opts.validateFormats = formatOpt;
+    }
+    _addVocabularies() {
+      this.addKeyword("$async");
+    }
+    _addDefaultMetaSchema() {
+      const { $data, meta, schemaId } = this.opts;
+      let _dataRefSchema = $dataRefSchema;
+      if (schemaId === "id") {
+        _dataRefSchema = { ...$dataRefSchema };
+        _dataRefSchema.id = _dataRefSchema.$id;
+        delete _dataRefSchema.$id;
+      }
+      if (meta && $data)
+        this.addMetaSchema(_dataRefSchema, _dataRefSchema[schemaId], false);
+    }
+    defaultMeta() {
+      const { meta, schemaId } = this.opts;
+      return this.opts.defaultMeta = typeof meta == "object" ? meta[schemaId] || meta : void 0;
+    }
+    validate(schemaKeyRef, data) {
+      let v;
+      if (typeof schemaKeyRef == "string") {
+        v = this.getSchema(schemaKeyRef);
+        if (!v)
+          throw new Error(`no schema with key or ref "${schemaKeyRef}"`);
+      } else {
+        v = this.compile(schemaKeyRef);
+      }
+      const valid2 = v(data);
+      if (!("$async" in v))
+        this.errors = v.errors;
+      return valid2;
+    }
+    compile(schema, _meta) {
+      const sch = this._addSchema(schema, _meta);
+      return sch.validate || this._compileSchemaEnv(sch);
+    }
+    compileAsync(schema, meta) {
+      if (typeof this.opts.loadSchema != "function") {
+        throw new Error("options.loadSchema should be a function");
+      }
+      const { loadSchema } = this.opts;
+      return runCompileAsync.call(this, schema, meta);
+      async function runCompileAsync(_schema, _meta) {
+        await loadMetaSchema.call(this, _schema.$schema);
+        const sch = this._addSchema(_schema, _meta);
+        return sch.validate || _compileAsync.call(this, sch);
+      }
+      async function loadMetaSchema($ref) {
+        if ($ref && !this.getSchema($ref)) {
+          await runCompileAsync.call(this, { $ref }, true);
+        }
+      }
+      async function _compileAsync(sch) {
+        try {
+          return this._compileSchemaEnv(sch);
+        } catch (e) {
+          if (!(e instanceof ref_error_12.default))
+            throw e;
+          checkLoaded.call(this, e);
+          await loadMissingSchema.call(this, e.missingSchema);
+          return _compileAsync.call(this, sch);
+        }
+      }
+      function checkLoaded({ missingSchema: ref2, missingRef }) {
+        if (this.refs[ref2]) {
+          throw new Error(`AnySchema ${ref2} is loaded but ${missingRef} cannot be resolved`);
+        }
+      }
+      async function loadMissingSchema(ref2) {
+        const _schema = await _loadSchema.call(this, ref2);
+        if (!this.refs[ref2])
+          await loadMetaSchema.call(this, _schema.$schema);
+        if (!this.refs[ref2])
+          this.addSchema(_schema, ref2, meta);
+      }
+      async function _loadSchema(ref2) {
+        const p = this._loading[ref2];
+        if (p)
+          return p;
+        try {
+          return await (this._loading[ref2] = loadSchema(ref2));
+        } finally {
+          delete this._loading[ref2];
+        }
+      }
+    }
+    // Adds schema to the instance
+    addSchema(schema, key, _meta, _validateSchema = this.opts.validateSchema) {
+      if (Array.isArray(schema)) {
+        for (const sch of schema)
+          this.addSchema(sch, void 0, _meta, _validateSchema);
+        return this;
+      }
+      let id2;
+      if (typeof schema === "object") {
+        const { schemaId } = this.opts;
+        id2 = schema[schemaId];
+        if (id2 !== void 0 && typeof id2 != "string") {
+          throw new Error(`schema ${schemaId} must be string`);
+        }
+      }
+      key = (0, resolve_12.normalizeId)(key || id2);
+      this._checkUnique(key);
+      this.schemas[key] = this._addSchema(schema, _meta, key, _validateSchema, true);
+      return this;
+    }
+    // Add schema that will be used to validate other schemas
+    // options in META_IGNORE_OPTIONS are alway set to false
+    addMetaSchema(schema, key, _validateSchema = this.opts.validateSchema) {
+      this.addSchema(schema, key, true, _validateSchema);
+      return this;
+    }
+    //  Validate schema against its meta-schema
+    validateSchema(schema, throwOrLogError) {
+      if (typeof schema == "boolean")
+        return true;
+      let $schema2;
+      $schema2 = schema.$schema;
+      if ($schema2 !== void 0 && typeof $schema2 != "string") {
+        throw new Error("$schema must be a string");
+      }
+      $schema2 = $schema2 || this.opts.defaultMeta || this.defaultMeta();
+      if (!$schema2) {
+        this.logger.warn("meta-schema not available");
+        this.errors = null;
+        return true;
+      }
+      const valid2 = this.validate($schema2, schema);
+      if (!valid2 && throwOrLogError) {
+        const message = "schema is invalid: " + this.errorsText();
+        if (this.opts.validateSchema === "log")
+          this.logger.error(message);
+        else
+          throw new Error(message);
+      }
+      return valid2;
+    }
+    // Get compiled schema by `key` or `ref`.
+    // (`key` that was passed to `addSchema` or full schema reference - `schema.$id` or resolved id)
+    getSchema(keyRef) {
+      let sch;
+      while (typeof (sch = getSchEnv.call(this, keyRef)) == "string")
+        keyRef = sch;
+      if (sch === void 0) {
+        const { schemaId } = this.opts;
+        const root = new compile_12.SchemaEnv({ schema: {}, schemaId });
+        sch = compile_12.resolveSchema.call(this, root, keyRef);
+        if (!sch)
+          return;
+        this.refs[keyRef] = sch;
+      }
+      return sch.validate || this._compileSchemaEnv(sch);
+    }
+    // Remove cached schema(s).
+    // If no parameter is passed all schemas but meta-schemas are removed.
+    // If RegExp is passed all schemas with key/id matching pattern but meta-schemas are removed.
+    // Even if schema is referenced by other schemas it still can be removed as other schemas have local references.
+    removeSchema(schemaKeyRef) {
+      if (schemaKeyRef instanceof RegExp) {
+        this._removeAllSchemas(this.schemas, schemaKeyRef);
+        this._removeAllSchemas(this.refs, schemaKeyRef);
+        return this;
+      }
+      switch (typeof schemaKeyRef) {
+        case "undefined":
+          this._removeAllSchemas(this.schemas);
+          this._removeAllSchemas(this.refs);
+          this._cache.clear();
+          return this;
+        case "string": {
+          const sch = getSchEnv.call(this, schemaKeyRef);
+          if (typeof sch == "object")
+            this._cache.delete(sch.schema);
+          delete this.schemas[schemaKeyRef];
+          delete this.refs[schemaKeyRef];
+          return this;
+        }
+        case "object": {
+          const cacheKey = schemaKeyRef;
+          this._cache.delete(cacheKey);
+          let id2 = schemaKeyRef[this.opts.schemaId];
+          if (id2) {
+            id2 = (0, resolve_12.normalizeId)(id2);
+            delete this.schemas[id2];
+            delete this.refs[id2];
+          }
+          return this;
+        }
+        default:
+          throw new Error("ajv.removeSchema: invalid parameter");
+      }
+    }
+    // add "vocabulary" - a collection of keywords
+    addVocabulary(definitions2) {
+      for (const def2 of definitions2)
+        this.addKeyword(def2);
+      return this;
+    }
+    addKeyword(kwdOrDef, def2) {
+      let keyword2;
+      if (typeof kwdOrDef == "string") {
+        keyword2 = kwdOrDef;
+        if (typeof def2 == "object") {
+          this.logger.warn("these parameters are deprecated, see docs for addKeyword");
+          def2.keyword = keyword2;
+        }
+      } else if (typeof kwdOrDef == "object" && def2 === void 0) {
+        def2 = kwdOrDef;
+        keyword2 = def2.keyword;
+        if (Array.isArray(keyword2) && !keyword2.length) {
+          throw new Error("addKeywords: keyword must be string or non-empty array");
+        }
+      } else {
+        throw new Error("invalid addKeywords parameters");
+      }
+      checkKeyword.call(this, keyword2, def2);
+      if (!def2) {
+        (0, util_12.eachItem)(keyword2, (kwd) => addRule.call(this, kwd));
+        return this;
+      }
+      keywordMetaschema.call(this, def2);
+      const definition = {
+        ...def2,
+        type: (0, dataType_12.getJSONTypes)(def2.type),
+        schemaType: (0, dataType_12.getJSONTypes)(def2.schemaType)
+      };
+      (0, util_12.eachItem)(keyword2, definition.type.length === 0 ? (k) => addRule.call(this, k, definition) : (k) => definition.type.forEach((t2) => addRule.call(this, k, definition, t2)));
+      return this;
+    }
+    getKeyword(keyword2) {
+      const rule = this.RULES.all[keyword2];
+      return typeof rule == "object" ? rule.definition : !!rule;
+    }
+    // Remove keyword
+    removeKeyword(keyword2) {
+      const { RULES } = this;
+      delete RULES.keywords[keyword2];
+      delete RULES.all[keyword2];
+      for (const group of RULES.rules) {
+        const i = group.rules.findIndex((rule) => rule.keyword === keyword2);
+        if (i >= 0)
+          group.rules.splice(i, 1);
+      }
+      return this;
+    }
+    // Add format
+    addFormat(name, format2) {
+      if (typeof format2 == "string")
+        format2 = new RegExp(format2);
+      this.formats[name] = format2;
+      return this;
+    }
+    errorsText(errors2 = this.errors, { separator = ", ", dataVar = "data" } = {}) {
+      if (!errors2 || errors2.length === 0)
+        return "No errors";
+      return errors2.map((e) => `${dataVar}${e.instancePath} ${e.message}`).reduce((text, msg) => text + separator + msg);
+    }
+    $dataMetaSchema(metaSchema, keywordsJsonPointers) {
+      const rules2 = this.RULES.all;
+      metaSchema = JSON.parse(JSON.stringify(metaSchema));
+      for (const jsonPointer of keywordsJsonPointers) {
+        const segments = jsonPointer.split("/").slice(1);
+        let keywords = metaSchema;
+        for (const seg of segments)
+          keywords = keywords[seg];
+        for (const key in rules2) {
+          const rule = rules2[key];
+          if (typeof rule != "object")
+            continue;
+          const { $data } = rule.definition;
+          const schema = keywords[key];
+          if ($data && schema)
+            keywords[key] = schemaOrData(schema);
+        }
+      }
+      return metaSchema;
+    }
+    _removeAllSchemas(schemas, regex) {
+      for (const keyRef in schemas) {
+        const sch = schemas[keyRef];
+        if (!regex || regex.test(keyRef)) {
+          if (typeof sch == "string") {
+            delete schemas[keyRef];
+          } else if (sch && !sch.meta) {
+            this._cache.delete(sch.schema);
+            delete schemas[keyRef];
+          }
+        }
+      }
+    }
+    _addSchema(schema, meta, baseId, validateSchema = this.opts.validateSchema, addSchema = this.opts.addUsedSchema) {
+      let id2;
+      const { schemaId } = this.opts;
+      if (typeof schema == "object") {
+        id2 = schema[schemaId];
+      } else {
+        if (this.opts.jtd)
+          throw new Error("schema must be object");
+        else if (typeof schema != "boolean")
+          throw new Error("schema must be object or boolean");
+      }
+      let sch = this._cache.get(schema);
+      if (sch !== void 0)
+        return sch;
+      baseId = (0, resolve_12.normalizeId)(id2 || baseId);
+      const localRefs = resolve_12.getSchemaRefs.call(this, schema, baseId);
+      sch = new compile_12.SchemaEnv({ schema, schemaId, meta, baseId, localRefs });
+      this._cache.set(sch.schema, sch);
+      if (addSchema && !baseId.startsWith("#")) {
+        if (baseId)
+          this._checkUnique(baseId);
+        this.refs[baseId] = sch;
+      }
+      if (validateSchema)
+        this.validateSchema(schema, true);
+      return sch;
+    }
+    _checkUnique(id2) {
+      if (this.schemas[id2] || this.refs[id2]) {
+        throw new Error(`schema with key or id "${id2}" already exists`);
+      }
+    }
+    _compileSchemaEnv(sch) {
+      if (sch.meta)
+        this._compileMetaSchema(sch);
+      else
+        compile_12.compileSchema.call(this, sch);
+      if (!sch.validate)
+        throw new Error("ajv implementation error");
+      return sch.validate;
+    }
+    _compileMetaSchema(sch) {
+      const currentOpts = this.opts;
+      this.opts = this._metaOpts;
+      try {
+        compile_12.compileSchema.call(this, sch);
+      } finally {
+        this.opts = currentOpts;
+      }
+    }
+  }
+  Ajv.ValidationError = validation_error_12.default;
+  Ajv.MissingRefError = ref_error_12.default;
+  exports.default = Ajv;
+  function checkOptions(checkOpts, options, msg, log = "error") {
+    for (const key in checkOpts) {
+      const opt = key;
+      if (opt in options)
+        this.logger[log](`${msg}: option ${key}. ${checkOpts[opt]}`);
+    }
+  }
+  function getSchEnv(keyRef) {
+    keyRef = (0, resolve_12.normalizeId)(keyRef);
+    return this.schemas[keyRef] || this.refs[keyRef];
+  }
+  function addInitialSchemas() {
+    const optsSchemas = this.opts.schemas;
+    if (!optsSchemas)
+      return;
+    if (Array.isArray(optsSchemas))
+      this.addSchema(optsSchemas);
+    else
+      for (const key in optsSchemas)
+        this.addSchema(optsSchemas[key], key);
+  }
+  function addInitialFormats() {
+    for (const name in this.opts.formats) {
+      const format2 = this.opts.formats[name];
+      if (format2)
+        this.addFormat(name, format2);
+    }
+  }
+  function addInitialKeywords(defs) {
+    if (Array.isArray(defs)) {
+      this.addVocabulary(defs);
+      return;
+    }
+    this.logger.warn("keywords option as map is deprecated, pass array");
+    for (const keyword2 in defs) {
+      const def2 = defs[keyword2];
+      if (!def2.keyword)
+        def2.keyword = keyword2;
+      this.addKeyword(def2);
+    }
+  }
+  function getMetaSchemaOptions() {
+    const metaOpts = { ...this.opts };
+    for (const opt of META_IGNORE_OPTIONS)
+      delete metaOpts[opt];
+    return metaOpts;
+  }
+  const noLogs = { log() {
+  }, warn() {
+  }, error() {
+  } };
+  function getLogger(logger) {
+    if (logger === false)
+      return noLogs;
+    if (logger === void 0)
+      return console;
+    if (logger.log && logger.warn && logger.error)
+      return logger;
+    throw new Error("logger must implement log, warn and error methods");
+  }
+  const KEYWORD_NAME = /^[a-z_$][a-z0-9_$:-]*$/i;
+  function checkKeyword(keyword2, def2) {
+    const { RULES } = this;
+    (0, util_12.eachItem)(keyword2, (kwd) => {
+      if (RULES.keywords[kwd])
+        throw new Error(`Keyword ${kwd} is already defined`);
+      if (!KEYWORD_NAME.test(kwd))
+        throw new Error(`Keyword ${kwd} has invalid name`);
+    });
+    if (!def2)
+      return;
+    if (def2.$data && !("code" in def2 || "validate" in def2)) {
+      throw new Error('$data keyword must have "code" or "validate" function');
+    }
+  }
+  function addRule(keyword2, definition, dataType2) {
+    var _a;
+    const post = definition === null || definition === void 0 ? void 0 : definition.post;
+    if (dataType2 && post)
+      throw new Error('keyword with "post" flag cannot have "type"');
+    const { RULES } = this;
+    let ruleGroup = post ? RULES.post : RULES.rules.find(({ type: t2 }) => t2 === dataType2);
+    if (!ruleGroup) {
+      ruleGroup = { type: dataType2, rules: [] };
+      RULES.rules.push(ruleGroup);
+    }
+    RULES.keywords[keyword2] = true;
+    if (!definition)
+      return;
+    const rule = {
+      keyword: keyword2,
+      definition: {
+        ...definition,
+        type: (0, dataType_12.getJSONTypes)(definition.type),
+        schemaType: (0, dataType_12.getJSONTypes)(definition.schemaType)
+      }
+    };
+    if (definition.before)
+      addBeforeRule.call(this, ruleGroup, rule, definition.before);
+    else
+      ruleGroup.rules.push(rule);
+    RULES.all[keyword2] = rule;
+    (_a = definition.implements) === null || _a === void 0 ? void 0 : _a.forEach((kwd) => this.addKeyword(kwd));
+  }
+  function addBeforeRule(ruleGroup, rule, before) {
+    const i = ruleGroup.rules.findIndex((_rule) => _rule.keyword === before);
+    if (i >= 0) {
+      ruleGroup.rules.splice(i, 0, rule);
+    } else {
+      ruleGroup.rules.push(rule);
+      this.logger.warn(`rule ${before} is not defined`);
+    }
+  }
+  function keywordMetaschema(def2) {
+    let { metaSchema } = def2;
+    if (metaSchema === void 0)
+      return;
+    if (def2.$data && this.opts.$data)
+      metaSchema = schemaOrData(metaSchema);
+    def2.validateSchema = this.compile(metaSchema, true);
+  }
+  const $dataRef = {
+    $ref: "https://raw.githubusercontent.com/ajv-validator/ajv/master/lib/refs/data.json#"
+  };
+  function schemaOrData(schema) {
+    return { anyOf: [schema, $dataRef] };
+  }
+})(core$2);
+var draft7 = {};
+var core$1 = {};
+var id = {};
+Object.defineProperty(id, "__esModule", { value: true });
+const def$s = {
+  keyword: "id",
+  code() {
+    throw new Error('NOT SUPPORTED: keyword "id", use "$id" for schema ID');
+  }
+};
+id.default = def$s;
+var ref = {};
+Object.defineProperty(ref, "__esModule", { value: true });
+ref.callRef = ref.getValidate = void 0;
+const ref_error_1$1 = ref_error;
+const code_1$8 = code;
+const codegen_1$l = codegen;
+const names_1$1 = names$1;
+const compile_1$1 = compile;
+const util_1$k = util;
+const def$r = {
+  keyword: "$ref",
+  schemaType: "string",
+  code(cxt) {
+    const { gen, schema: $ref, it } = cxt;
+    const { baseId, schemaEnv: env2, validateName, opts, self: self2 } = it;
+    const { root } = env2;
+    if (($ref === "#" || $ref === "#/") && baseId === root.baseId)
+      return callRootRef();
+    const schOrEnv = compile_1$1.resolveRef.call(self2, root, baseId, $ref);
+    if (schOrEnv === void 0)
+      throw new ref_error_1$1.default(it.opts.uriResolver, baseId, $ref);
+    if (schOrEnv instanceof compile_1$1.SchemaEnv)
+      return callValidate(schOrEnv);
+    return inlineRefSchema(schOrEnv);
+    function callRootRef() {
+      if (env2 === root)
+        return callRef(cxt, validateName, env2, env2.$async);
+      const rootName = gen.scopeValue("root", { ref: root });
+      return callRef(cxt, (0, codegen_1$l._)`${rootName}.validate`, root, root.$async);
+    }
+    function callValidate(sch) {
+      const v = getValidate(cxt, sch);
+      callRef(cxt, v, sch, sch.$async);
+    }
+    function inlineRefSchema(sch) {
+      const schName = gen.scopeValue("schema", opts.code.source === true ? { ref: sch, code: (0, codegen_1$l.stringify)(sch) } : { ref: sch });
+      const valid2 = gen.name("valid");
+      const schCxt = cxt.subschema({
+        schema: sch,
+        dataTypes: [],
+        schemaPath: codegen_1$l.nil,
+        topSchemaRef: schName,
+        errSchemaPath: $ref
+      }, valid2);
+      cxt.mergeEvaluated(schCxt);
+      cxt.ok(valid2);
+    }
+  }
+};
+function getValidate(cxt, sch) {
+  const { gen } = cxt;
+  return sch.validate ? gen.scopeValue("validate", { ref: sch.validate }) : (0, codegen_1$l._)`${gen.scopeValue("wrapper", { ref: sch })}.validate`;
+}
+ref.getValidate = getValidate;
+function callRef(cxt, v, sch, $async) {
+  const { gen, it } = cxt;
+  const { allErrors, schemaEnv: env2, opts } = it;
+  const passCxt = opts.passContext ? names_1$1.default.this : codegen_1$l.nil;
+  if ($async)
+    callAsyncRef();
+  else
+    callSyncRef();
+  function callAsyncRef() {
+    if (!env2.$async)
+      throw new Error("async schema referenced by sync schema");
+    const valid2 = gen.let("valid");
+    gen.try(() => {
+      gen.code((0, codegen_1$l._)`await ${(0, code_1$8.callValidateCode)(cxt, v, passCxt)}`);
+      addEvaluatedFrom(v);
+      if (!allErrors)
+        gen.assign(valid2, true);
+    }, (e) => {
+      gen.if((0, codegen_1$l._)`!(${e} instanceof ${it.ValidationError})`, () => gen.throw(e));
+      addErrorsFrom(e);
+      if (!allErrors)
+        gen.assign(valid2, false);
+    });
+    cxt.ok(valid2);
+  }
+  function callSyncRef() {
+    cxt.result((0, code_1$8.callValidateCode)(cxt, v, passCxt), () => addEvaluatedFrom(v), () => addErrorsFrom(v));
+  }
+  function addErrorsFrom(source2) {
+    const errs = (0, codegen_1$l._)`${source2}.errors`;
+    gen.assign(names_1$1.default.vErrors, (0, codegen_1$l._)`${names_1$1.default.vErrors} === null ? ${errs} : ${names_1$1.default.vErrors}.concat(${errs})`);
+    gen.assign(names_1$1.default.errors, (0, codegen_1$l._)`${names_1$1.default.vErrors}.length`);
+  }
+  function addEvaluatedFrom(source2) {
+    var _a;
+    if (!it.opts.unevaluated)
+      return;
+    const schEvaluated = (_a = sch === null || sch === void 0 ? void 0 : sch.validate) === null || _a === void 0 ? void 0 : _a.evaluated;
+    if (it.props !== true) {
+      if (schEvaluated && !schEvaluated.dynamicProps) {
+        if (schEvaluated.props !== void 0) {
+          it.props = util_1$k.mergeEvaluated.props(gen, schEvaluated.props, it.props);
+        }
+      } else {
+        const props = gen.var("props", (0, codegen_1$l._)`${source2}.evaluated.props`);
+        it.props = util_1$k.mergeEvaluated.props(gen, props, it.props, codegen_1$l.Name);
+      }
+    }
+    if (it.items !== true) {
+      if (schEvaluated && !schEvaluated.dynamicItems) {
+        if (schEvaluated.items !== void 0) {
+          it.items = util_1$k.mergeEvaluated.items(gen, schEvaluated.items, it.items);
+        }
+      } else {
+        const items2 = gen.var("items", (0, codegen_1$l._)`${source2}.evaluated.items`);
+        it.items = util_1$k.mergeEvaluated.items(gen, items2, it.items, codegen_1$l.Name);
+      }
+    }
+  }
+}
+ref.callRef = callRef;
+ref.default = def$r;
+Object.defineProperty(core$1, "__esModule", { value: true });
+const id_1 = id;
+const ref_1 = ref;
+const core = [
+  "$schema",
+  "$id",
+  "$defs",
+  "$vocabulary",
+  { keyword: "$comment" },
+  "definitions",
+  id_1.default,
+  ref_1.default
+];
+core$1.default = core;
+var validation$1 = {};
+var limitNumber = {};
+Object.defineProperty(limitNumber, "__esModule", { value: true });
+const codegen_1$k = codegen;
+const ops = codegen_1$k.operators;
+const KWDs = {
+  maximum: { okStr: "<=", ok: ops.LTE, fail: ops.GT },
+  minimum: { okStr: ">=", ok: ops.GTE, fail: ops.LT },
+  exclusiveMaximum: { okStr: "<", ok: ops.LT, fail: ops.GTE },
+  exclusiveMinimum: { okStr: ">", ok: ops.GT, fail: ops.LTE }
+};
+const error$i = {
+  message: ({ keyword: keyword2, schemaCode }) => (0, codegen_1$k.str)`must be ${KWDs[keyword2].okStr} ${schemaCode}`,
+  params: ({ keyword: keyword2, schemaCode }) => (0, codegen_1$k._)`{comparison: ${KWDs[keyword2].okStr}, limit: ${schemaCode}}`
+};
+const def$q = {
+  keyword: Object.keys(KWDs),
+  type: "number",
+  schemaType: "number",
+  $data: true,
+  error: error$i,
+  code(cxt) {
+    const { keyword: keyword2, data, schemaCode } = cxt;
+    cxt.fail$data((0, codegen_1$k._)`${data} ${KWDs[keyword2].fail} ${schemaCode} || isNaN(${data})`);
+  }
+};
+limitNumber.default = def$q;
+var multipleOf = {};
+Object.defineProperty(multipleOf, "__esModule", { value: true });
+const codegen_1$j = codegen;
+const error$h = {
+  message: ({ schemaCode }) => (0, codegen_1$j.str)`must be multiple of ${schemaCode}`,
+  params: ({ schemaCode }) => (0, codegen_1$j._)`{multipleOf: ${schemaCode}}`
+};
+const def$p = {
+  keyword: "multipleOf",
+  type: "number",
+  schemaType: "number",
+  $data: true,
+  error: error$h,
+  code(cxt) {
+    const { gen, data, schemaCode, it } = cxt;
+    const prec = it.opts.multipleOfPrecision;
+    const res = gen.let("res");
+    const invalid = prec ? (0, codegen_1$j._)`Math.abs(Math.round(${res}) - ${res}) > 1e-${prec}` : (0, codegen_1$j._)`${res} !== parseInt(${res})`;
+    cxt.fail$data((0, codegen_1$j._)`(${schemaCode} === 0 || (${res} = ${data}/${schemaCode}, ${invalid}))`);
+  }
+};
+multipleOf.default = def$p;
+var limitLength = {};
+var ucs2length$1 = {};
+Object.defineProperty(ucs2length$1, "__esModule", { value: true });
+function ucs2length(str) {
+  const len = str.length;
+  let length = 0;
+  let pos = 0;
+  let value;
+  while (pos < len) {
+    length++;
+    value = str.charCodeAt(pos++);
+    if (value >= 55296 && value <= 56319 && pos < len) {
+      value = str.charCodeAt(pos);
+      if ((value & 64512) === 56320)
+        pos++;
+    }
+  }
+  return length;
+}
+ucs2length$1.default = ucs2length;
+ucs2length.code = 'require("ajv/dist/runtime/ucs2length").default';
+Object.defineProperty(limitLength, "__esModule", { value: true });
+const codegen_1$i = codegen;
+const util_1$j = util;
+const ucs2length_1 = ucs2length$1;
+const error$g = {
+  message({ keyword: keyword2, schemaCode }) {
+    const comp = keyword2 === "maxLength" ? "more" : "fewer";
+    return (0, codegen_1$i.str)`must NOT have ${comp} than ${schemaCode} characters`;
+  },
+  params: ({ schemaCode }) => (0, codegen_1$i._)`{limit: ${schemaCode}}`
+};
+const def$o = {
+  keyword: ["maxLength", "minLength"],
+  type: "string",
+  schemaType: "number",
+  $data: true,
+  error: error$g,
+  code(cxt) {
+    const { keyword: keyword2, data, schemaCode, it } = cxt;
+    const op = keyword2 === "maxLength" ? codegen_1$i.operators.GT : codegen_1$i.operators.LT;
+    const len = it.opts.unicode === false ? (0, codegen_1$i._)`${data}.length` : (0, codegen_1$i._)`${(0, util_1$j.useFunc)(cxt.gen, ucs2length_1.default)}(${data})`;
+    cxt.fail$data((0, codegen_1$i._)`${len} ${op} ${schemaCode}`);
+  }
+};
+limitLength.default = def$o;
+var pattern = {};
+Object.defineProperty(pattern, "__esModule", { value: true });
+const code_1$7 = code;
+const util_1$i = util;
+const codegen_1$h = codegen;
+const error$f = {
+  message: ({ schemaCode }) => (0, codegen_1$h.str)`must match pattern "${schemaCode}"`,
+  params: ({ schemaCode }) => (0, codegen_1$h._)`{pattern: ${schemaCode}}`
+};
+const def$n = {
+  keyword: "pattern",
+  type: "string",
+  schemaType: "string",
+  $data: true,
+  error: error$f,
+  code(cxt) {
+    const { gen, data, $data, schema, schemaCode, it } = cxt;
+    const u2 = it.opts.unicodeRegExp ? "u" : "";
+    if ($data) {
+      const { regExp } = it.opts.code;
+      const regExpCode = regExp.code === "new RegExp" ? (0, codegen_1$h._)`new RegExp` : (0, util_1$i.useFunc)(gen, regExp);
+      const valid2 = gen.let("valid");
+      gen.try(() => gen.assign(valid2, (0, codegen_1$h._)`${regExpCode}(${schemaCode}, ${u2}).test(${data})`), () => gen.assign(valid2, false));
+      cxt.fail$data((0, codegen_1$h._)`!${valid2}`);
+    } else {
+      const regExp = (0, code_1$7.usePattern)(cxt, schema);
+      cxt.fail$data((0, codegen_1$h._)`!${regExp}.test(${data})`);
+    }
+  }
+};
+pattern.default = def$n;
+var limitProperties = {};
+Object.defineProperty(limitProperties, "__esModule", { value: true });
+const codegen_1$g = codegen;
+const error$e = {
+  message({ keyword: keyword2, schemaCode }) {
+    const comp = keyword2 === "maxProperties" ? "more" : "fewer";
+    return (0, codegen_1$g.str)`must NOT have ${comp} than ${schemaCode} properties`;
+  },
+  params: ({ schemaCode }) => (0, codegen_1$g._)`{limit: ${schemaCode}}`
+};
+const def$m = {
+  keyword: ["maxProperties", "minProperties"],
+  type: "object",
+  schemaType: "number",
+  $data: true,
+  error: error$e,
+  code(cxt) {
+    const { keyword: keyword2, data, schemaCode } = cxt;
+    const op = keyword2 === "maxProperties" ? codegen_1$g.operators.GT : codegen_1$g.operators.LT;
+    cxt.fail$data((0, codegen_1$g._)`Object.keys(${data}).length ${op} ${schemaCode}`);
+  }
+};
+limitProperties.default = def$m;
+var required = {};
+Object.defineProperty(required, "__esModule", { value: true });
+const code_1$6 = code;
+const codegen_1$f = codegen;
+const util_1$h = util;
+const error$d = {
+  message: ({ params: { missingProperty } }) => (0, codegen_1$f.str)`must have required property '${missingProperty}'`,
+  params: ({ params: { missingProperty } }) => (0, codegen_1$f._)`{missingProperty: ${missingProperty}}`
+};
+const def$l = {
+  keyword: "required",
+  type: "object",
+  schemaType: "array",
+  $data: true,
+  error: error$d,
+  code(cxt) {
+    const { gen, schema, schemaCode, data, $data, it } = cxt;
+    const { opts } = it;
+    if (!$data && schema.length === 0)
+      return;
+    const useLoop = schema.length >= opts.loopRequired;
+    if (it.allErrors)
+      allErrorsMode();
+    else
+      exitOnErrorMode();
+    if (opts.strictRequired) {
+      const props = cxt.parentSchema.properties;
+      const { definedProperties } = cxt.it;
+      for (const requiredKey of schema) {
+        if ((props === null || props === void 0 ? void 0 : props[requiredKey]) === void 0 && !definedProperties.has(requiredKey)) {
+          const schemaPath = it.schemaEnv.baseId + it.errSchemaPath;
+          const msg = `required property "${requiredKey}" is not defined at "${schemaPath}" (strictRequired)`;
+          (0, util_1$h.checkStrictMode)(it, msg, it.opts.strictRequired);
+        }
+      }
+    }
+    function allErrorsMode() {
+      if (useLoop || $data) {
+        cxt.block$data(codegen_1$f.nil, loopAllRequired);
+      } else {
+        for (const prop of schema) {
+          (0, code_1$6.checkReportMissingProp)(cxt, prop);
+        }
+      }
+    }
+    function exitOnErrorMode() {
+      const missing = gen.let("missing");
+      if (useLoop || $data) {
+        const valid2 = gen.let("valid", true);
+        cxt.block$data(valid2, () => loopUntilMissing(missing, valid2));
+        cxt.ok(valid2);
+      } else {
+        gen.if((0, code_1$6.checkMissingProp)(cxt, schema, missing));
+        (0, code_1$6.reportMissingProp)(cxt, missing);
+        gen.else();
+      }
+    }
+    function loopAllRequired() {
+      gen.forOf("prop", schemaCode, (prop) => {
+        cxt.setParams({ missingProperty: prop });
+        gen.if((0, code_1$6.noPropertyInData)(gen, data, prop, opts.ownProperties), () => cxt.error());
+      });
+    }
+    function loopUntilMissing(missing, valid2) {
+      cxt.setParams({ missingProperty: missing });
+      gen.forOf(missing, schemaCode, () => {
+        gen.assign(valid2, (0, code_1$6.propertyInData)(gen, data, missing, opts.ownProperties));
+        gen.if((0, codegen_1$f.not)(valid2), () => {
+          cxt.error();
+          gen.break();
+        });
+      }, codegen_1$f.nil);
+    }
+  }
+};
+required.default = def$l;
+var limitItems = {};
+Object.defineProperty(limitItems, "__esModule", { value: true });
+const codegen_1$e = codegen;
+const error$c = {
+  message({ keyword: keyword2, schemaCode }) {
+    const comp = keyword2 === "maxItems" ? "more" : "fewer";
+    return (0, codegen_1$e.str)`must NOT have ${comp} than ${schemaCode} items`;
+  },
+  params: ({ schemaCode }) => (0, codegen_1$e._)`{limit: ${schemaCode}}`
+};
+const def$k = {
+  keyword: ["maxItems", "minItems"],
+  type: "array",
+  schemaType: "number",
+  $data: true,
+  error: error$c,
+  code(cxt) {
+    const { keyword: keyword2, data, schemaCode } = cxt;
+    const op = keyword2 === "maxItems" ? codegen_1$e.operators.GT : codegen_1$e.operators.LT;
+    cxt.fail$data((0, codegen_1$e._)`${data}.length ${op} ${schemaCode}`);
+  }
+};
+limitItems.default = def$k;
+var uniqueItems = {};
+var equal$1 = {};
+Object.defineProperty(equal$1, "__esModule", { value: true });
+const equal2 = fastDeepEqual;
+equal2.code = 'require("ajv/dist/runtime/equal").default';
+equal$1.default = equal2;
+Object.defineProperty(uniqueItems, "__esModule", { value: true });
+const dataType_1 = dataType;
+const codegen_1$d = codegen;
+const util_1$g = util;
+const equal_1$2 = equal$1;
+const error$b = {
+  message: ({ params: { i, j } }) => (0, codegen_1$d.str)`must NOT have duplicate items (items ## ${j} and ${i} are identical)`,
+  params: ({ params: { i, j } }) => (0, codegen_1$d._)`{i: ${i}, j: ${j}}`
+};
+const def$j = {
+  keyword: "uniqueItems",
+  type: "array",
+  schemaType: "boolean",
+  $data: true,
+  error: error$b,
+  code(cxt) {
+    const { gen, data, $data, schema, parentSchema, schemaCode, it } = cxt;
+    if (!$data && !schema)
+      return;
+    const valid2 = gen.let("valid");
+    const itemTypes = parentSchema.items ? (0, dataType_1.getSchemaTypes)(parentSchema.items) : [];
+    cxt.block$data(valid2, validateUniqueItems, (0, codegen_1$d._)`${schemaCode} === false`);
+    cxt.ok(valid2);
+    function validateUniqueItems() {
+      const i = gen.let("i", (0, codegen_1$d._)`${data}.length`);
+      const j = gen.let("j");
+      cxt.setParams({ i, j });
+      gen.assign(valid2, true);
+      gen.if((0, codegen_1$d._)`${i} > 1`, () => (canOptimize() ? loopN : loopN2)(i, j));
+    }
+    function canOptimize() {
+      return itemTypes.length > 0 && !itemTypes.some((t2) => t2 === "object" || t2 === "array");
+    }
+    function loopN(i, j) {
+      const item = gen.name("item");
+      const wrongType = (0, dataType_1.checkDataTypes)(itemTypes, item, it.opts.strictNumbers, dataType_1.DataType.Wrong);
+      const indices = gen.const("indices", (0, codegen_1$d._)`{}`);
+      gen.for((0, codegen_1$d._)`;${i}--;`, () => {
+        gen.let(item, (0, codegen_1$d._)`${data}[${i}]`);
+        gen.if(wrongType, (0, codegen_1$d._)`continue`);
+        if (itemTypes.length > 1)
+          gen.if((0, codegen_1$d._)`typeof ${item} == "string"`, (0, codegen_1$d._)`${item} += "_"`);
+        gen.if((0, codegen_1$d._)`typeof ${indices}[${item}] == "number"`, () => {
+          gen.assign(j, (0, codegen_1$d._)`${indices}[${item}]`);
+          cxt.error();
+          gen.assign(valid2, false).break();
+        }).code((0, codegen_1$d._)`${indices}[${item}] = ${i}`);
+      });
+    }
+    function loopN2(i, j) {
+      const eql = (0, util_1$g.useFunc)(gen, equal_1$2.default);
+      const outer = gen.name("outer");
+      gen.label(outer).for((0, codegen_1$d._)`;${i}--;`, () => gen.for((0, codegen_1$d._)`${j} = ${i}; ${j}--;`, () => gen.if((0, codegen_1$d._)`${eql}(${data}[${i}], ${data}[${j}])`, () => {
+        cxt.error();
+        gen.assign(valid2, false).break(outer);
+      })));
+    }
+  }
+};
+uniqueItems.default = def$j;
+var _const = {};
+Object.defineProperty(_const, "__esModule", { value: true });
+const codegen_1$c = codegen;
+const util_1$f = util;
+const equal_1$1 = equal$1;
+const error$a = {
+  message: "must be equal to constant",
+  params: ({ schemaCode }) => (0, codegen_1$c._)`{allowedValue: ${schemaCode}}`
+};
+const def$i = {
+  keyword: "const",
+  $data: true,
+  error: error$a,
+  code(cxt) {
+    const { gen, data, $data, schemaCode, schema } = cxt;
+    if ($data || schema && typeof schema == "object") {
+      cxt.fail$data((0, codegen_1$c._)`!${(0, util_1$f.useFunc)(gen, equal_1$1.default)}(${data}, ${schemaCode})`);
+    } else {
+      cxt.fail((0, codegen_1$c._)`${schema} !== ${data}`);
+    }
+  }
+};
+_const.default = def$i;
+var _enum = {};
+Object.defineProperty(_enum, "__esModule", { value: true });
+const codegen_1$b = codegen;
+const util_1$e = util;
+const equal_1 = equal$1;
+const error$9 = {
+  message: "must be equal to one of the allowed values",
+  params: ({ schemaCode }) => (0, codegen_1$b._)`{allowedValues: ${schemaCode}}`
+};
+const def$h = {
+  keyword: "enum",
+  schemaType: "array",
+  $data: true,
+  error: error$9,
+  code(cxt) {
+    const { gen, data, $data, schema, schemaCode, it } = cxt;
+    if (!$data && schema.length === 0)
+      throw new Error("enum must have non-empty array");
+    const useLoop = schema.length >= it.opts.loopEnum;
+    let eql;
+    const getEql = () => eql !== null && eql !== void 0 ? eql : eql = (0, util_1$e.useFunc)(gen, equal_1.default);
+    let valid2;
+    if (useLoop || $data) {
+      valid2 = gen.let("valid");
+      cxt.block$data(valid2, loopEnum);
+    } else {
+      if (!Array.isArray(schema))
+        throw new Error("ajv implementation error");
+      const vSchema = gen.const("vSchema", schemaCode);
+      valid2 = (0, codegen_1$b.or)(...schema.map((_x, i) => equalCode(vSchema, i)));
+    }
+    cxt.pass(valid2);
+    function loopEnum() {
+      gen.assign(valid2, false);
+      gen.forOf("v", schemaCode, (v) => gen.if((0, codegen_1$b._)`${getEql()}(${data}, ${v})`, () => gen.assign(valid2, true).break()));
+    }
+    function equalCode(vSchema, i) {
+      const sch = schema[i];
+      return typeof sch === "object" && sch !== null ? (0, codegen_1$b._)`${getEql()}(${data}, ${vSchema}[${i}])` : (0, codegen_1$b._)`${data} === ${sch}`;
+    }
+  }
+};
+_enum.default = def$h;
+Object.defineProperty(validation$1, "__esModule", { value: true });
+const limitNumber_1 = limitNumber;
+const multipleOf_1 = multipleOf;
+const limitLength_1 = limitLength;
+const pattern_1 = pattern;
+const limitProperties_1 = limitProperties;
+const required_1 = required;
+const limitItems_1 = limitItems;
+const uniqueItems_1 = uniqueItems;
+const const_1 = _const;
+const enum_1 = _enum;
+const validation = [
+  // number
+  limitNumber_1.default,
+  multipleOf_1.default,
+  // string
+  limitLength_1.default,
+  pattern_1.default,
+  // object
+  limitProperties_1.default,
+  required_1.default,
+  // array
+  limitItems_1.default,
+  uniqueItems_1.default,
+  // any
+  { keyword: "type", schemaType: ["string", "array"] },
+  { keyword: "nullable", schemaType: "boolean" },
+  const_1.default,
+  enum_1.default
+];
+validation$1.default = validation;
+var applicator = {};
+var additionalItems = {};
+Object.defineProperty(additionalItems, "__esModule", { value: true });
+additionalItems.validateAdditionalItems = void 0;
+const codegen_1$a = codegen;
+const util_1$d = util;
+const error$8 = {
+  message: ({ params: { len } }) => (0, codegen_1$a.str)`must NOT have more than ${len} items`,
+  params: ({ params: { len } }) => (0, codegen_1$a._)`{limit: ${len}}`
+};
+const def$g = {
+  keyword: "additionalItems",
+  type: "array",
+  schemaType: ["boolean", "object"],
+  before: "uniqueItems",
+  error: error$8,
+  code(cxt) {
+    const { parentSchema, it } = cxt;
+    const { items: items2 } = parentSchema;
+    if (!Array.isArray(items2)) {
+      (0, util_1$d.checkStrictMode)(it, '"additionalItems" is ignored when "items" is not an array of schemas');
+      return;
+    }
+    validateAdditionalItems(cxt, items2);
+  }
+};
+function validateAdditionalItems(cxt, items2) {
+  const { gen, schema, data, keyword: keyword2, it } = cxt;
+  it.items = true;
+  const len = gen.const("len", (0, codegen_1$a._)`${data}.length`);
+  if (schema === false) {
+    cxt.setParams({ len: items2.length });
+    cxt.pass((0, codegen_1$a._)`${len} <= ${items2.length}`);
+  } else if (typeof schema == "object" && !(0, util_1$d.alwaysValidSchema)(it, schema)) {
+    const valid2 = gen.var("valid", (0, codegen_1$a._)`${len} <= ${items2.length}`);
+    gen.if((0, codegen_1$a.not)(valid2), () => validateItems(valid2));
+    cxt.ok(valid2);
+  }
+  function validateItems(valid2) {
+    gen.forRange("i", items2.length, len, (i) => {
+      cxt.subschema({ keyword: keyword2, dataProp: i, dataPropType: util_1$d.Type.Num }, valid2);
+      if (!it.allErrors)
+        gen.if((0, codegen_1$a.not)(valid2), () => gen.break());
+    });
+  }
+}
+additionalItems.validateAdditionalItems = validateAdditionalItems;
+additionalItems.default = def$g;
+var prefixItems = {};
+var items = {};
+Object.defineProperty(items, "__esModule", { value: true });
+items.validateTuple = void 0;
+const codegen_1$9 = codegen;
+const util_1$c = util;
+const code_1$5 = code;
+const def$f = {
+  keyword: "items",
+  type: "array",
+  schemaType: ["object", "array", "boolean"],
+  before: "uniqueItems",
+  code(cxt) {
+    const { schema, it } = cxt;
+    if (Array.isArray(schema))
+      return validateTuple(cxt, "additionalItems", schema);
+    it.items = true;
+    if ((0, util_1$c.alwaysValidSchema)(it, schema))
+      return;
+    cxt.ok((0, code_1$5.validateArray)(cxt));
+  }
+};
+function validateTuple(cxt, extraItems, schArr = cxt.schema) {
+  const { gen, parentSchema, data, keyword: keyword2, it } = cxt;
+  checkStrictTuple(parentSchema);
+  if (it.opts.unevaluated && schArr.length && it.items !== true) {
+    it.items = util_1$c.mergeEvaluated.items(gen, schArr.length, it.items);
+  }
+  const valid2 = gen.name("valid");
+  const len = gen.const("len", (0, codegen_1$9._)`${data}.length`);
+  schArr.forEach((sch, i) => {
+    if ((0, util_1$c.alwaysValidSchema)(it, sch))
+      return;
+    gen.if((0, codegen_1$9._)`${len} > ${i}`, () => cxt.subschema({
+      keyword: keyword2,
+      schemaProp: i,
+      dataProp: i
+    }, valid2));
+    cxt.ok(valid2);
+  });
+  function checkStrictTuple(sch) {
+    const { opts, errSchemaPath } = it;
+    const l = schArr.length;
+    const fullTuple = l === sch.minItems && (l === sch.maxItems || sch[extraItems] === false);
+    if (opts.strictTuples && !fullTuple) {
+      const msg = `"${keyword2}" is ${l}-tuple, but minItems or maxItems/${extraItems} are not specified or different at path "${errSchemaPath}"`;
+      (0, util_1$c.checkStrictMode)(it, msg, opts.strictTuples);
+    }
+  }
+}
+items.validateTuple = validateTuple;
+items.default = def$f;
+Object.defineProperty(prefixItems, "__esModule", { value: true });
+const items_1$1 = items;
+const def$e = {
+  keyword: "prefixItems",
+  type: "array",
+  schemaType: ["array"],
+  before: "uniqueItems",
+  code: (cxt) => (0, items_1$1.validateTuple)(cxt, "items")
+};
+prefixItems.default = def$e;
+var items2020 = {};
+Object.defineProperty(items2020, "__esModule", { value: true });
+const codegen_1$8 = codegen;
+const util_1$b = util;
+const code_1$4 = code;
+const additionalItems_1$1 = additionalItems;
+const error$7 = {
+  message: ({ params: { len } }) => (0, codegen_1$8.str)`must NOT have more than ${len} items`,
+  params: ({ params: { len } }) => (0, codegen_1$8._)`{limit: ${len}}`
+};
+const def$d = {
+  keyword: "items",
+  type: "array",
+  schemaType: ["object", "boolean"],
+  before: "uniqueItems",
+  error: error$7,
+  code(cxt) {
+    const { schema, parentSchema, it } = cxt;
+    const { prefixItems: prefixItems2 } = parentSchema;
+    it.items = true;
+    if ((0, util_1$b.alwaysValidSchema)(it, schema))
+      return;
+    if (prefixItems2)
+      (0, additionalItems_1$1.validateAdditionalItems)(cxt, prefixItems2);
+    else
+      cxt.ok((0, code_1$4.validateArray)(cxt));
+  }
+};
+items2020.default = def$d;
+var contains = {};
+Object.defineProperty(contains, "__esModule", { value: true });
+const codegen_1$7 = codegen;
+const util_1$a = util;
+const error$6 = {
+  message: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1$7.str)`must contain at least ${min} valid item(s)` : (0, codegen_1$7.str)`must contain at least ${min} and no more than ${max} valid item(s)`,
+  params: ({ params: { min, max } }) => max === void 0 ? (0, codegen_1$7._)`{minContains: ${min}}` : (0, codegen_1$7._)`{minContains: ${min}, maxContains: ${max}}`
+};
+const def$c = {
+  keyword: "contains",
+  type: "array",
+  schemaType: ["object", "boolean"],
+  before: "uniqueItems",
+  trackErrors: true,
+  error: error$6,
+  code(cxt) {
+    const { gen, schema, parentSchema, data, it } = cxt;
+    let min;
+    let max;
+    const { minContains, maxContains } = parentSchema;
+    if (it.opts.next) {
+      min = minContains === void 0 ? 1 : minContains;
+      max = maxContains;
+    } else {
+      min = 1;
+    }
+    const len = gen.const("len", (0, codegen_1$7._)`${data}.length`);
+    cxt.setParams({ min, max });
+    if (max === void 0 && min === 0) {
+      (0, util_1$a.checkStrictMode)(it, `"minContains" == 0 without "maxContains": "contains" keyword ignored`);
+      return;
+    }
+    if (max !== void 0 && min > max) {
+      (0, util_1$a.checkStrictMode)(it, `"minContains" > "maxContains" is always invalid`);
+      cxt.fail();
+      return;
+    }
+    if ((0, util_1$a.alwaysValidSchema)(it, schema)) {
+      let cond = (0, codegen_1$7._)`${len} >= ${min}`;
+      if (max !== void 0)
+        cond = (0, codegen_1$7._)`${cond} && ${len} <= ${max}`;
+      cxt.pass(cond);
+      return;
+    }
+    it.items = true;
+    const valid2 = gen.name("valid");
+    if (max === void 0 && min === 1) {
+      validateItems(valid2, () => gen.if(valid2, () => gen.break()));
+    } else if (min === 0) {
+      gen.let(valid2, true);
+      if (max !== void 0)
+        gen.if((0, codegen_1$7._)`${data}.length > 0`, validateItemsWithCount);
+    } else {
+      gen.let(valid2, false);
+      validateItemsWithCount();
+    }
+    cxt.result(valid2, () => cxt.reset());
+    function validateItemsWithCount() {
+      const schValid = gen.name("_valid");
+      const count = gen.let("count", 0);
+      validateItems(schValid, () => gen.if(schValid, () => checkLimits(count)));
+    }
+    function validateItems(_valid, block) {
+      gen.forRange("i", 0, len, (i) => {
+        cxt.subschema({
+          keyword: "contains",
+          dataProp: i,
+          dataPropType: util_1$a.Type.Num,
+          compositeRule: true
+        }, _valid);
+        block();
+      });
+    }
+    function checkLimits(count) {
+      gen.code((0, codegen_1$7._)`${count}++`);
+      if (max === void 0) {
+        gen.if((0, codegen_1$7._)`${count} >= ${min}`, () => gen.assign(valid2, true).break());
+      } else {
+        gen.if((0, codegen_1$7._)`${count} > ${max}`, () => gen.assign(valid2, false).break());
+        if (min === 1)
+          gen.assign(valid2, true);
+        else
+          gen.if((0, codegen_1$7._)`${count} >= ${min}`, () => gen.assign(valid2, true));
+      }
+    }
+  }
+};
+contains.default = def$c;
+var dependencies = {};
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.validateSchemaDeps = exports.validatePropertyDeps = exports.error = void 0;
+  const codegen_12 = codegen;
+  const util_12 = util;
+  const code_12 = code;
+  exports.error = {
+    message: ({ params: { property, depsCount, deps } }) => {
+      const property_ies = depsCount === 1 ? "property" : "properties";
+      return (0, codegen_12.str)`must have ${property_ies} ${deps} when property ${property} is present`;
+    },
+    params: ({ params: { property, depsCount, deps, missingProperty } }) => (0, codegen_12._)`{property: ${property},
+    missingProperty: ${missingProperty},
+    depsCount: ${depsCount},
+    deps: ${deps}}`
+    // TODO change to reference
+  };
+  const def2 = {
+    keyword: "dependencies",
+    type: "object",
+    schemaType: "object",
+    error: exports.error,
+    code(cxt) {
+      const [propDeps, schDeps] = splitDependencies(cxt);
+      validatePropertyDeps(cxt, propDeps);
+      validateSchemaDeps(cxt, schDeps);
+    }
+  };
+  function splitDependencies({ schema }) {
+    const propertyDeps = {};
+    const schemaDeps = {};
+    for (const key in schema) {
+      if (key === "__proto__")
+        continue;
+      const deps = Array.isArray(schema[key]) ? propertyDeps : schemaDeps;
+      deps[key] = schema[key];
+    }
+    return [propertyDeps, schemaDeps];
+  }
+  function validatePropertyDeps(cxt, propertyDeps = cxt.schema) {
+    const { gen, data, it } = cxt;
+    if (Object.keys(propertyDeps).length === 0)
+      return;
+    const missing = gen.let("missing");
+    for (const prop in propertyDeps) {
+      const deps = propertyDeps[prop];
+      if (deps.length === 0)
+        continue;
+      const hasProperty = (0, code_12.propertyInData)(gen, data, prop, it.opts.ownProperties);
+      cxt.setParams({
+        property: prop,
+        depsCount: deps.length,
+        deps: deps.join(", ")
+      });
+      if (it.allErrors) {
+        gen.if(hasProperty, () => {
+          for (const depProp of deps) {
+            (0, code_12.checkReportMissingProp)(cxt, depProp);
+          }
+        });
+      } else {
+        gen.if((0, codegen_12._)`${hasProperty} && (${(0, code_12.checkMissingProp)(cxt, deps, missing)})`);
+        (0, code_12.reportMissingProp)(cxt, missing);
+        gen.else();
+      }
+    }
+  }
+  exports.validatePropertyDeps = validatePropertyDeps;
+  function validateSchemaDeps(cxt, schemaDeps = cxt.schema) {
+    const { gen, data, keyword: keyword2, it } = cxt;
+    const valid2 = gen.name("valid");
+    for (const prop in schemaDeps) {
+      if ((0, util_12.alwaysValidSchema)(it, schemaDeps[prop]))
+        continue;
+      gen.if(
+        (0, code_12.propertyInData)(gen, data, prop, it.opts.ownProperties),
+        () => {
+          const schCxt = cxt.subschema({ keyword: keyword2, schemaProp: prop }, valid2);
+          cxt.mergeValidEvaluated(schCxt, valid2);
+        },
+        () => gen.var(valid2, true)
+        // TODO var
+      );
+      cxt.ok(valid2);
+    }
+  }
+  exports.validateSchemaDeps = validateSchemaDeps;
+  exports.default = def2;
+})(dependencies);
+var propertyNames = {};
+Object.defineProperty(propertyNames, "__esModule", { value: true });
+const codegen_1$6 = codegen;
+const util_1$9 = util;
+const error$5 = {
+  message: "property name must be valid",
+  params: ({ params }) => (0, codegen_1$6._)`{propertyName: ${params.propertyName}}`
+};
+const def$b = {
+  keyword: "propertyNames",
+  type: "object",
+  schemaType: ["object", "boolean"],
+  error: error$5,
+  code(cxt) {
+    const { gen, schema, data, it } = cxt;
+    if ((0, util_1$9.alwaysValidSchema)(it, schema))
+      return;
+    const valid2 = gen.name("valid");
+    gen.forIn("key", data, (key) => {
+      cxt.setParams({ propertyName: key });
+      cxt.subschema({
+        keyword: "propertyNames",
+        data: key,
+        dataTypes: ["string"],
+        propertyName: key,
+        compositeRule: true
+      }, valid2);
+      gen.if((0, codegen_1$6.not)(valid2), () => {
+        cxt.error(true);
+        if (!it.allErrors)
+          gen.break();
+      });
+    });
+    cxt.ok(valid2);
+  }
+};
+propertyNames.default = def$b;
+var additionalProperties = {};
+Object.defineProperty(additionalProperties, "__esModule", { value: true });
+const code_1$3 = code;
+const codegen_1$5 = codegen;
+const names_1 = names$1;
+const util_1$8 = util;
+const error$4 = {
+  message: "must NOT have additional properties",
+  params: ({ params }) => (0, codegen_1$5._)`{additionalProperty: ${params.additionalProperty}}`
+};
+const def$a = {
+  keyword: "additionalProperties",
+  type: ["object"],
+  schemaType: ["boolean", "object"],
+  allowUndefined: true,
+  trackErrors: true,
+  error: error$4,
+  code(cxt) {
+    const { gen, schema, parentSchema, data, errsCount, it } = cxt;
+    if (!errsCount)
+      throw new Error("ajv implementation error");
+    const { allErrors, opts } = it;
+    it.props = true;
+    if (opts.removeAdditional !== "all" && (0, util_1$8.alwaysValidSchema)(it, schema))
+      return;
+    const props = (0, code_1$3.allSchemaProperties)(parentSchema.properties);
+    const patProps = (0, code_1$3.allSchemaProperties)(parentSchema.patternProperties);
+    checkAdditionalProperties();
+    cxt.ok((0, codegen_1$5._)`${errsCount} === ${names_1.default.errors}`);
+    function checkAdditionalProperties() {
+      gen.forIn("key", data, (key) => {
+        if (!props.length && !patProps.length)
+          additionalPropertyCode(key);
+        else
+          gen.if(isAdditional(key), () => additionalPropertyCode(key));
+      });
+    }
+    function isAdditional(key) {
+      let definedProp;
+      if (props.length > 8) {
+        const propsSchema = (0, util_1$8.schemaRefOrVal)(it, parentSchema.properties, "properties");
+        definedProp = (0, code_1$3.isOwnProperty)(gen, propsSchema, key);
+      } else if (props.length) {
+        definedProp = (0, codegen_1$5.or)(...props.map((p) => (0, codegen_1$5._)`${key} === ${p}`));
+      } else {
+        definedProp = codegen_1$5.nil;
+      }
+      if (patProps.length) {
+        definedProp = (0, codegen_1$5.or)(definedProp, ...patProps.map((p) => (0, codegen_1$5._)`${(0, code_1$3.usePattern)(cxt, p)}.test(${key})`));
+      }
+      return (0, codegen_1$5.not)(definedProp);
+    }
+    function deleteAdditional(key) {
+      gen.code((0, codegen_1$5._)`delete ${data}[${key}]`);
+    }
+    function additionalPropertyCode(key) {
+      if (opts.removeAdditional === "all" || opts.removeAdditional && schema === false) {
+        deleteAdditional(key);
+        return;
+      }
+      if (schema === false) {
+        cxt.setParams({ additionalProperty: key });
+        cxt.error();
+        if (!allErrors)
+          gen.break();
+        return;
+      }
+      if (typeof schema == "object" && !(0, util_1$8.alwaysValidSchema)(it, schema)) {
+        const valid2 = gen.name("valid");
+        if (opts.removeAdditional === "failing") {
+          applyAdditionalSchema(key, valid2, false);
+          gen.if((0, codegen_1$5.not)(valid2), () => {
+            cxt.reset();
+            deleteAdditional(key);
+          });
+        } else {
+          applyAdditionalSchema(key, valid2);
+          if (!allErrors)
+            gen.if((0, codegen_1$5.not)(valid2), () => gen.break());
+        }
+      }
+    }
+    function applyAdditionalSchema(key, valid2, errors2) {
+      const subschema2 = {
+        keyword: "additionalProperties",
+        dataProp: key,
+        dataPropType: util_1$8.Type.Str
+      };
+      if (errors2 === false) {
+        Object.assign(subschema2, {
+          compositeRule: true,
+          createErrors: false,
+          allErrors: false
+        });
+      }
+      cxt.subschema(subschema2, valid2);
+    }
+  }
+};
+additionalProperties.default = def$a;
+var properties$1 = {};
+Object.defineProperty(properties$1, "__esModule", { value: true });
+const validate_1 = validate;
+const code_1$2 = code;
+const util_1$7 = util;
+const additionalProperties_1$1 = additionalProperties;
+const def$9 = {
+  keyword: "properties",
+  type: "object",
+  schemaType: "object",
+  code(cxt) {
+    const { gen, schema, parentSchema, data, it } = cxt;
+    if (it.opts.removeAdditional === "all" && parentSchema.additionalProperties === void 0) {
+      additionalProperties_1$1.default.code(new validate_1.KeywordCxt(it, additionalProperties_1$1.default, "additionalProperties"));
+    }
+    const allProps = (0, code_1$2.allSchemaProperties)(schema);
+    for (const prop of allProps) {
+      it.definedProperties.add(prop);
+    }
+    if (it.opts.unevaluated && allProps.length && it.props !== true) {
+      it.props = util_1$7.mergeEvaluated.props(gen, (0, util_1$7.toHash)(allProps), it.props);
+    }
+    const properties2 = allProps.filter((p) => !(0, util_1$7.alwaysValidSchema)(it, schema[p]));
+    if (properties2.length === 0)
+      return;
+    const valid2 = gen.name("valid");
+    for (const prop of properties2) {
+      if (hasDefault(prop)) {
+        applyPropertySchema(prop);
+      } else {
+        gen.if((0, code_1$2.propertyInData)(gen, data, prop, it.opts.ownProperties));
+        applyPropertySchema(prop);
+        if (!it.allErrors)
+          gen.else().var(valid2, true);
+        gen.endIf();
+      }
+      cxt.it.definedProperties.add(prop);
+      cxt.ok(valid2);
+    }
+    function hasDefault(prop) {
+      return it.opts.useDefaults && !it.compositeRule && schema[prop].default !== void 0;
+    }
+    function applyPropertySchema(prop) {
+      cxt.subschema({
+        keyword: "properties",
+        schemaProp: prop,
+        dataProp: prop
+      }, valid2);
+    }
+  }
+};
+properties$1.default = def$9;
+var patternProperties = {};
+Object.defineProperty(patternProperties, "__esModule", { value: true });
+const code_1$1 = code;
+const codegen_1$4 = codegen;
+const util_1$6 = util;
+const util_2 = util;
+const def$8 = {
+  keyword: "patternProperties",
+  type: "object",
+  schemaType: "object",
+  code(cxt) {
+    const { gen, schema, data, parentSchema, it } = cxt;
+    const { opts } = it;
+    const patterns = (0, code_1$1.allSchemaProperties)(schema);
+    const alwaysValidPatterns = patterns.filter((p) => (0, util_1$6.alwaysValidSchema)(it, schema[p]));
+    if (patterns.length === 0 || alwaysValidPatterns.length === patterns.length && (!it.opts.unevaluated || it.props === true)) {
+      return;
+    }
+    const checkProperties = opts.strictSchema && !opts.allowMatchingProperties && parentSchema.properties;
+    const valid2 = gen.name("valid");
+    if (it.props !== true && !(it.props instanceof codegen_1$4.Name)) {
+      it.props = (0, util_2.evaluatedPropsToName)(gen, it.props);
+    }
+    const { props } = it;
+    validatePatternProperties();
+    function validatePatternProperties() {
+      for (const pat of patterns) {
+        if (checkProperties)
+          checkMatchingProperties(pat);
+        if (it.allErrors) {
+          validateProperties(pat);
+        } else {
+          gen.var(valid2, true);
+          validateProperties(pat);
+          gen.if(valid2);
+        }
+      }
+    }
+    function checkMatchingProperties(pat) {
+      for (const prop in checkProperties) {
+        if (new RegExp(pat).test(prop)) {
+          (0, util_1$6.checkStrictMode)(it, `property ${prop} matches pattern ${pat} (use allowMatchingProperties)`);
+        }
+      }
+    }
+    function validateProperties(pat) {
+      gen.forIn("key", data, (key) => {
+        gen.if((0, codegen_1$4._)`${(0, code_1$1.usePattern)(cxt, pat)}.test(${key})`, () => {
+          const alwaysValid = alwaysValidPatterns.includes(pat);
+          if (!alwaysValid) {
+            cxt.subschema({
+              keyword: "patternProperties",
+              schemaProp: pat,
+              dataProp: key,
+              dataPropType: util_2.Type.Str
+            }, valid2);
+          }
+          if (it.opts.unevaluated && props !== true) {
+            gen.assign((0, codegen_1$4._)`${props}[${key}]`, true);
+          } else if (!alwaysValid && !it.allErrors) {
+            gen.if((0, codegen_1$4.not)(valid2), () => gen.break());
+          }
+        });
+      });
+    }
+  }
+};
+patternProperties.default = def$8;
+var not = {};
+Object.defineProperty(not, "__esModule", { value: true });
+const util_1$5 = util;
+const def$7 = {
+  keyword: "not",
+  schemaType: ["object", "boolean"],
+  trackErrors: true,
+  code(cxt) {
+    const { gen, schema, it } = cxt;
+    if ((0, util_1$5.alwaysValidSchema)(it, schema)) {
+      cxt.fail();
+      return;
+    }
+    const valid2 = gen.name("valid");
+    cxt.subschema({
+      keyword: "not",
+      compositeRule: true,
+      createErrors: false,
+      allErrors: false
+    }, valid2);
+    cxt.failResult(valid2, () => cxt.reset(), () => cxt.error());
+  },
+  error: { message: "must NOT be valid" }
+};
+not.default = def$7;
+var anyOf = {};
+Object.defineProperty(anyOf, "__esModule", { value: true });
+const code_1 = code;
+const def$6 = {
+  keyword: "anyOf",
+  schemaType: "array",
+  trackErrors: true,
+  code: code_1.validateUnion,
+  error: { message: "must match a schema in anyOf" }
+};
+anyOf.default = def$6;
+var oneOf = {};
+Object.defineProperty(oneOf, "__esModule", { value: true });
+const codegen_1$3 = codegen;
+const util_1$4 = util;
+const error$3 = {
+  message: "must match exactly one schema in oneOf",
+  params: ({ params }) => (0, codegen_1$3._)`{passingSchemas: ${params.passing}}`
+};
+const def$5 = {
+  keyword: "oneOf",
+  schemaType: "array",
+  trackErrors: true,
+  error: error$3,
+  code(cxt) {
+    const { gen, schema, parentSchema, it } = cxt;
+    if (!Array.isArray(schema))
+      throw new Error("ajv implementation error");
+    if (it.opts.discriminator && parentSchema.discriminator)
+      return;
+    const schArr = schema;
+    const valid2 = gen.let("valid", false);
+    const passing = gen.let("passing", null);
+    const schValid = gen.name("_valid");
+    cxt.setParams({ passing });
+    gen.block(validateOneOf);
+    cxt.result(valid2, () => cxt.reset(), () => cxt.error(true));
+    function validateOneOf() {
+      schArr.forEach((sch, i) => {
+        let schCxt;
+        if ((0, util_1$4.alwaysValidSchema)(it, sch)) {
+          gen.var(schValid, true);
+        } else {
+          schCxt = cxt.subschema({
+            keyword: "oneOf",
+            schemaProp: i,
+            compositeRule: true
+          }, schValid);
+        }
+        if (i > 0) {
+          gen.if((0, codegen_1$3._)`${schValid} && ${valid2}`).assign(valid2, false).assign(passing, (0, codegen_1$3._)`[${passing}, ${i}]`).else();
+        }
+        gen.if(schValid, () => {
+          gen.assign(valid2, true);
+          gen.assign(passing, i);
+          if (schCxt)
+            cxt.mergeEvaluated(schCxt, codegen_1$3.Name);
+        });
+      });
+    }
+  }
+};
+oneOf.default = def$5;
+var allOf = {};
+Object.defineProperty(allOf, "__esModule", { value: true });
+const util_1$3 = util;
+const def$4 = {
+  keyword: "allOf",
+  schemaType: "array",
+  code(cxt) {
+    const { gen, schema, it } = cxt;
+    if (!Array.isArray(schema))
+      throw new Error("ajv implementation error");
+    const valid2 = gen.name("valid");
+    schema.forEach((sch, i) => {
+      if ((0, util_1$3.alwaysValidSchema)(it, sch))
+        return;
+      const schCxt = cxt.subschema({ keyword: "allOf", schemaProp: i }, valid2);
+      cxt.ok(valid2);
+      cxt.mergeEvaluated(schCxt);
+    });
+  }
+};
+allOf.default = def$4;
+var _if = {};
+Object.defineProperty(_if, "__esModule", { value: true });
+const codegen_1$2 = codegen;
+const util_1$2 = util;
+const error$2 = {
+  message: ({ params }) => (0, codegen_1$2.str)`must match "${params.ifClause}" schema`,
+  params: ({ params }) => (0, codegen_1$2._)`{failingKeyword: ${params.ifClause}}`
+};
+const def$3 = {
+  keyword: "if",
+  schemaType: ["object", "boolean"],
+  trackErrors: true,
+  error: error$2,
+  code(cxt) {
+    const { gen, parentSchema, it } = cxt;
+    if (parentSchema.then === void 0 && parentSchema.else === void 0) {
+      (0, util_1$2.checkStrictMode)(it, '"if" without "then" and "else" is ignored');
+    }
+    const hasThen = hasSchema(it, "then");
+    const hasElse = hasSchema(it, "else");
+    if (!hasThen && !hasElse)
+      return;
+    const valid2 = gen.let("valid", true);
+    const schValid = gen.name("_valid");
+    validateIf();
+    cxt.reset();
+    if (hasThen && hasElse) {
+      const ifClause = gen.let("ifClause");
+      cxt.setParams({ ifClause });
+      gen.if(schValid, validateClause("then", ifClause), validateClause("else", ifClause));
+    } else if (hasThen) {
+      gen.if(schValid, validateClause("then"));
+    } else {
+      gen.if((0, codegen_1$2.not)(schValid), validateClause("else"));
+    }
+    cxt.pass(valid2, () => cxt.error(true));
+    function validateIf() {
+      const schCxt = cxt.subschema({
+        keyword: "if",
+        compositeRule: true,
+        createErrors: false,
+        allErrors: false
+      }, schValid);
+      cxt.mergeEvaluated(schCxt);
+    }
+    function validateClause(keyword2, ifClause) {
+      return () => {
+        const schCxt = cxt.subschema({ keyword: keyword2 }, schValid);
+        gen.assign(valid2, schValid);
+        cxt.mergeValidEvaluated(schCxt, valid2);
+        if (ifClause)
+          gen.assign(ifClause, (0, codegen_1$2._)`${keyword2}`);
+        else
+          cxt.setParams({ ifClause: keyword2 });
+      };
+    }
+  }
+};
+function hasSchema(it, keyword2) {
+  const schema = it.schema[keyword2];
+  return schema !== void 0 && !(0, util_1$2.alwaysValidSchema)(it, schema);
+}
+_if.default = def$3;
+var thenElse = {};
+Object.defineProperty(thenElse, "__esModule", { value: true });
+const util_1$1 = util;
+const def$2 = {
+  keyword: ["then", "else"],
+  schemaType: ["object", "boolean"],
+  code({ keyword: keyword2, parentSchema, it }) {
+    if (parentSchema.if === void 0)
+      (0, util_1$1.checkStrictMode)(it, `"${keyword2}" without "if" is ignored`);
+  }
+};
+thenElse.default = def$2;
+Object.defineProperty(applicator, "__esModule", { value: true });
+const additionalItems_1 = additionalItems;
+const prefixItems_1 = prefixItems;
+const items_1 = items;
+const items2020_1 = items2020;
+const contains_1 = contains;
+const dependencies_1 = dependencies;
+const propertyNames_1 = propertyNames;
+const additionalProperties_1 = additionalProperties;
+const properties_1 = properties$1;
+const patternProperties_1 = patternProperties;
+const not_1 = not;
+const anyOf_1 = anyOf;
+const oneOf_1 = oneOf;
+const allOf_1 = allOf;
+const if_1 = _if;
+const thenElse_1 = thenElse;
+function getApplicator(draft2020 = false) {
+  const applicator2 = [
+    // any
+    not_1.default,
+    anyOf_1.default,
+    oneOf_1.default,
+    allOf_1.default,
+    if_1.default,
+    thenElse_1.default,
+    // object
+    propertyNames_1.default,
+    additionalProperties_1.default,
+    dependencies_1.default,
+    properties_1.default,
+    patternProperties_1.default
+  ];
+  if (draft2020)
+    applicator2.push(prefixItems_1.default, items2020_1.default);
+  else
+    applicator2.push(additionalItems_1.default, items_1.default);
+  applicator2.push(contains_1.default);
+  return applicator2;
+}
+applicator.default = getApplicator;
+var format$2 = {};
+var format$1 = {};
+Object.defineProperty(format$1, "__esModule", { value: true });
+const codegen_1$1 = codegen;
+const error$1 = {
+  message: ({ schemaCode }) => (0, codegen_1$1.str)`must match format "${schemaCode}"`,
+  params: ({ schemaCode }) => (0, codegen_1$1._)`{format: ${schemaCode}}`
+};
+const def$1 = {
+  keyword: "format",
+  type: ["number", "string"],
+  schemaType: "string",
+  $data: true,
+  error: error$1,
+  code(cxt, ruleType) {
+    const { gen, data, $data, schema, schemaCode, it } = cxt;
+    const { opts, errSchemaPath, schemaEnv, self: self2 } = it;
+    if (!opts.validateFormats)
+      return;
+    if ($data)
+      validate$DataFormat();
+    else
+      validateFormat();
+    function validate$DataFormat() {
+      const fmts = gen.scopeValue("formats", {
+        ref: self2.formats,
+        code: opts.code.formats
+      });
+      const fDef = gen.const("fDef", (0, codegen_1$1._)`${fmts}[${schemaCode}]`);
+      const fType = gen.let("fType");
+      const format2 = gen.let("format");
+      gen.if((0, codegen_1$1._)`typeof ${fDef} == "object" && !(${fDef} instanceof RegExp)`, () => gen.assign(fType, (0, codegen_1$1._)`${fDef}.type || "string"`).assign(format2, (0, codegen_1$1._)`${fDef}.validate`), () => gen.assign(fType, (0, codegen_1$1._)`"string"`).assign(format2, fDef));
+      cxt.fail$data((0, codegen_1$1.or)(unknownFmt(), invalidFmt()));
+      function unknownFmt() {
+        if (opts.strictSchema === false)
+          return codegen_1$1.nil;
+        return (0, codegen_1$1._)`${schemaCode} && !${format2}`;
+      }
+      function invalidFmt() {
+        const callFormat = schemaEnv.$async ? (0, codegen_1$1._)`(${fDef}.async ? await ${format2}(${data}) : ${format2}(${data}))` : (0, codegen_1$1._)`${format2}(${data})`;
+        const validData = (0, codegen_1$1._)`(typeof ${format2} == "function" ? ${callFormat} : ${format2}.test(${data}))`;
+        return (0, codegen_1$1._)`${format2} && ${format2} !== true && ${fType} === ${ruleType} && !${validData}`;
+      }
+    }
+    function validateFormat() {
+      const formatDef = self2.formats[schema];
+      if (!formatDef) {
+        unknownFormat();
+        return;
+      }
+      if (formatDef === true)
+        return;
+      const [fmtType, format2, fmtRef] = getFormat(formatDef);
+      if (fmtType === ruleType)
+        cxt.pass(validCondition());
+      function unknownFormat() {
+        if (opts.strictSchema === false) {
+          self2.logger.warn(unknownMsg());
+          return;
+        }
+        throw new Error(unknownMsg());
+        function unknownMsg() {
+          return `unknown format "${schema}" ignored in schema at path "${errSchemaPath}"`;
+        }
+      }
+      function getFormat(fmtDef) {
+        const code2 = fmtDef instanceof RegExp ? (0, codegen_1$1.regexpCode)(fmtDef) : opts.code.formats ? (0, codegen_1$1._)`${opts.code.formats}${(0, codegen_1$1.getProperty)(schema)}` : void 0;
+        const fmt = gen.scopeValue("formats", { key: schema, ref: fmtDef, code: code2 });
+        if (typeof fmtDef == "object" && !(fmtDef instanceof RegExp)) {
+          return [fmtDef.type || "string", fmtDef.validate, (0, codegen_1$1._)`${fmt}.validate`];
+        }
+        return ["string", fmtDef, fmt];
+      }
+      function validCondition() {
+        if (typeof formatDef == "object" && !(formatDef instanceof RegExp) && formatDef.async) {
+          if (!schemaEnv.$async)
+            throw new Error("async format in sync schema");
+          return (0, codegen_1$1._)`await ${fmtRef}(${data})`;
+        }
+        return typeof format2 == "function" ? (0, codegen_1$1._)`${fmtRef}(${data})` : (0, codegen_1$1._)`${fmtRef}.test(${data})`;
+      }
+    }
+  }
+};
+format$1.default = def$1;
+Object.defineProperty(format$2, "__esModule", { value: true });
+const format_1$1 = format$1;
+const format = [format_1$1.default];
+format$2.default = format;
+var metadata = {};
+Object.defineProperty(metadata, "__esModule", { value: true });
+metadata.contentVocabulary = metadata.metadataVocabulary = void 0;
+metadata.metadataVocabulary = [
+  "title",
+  "description",
+  "default",
+  "deprecated",
+  "readOnly",
+  "writeOnly",
+  "examples"
+];
+metadata.contentVocabulary = [
+  "contentMediaType",
+  "contentEncoding",
+  "contentSchema"
+];
+Object.defineProperty(draft7, "__esModule", { value: true });
+const core_1 = core$1;
+const validation_1 = validation$1;
+const applicator_1 = applicator;
+const format_1 = format$2;
+const metadata_1 = metadata;
+const draft7Vocabularies = [
+  core_1.default,
+  validation_1.default,
+  (0, applicator_1.default)(),
+  format_1.default,
+  metadata_1.metadataVocabulary,
+  metadata_1.contentVocabulary
+];
+draft7.default = draft7Vocabularies;
+var discriminator = {};
+var types = {};
+Object.defineProperty(types, "__esModule", { value: true });
+types.DiscrError = void 0;
+var DiscrError;
+(function(DiscrError2) {
+  DiscrError2["Tag"] = "tag";
+  DiscrError2["Mapping"] = "mapping";
+})(DiscrError || (types.DiscrError = DiscrError = {}));
+Object.defineProperty(discriminator, "__esModule", { value: true });
+const codegen_1 = codegen;
+const types_1 = types;
+const compile_1 = compile;
+const ref_error_1 = ref_error;
+const util_1 = util;
+const error = {
+  message: ({ params: { discrError, tagName } }) => discrError === types_1.DiscrError.Tag ? `tag "${tagName}" must be string` : `value of tag "${tagName}" must be in oneOf`,
+  params: ({ params: { discrError, tag, tagName } }) => (0, codegen_1._)`{error: ${discrError}, tag: ${tagName}, tagValue: ${tag}}`
+};
+const def = {
+  keyword: "discriminator",
+  type: "object",
+  schemaType: "object",
+  error,
+  code(cxt) {
+    const { gen, data, schema, parentSchema, it } = cxt;
+    const { oneOf: oneOf2 } = parentSchema;
+    if (!it.opts.discriminator) {
+      throw new Error("discriminator: requires discriminator option");
+    }
+    const tagName = schema.propertyName;
+    if (typeof tagName != "string")
+      throw new Error("discriminator: requires propertyName");
+    if (schema.mapping)
+      throw new Error("discriminator: mapping is not supported");
+    if (!oneOf2)
+      throw new Error("discriminator: requires oneOf keyword");
+    const valid2 = gen.let("valid", false);
+    const tag = gen.const("tag", (0, codegen_1._)`${data}${(0, codegen_1.getProperty)(tagName)}`);
+    gen.if((0, codegen_1._)`typeof ${tag} == "string"`, () => validateMapping(), () => cxt.error(false, { discrError: types_1.DiscrError.Tag, tag, tagName }));
+    cxt.ok(valid2);
+    function validateMapping() {
+      const mapping = getMapping();
+      gen.if(false);
+      for (const tagValue in mapping) {
+        gen.elseIf((0, codegen_1._)`${tag} === ${tagValue}`);
+        gen.assign(valid2, applyTagSchema(mapping[tagValue]));
+      }
+      gen.else();
+      cxt.error(false, { discrError: types_1.DiscrError.Mapping, tag, tagName });
+      gen.endIf();
+    }
+    function applyTagSchema(schemaProp) {
+      const _valid = gen.name("valid");
+      const schCxt = cxt.subschema({ keyword: "oneOf", schemaProp }, _valid);
+      cxt.mergeEvaluated(schCxt, codegen_1.Name);
+      return _valid;
+    }
+    function getMapping() {
+      var _a;
+      const oneOfMapping = {};
+      const topRequired = hasRequired(parentSchema);
+      let tagRequired = true;
+      for (let i = 0; i < oneOf2.length; i++) {
+        let sch = oneOf2[i];
+        if ((sch === null || sch === void 0 ? void 0 : sch.$ref) && !(0, util_1.schemaHasRulesButRef)(sch, it.self.RULES)) {
+          const ref2 = sch.$ref;
+          sch = compile_1.resolveRef.call(it.self, it.schemaEnv.root, it.baseId, ref2);
+          if (sch instanceof compile_1.SchemaEnv)
+            sch = sch.schema;
+          if (sch === void 0)
+            throw new ref_error_1.default(it.opts.uriResolver, it.baseId, ref2);
+        }
+        const propSch = (_a = sch === null || sch === void 0 ? void 0 : sch.properties) === null || _a === void 0 ? void 0 : _a[tagName];
+        if (typeof propSch != "object") {
+          throw new Error(`discriminator: oneOf subschemas (or referenced schemas) must have "properties/${tagName}"`);
+        }
+        tagRequired = tagRequired && (topRequired || hasRequired(sch));
+        addMappings(propSch, i);
+      }
+      if (!tagRequired)
+        throw new Error(`discriminator: "${tagName}" must be required`);
+      return oneOfMapping;
+      function hasRequired({ required: required2 }) {
+        return Array.isArray(required2) && required2.includes(tagName);
+      }
+      function addMappings(sch, i) {
+        if (sch.const) {
+          addMapping(sch.const, i);
+        } else if (sch.enum) {
+          for (const tagValue of sch.enum) {
+            addMapping(tagValue, i);
+          }
+        } else {
+          throw new Error(`discriminator: "properties/${tagName}" must have "const" or "enum"`);
+        }
+      }
+      function addMapping(tagValue, i) {
+        if (typeof tagValue != "string" || tagValue in oneOfMapping) {
+          throw new Error(`discriminator: "${tagName}" values must be unique strings`);
+        }
+        oneOfMapping[tagValue] = i;
+      }
+    }
+  }
+};
+discriminator.default = def;
+const $schema = "http://json-schema.org/draft-07/schema#";
+const $id = "http://json-schema.org/draft-07/schema#";
+const title = "Core schema meta-schema";
+const definitions = {
+  schemaArray: {
+    type: "array",
+    minItems: 1,
+    items: {
+      $ref: "#"
+    }
+  },
+  nonNegativeInteger: {
+    type: "integer",
+    minimum: 0
+  },
+  nonNegativeIntegerDefault0: {
+    allOf: [
+      {
+        $ref: "#/definitions/nonNegativeInteger"
+      },
+      {
+        "default": 0
+      }
+    ]
+  },
+  simpleTypes: {
+    "enum": [
+      "array",
+      "boolean",
+      "integer",
+      "null",
+      "number",
+      "object",
+      "string"
+    ]
+  },
+  stringArray: {
+    type: "array",
+    items: {
+      type: "string"
+    },
+    uniqueItems: true,
+    "default": []
+  }
+};
+const type = [
+  "object",
+  "boolean"
+];
+const properties = {
+  $id: {
+    type: "string",
+    format: "uri-reference"
+  },
+  $schema: {
+    type: "string",
+    format: "uri"
+  },
+  $ref: {
+    type: "string",
+    format: "uri-reference"
+  },
+  $comment: {
+    type: "string"
+  },
+  title: {
+    type: "string"
+  },
+  description: {
+    type: "string"
+  },
+  "default": true,
+  readOnly: {
+    type: "boolean",
+    "default": false
+  },
+  examples: {
+    type: "array",
+    items: true
+  },
+  multipleOf: {
+    type: "number",
+    exclusiveMinimum: 0
+  },
+  maximum: {
+    type: "number"
+  },
+  exclusiveMaximum: {
+    type: "number"
+  },
+  minimum: {
+    type: "number"
+  },
+  exclusiveMinimum: {
+    type: "number"
+  },
+  maxLength: {
+    $ref: "#/definitions/nonNegativeInteger"
+  },
+  minLength: {
+    $ref: "#/definitions/nonNegativeIntegerDefault0"
+  },
+  pattern: {
+    type: "string",
+    format: "regex"
+  },
+  additionalItems: {
+    $ref: "#"
+  },
+  items: {
+    anyOf: [
+      {
+        $ref: "#"
+      },
+      {
+        $ref: "#/definitions/schemaArray"
+      }
+    ],
+    "default": true
+  },
+  maxItems: {
+    $ref: "#/definitions/nonNegativeInteger"
+  },
+  minItems: {
+    $ref: "#/definitions/nonNegativeIntegerDefault0"
+  },
+  uniqueItems: {
+    type: "boolean",
+    "default": false
+  },
+  contains: {
+    $ref: "#"
+  },
+  maxProperties: {
+    $ref: "#/definitions/nonNegativeInteger"
+  },
+  minProperties: {
+    $ref: "#/definitions/nonNegativeIntegerDefault0"
+  },
+  required: {
+    $ref: "#/definitions/stringArray"
+  },
+  additionalProperties: {
+    $ref: "#"
+  },
+  definitions: {
+    type: "object",
+    additionalProperties: {
+      $ref: "#"
+    },
+    "default": {}
+  },
+  properties: {
+    type: "object",
+    additionalProperties: {
+      $ref: "#"
+    },
+    "default": {}
+  },
+  patternProperties: {
+    type: "object",
+    additionalProperties: {
+      $ref: "#"
+    },
+    propertyNames: {
+      format: "regex"
+    },
+    "default": {}
+  },
+  dependencies: {
+    type: "object",
+    additionalProperties: {
+      anyOf: [
+        {
+          $ref: "#"
+        },
+        {
+          $ref: "#/definitions/stringArray"
+        }
+      ]
+    }
+  },
+  propertyNames: {
+    $ref: "#"
+  },
+  "const": true,
+  "enum": {
+    type: "array",
+    items: true,
+    minItems: 1,
+    uniqueItems: true
+  },
+  type: {
+    anyOf: [
+      {
+        $ref: "#/definitions/simpleTypes"
+      },
+      {
+        type: "array",
+        items: {
+          $ref: "#/definitions/simpleTypes"
+        },
+        minItems: 1,
+        uniqueItems: true
+      }
+    ]
+  },
+  format: {
+    type: "string"
+  },
+  contentMediaType: {
+    type: "string"
+  },
+  contentEncoding: {
+    type: "string"
+  },
+  "if": {
+    $ref: "#"
+  },
+  then: {
+    $ref: "#"
+  },
+  "else": {
+    $ref: "#"
+  },
+  allOf: {
+    $ref: "#/definitions/schemaArray"
+  },
+  anyOf: {
+    $ref: "#/definitions/schemaArray"
+  },
+  oneOf: {
+    $ref: "#/definitions/schemaArray"
+  },
+  not: {
+    $ref: "#"
+  }
+};
+const require$$3 = {
+  $schema,
+  $id,
+  title,
+  definitions,
+  type,
+  properties,
+  "default": true
+};
+(function(module, exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.MissingRefError = exports.ValidationError = exports.CodeGen = exports.Name = exports.nil = exports.stringify = exports.str = exports._ = exports.KeywordCxt = exports.Ajv = void 0;
+  const core_12 = core$2;
+  const draft7_1 = draft7;
+  const discriminator_1 = discriminator;
+  const draft7MetaSchema = require$$3;
+  const META_SUPPORT_DATA = ["/properties"];
+  const META_SCHEMA_ID = "http://json-schema.org/draft-07/schema";
+  class Ajv extends core_12.default {
+    _addVocabularies() {
+      super._addVocabularies();
+      draft7_1.default.forEach((v) => this.addVocabulary(v));
+      if (this.opts.discriminator)
+        this.addKeyword(discriminator_1.default);
+    }
+    _addDefaultMetaSchema() {
+      super._addDefaultMetaSchema();
+      if (!this.opts.meta)
+        return;
+      const metaSchema = this.opts.$data ? this.$dataMetaSchema(draft7MetaSchema, META_SUPPORT_DATA) : draft7MetaSchema;
+      this.addMetaSchema(metaSchema, META_SCHEMA_ID, false);
+      this.refs["http://json-schema.org/schema"] = META_SCHEMA_ID;
+    }
+    defaultMeta() {
+      return this.opts.defaultMeta = super.defaultMeta() || (this.getSchema(META_SCHEMA_ID) ? META_SCHEMA_ID : void 0);
+    }
+  }
+  exports.Ajv = Ajv;
+  module.exports = exports = Ajv;
+  module.exports.Ajv = Ajv;
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.default = Ajv;
+  var validate_12 = validate;
+  Object.defineProperty(exports, "KeywordCxt", { enumerable: true, get: function() {
+    return validate_12.KeywordCxt;
+  } });
+  var codegen_12 = codegen;
+  Object.defineProperty(exports, "_", { enumerable: true, get: function() {
+    return codegen_12._;
+  } });
+  Object.defineProperty(exports, "str", { enumerable: true, get: function() {
+    return codegen_12.str;
+  } });
+  Object.defineProperty(exports, "stringify", { enumerable: true, get: function() {
+    return codegen_12.stringify;
+  } });
+  Object.defineProperty(exports, "nil", { enumerable: true, get: function() {
+    return codegen_12.nil;
+  } });
+  Object.defineProperty(exports, "Name", { enumerable: true, get: function() {
+    return codegen_12.Name;
+  } });
+  Object.defineProperty(exports, "CodeGen", { enumerable: true, get: function() {
+    return codegen_12.CodeGen;
+  } });
+  var validation_error_12 = validation_error;
+  Object.defineProperty(exports, "ValidationError", { enumerable: true, get: function() {
+    return validation_error_12.default;
+  } });
+  var ref_error_12 = ref_error;
+  Object.defineProperty(exports, "MissingRefError", { enumerable: true, get: function() {
+    return ref_error_12.default;
+  } });
+})(ajv, ajv.exports);
+var ajvExports = ajv.exports;
+var dist = { exports: {} };
+var formats = {};
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.formatNames = exports.fastFormats = exports.fullFormats = void 0;
+  function fmtDef(validate2, compare2) {
+    return { validate: validate2, compare: compare2 };
+  }
+  exports.fullFormats = {
+    // date: http://tools.ietf.org/html/rfc3339#section-5.6
+    date: fmtDef(date, compareDate),
+    // date-time: http://tools.ietf.org/html/rfc3339#section-5.6
+    time: fmtDef(time, compareTime),
+    "date-time": fmtDef(date_time, compareDateTime),
+    // duration: https://tools.ietf.org/html/rfc3339#appendix-A
+    duration: /^P(?!$)((\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+S)?)?|(\d+W)?)$/,
+    uri: uri2,
+    "uri-reference": /^(?:[a-z][a-z0-9+\-.]*:)?(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'"()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'"()*+,;=:@]|%[0-9a-f]{2})*)*)?(?:\?(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'"()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i,
+    // uri-template: https://tools.ietf.org/html/rfc6570
+    "uri-template": /^(?:(?:[^\x00-\x20"'<>%\\^`{|}]|%[0-9a-f]{2})|\{[+#./;?&=,!@|]?(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?(?:,(?:[a-z0-9_]|%[0-9a-f]{2})+(?::[1-9][0-9]{0,3}|\*)?)*\})*$/i,
+    // For the source: https://gist.github.com/dperini/729294
+    // For test cases: https://mathiasbynens.be/demo/url-regex
+    url: /^(?:https?|ftp):\/\/(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u{00a1}-\u{ffff}]+-)*[a-z0-9\u{00a1}-\u{ffff}]+)(?:\.(?:[a-z0-9\u{00a1}-\u{ffff}]+-)*[a-z0-9\u{00a1}-\u{ffff}]+)*(?:\.(?:[a-z\u{00a1}-\u{ffff}]{2,})))(?::\d{2,5})?(?:\/[^\s]*)?$/iu,
+    email: /^[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/i,
+    hostname: /^(?=.{1,253}\.?$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[-0-9a-z]{0,61}[0-9a-z])?)*\.?$/i,
+    // optimized https://www.safaribooksonline.com/library/view/regular-expressions-cookbook/9780596802837/ch07s16.html
+    ipv4: /^(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)$/,
+    ipv6: /^((([0-9a-f]{1,4}:){7}([0-9a-f]{1,4}|:))|(([0-9a-f]{1,4}:){6}(:[0-9a-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){5}(((:[0-9a-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9a-f]{1,4}:){4}(((:[0-9a-f]{1,4}){1,3})|((:[0-9a-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){3}(((:[0-9a-f]{1,4}){1,4})|((:[0-9a-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){2}(((:[0-9a-f]{1,4}){1,5})|((:[0-9a-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9a-f]{1,4}:){1}(((:[0-9a-f]{1,4}){1,6})|((:[0-9a-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9a-f]{1,4}){1,7})|((:[0-9a-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))$/i,
+    regex,
+    // uuid: http://tools.ietf.org/html/rfc4122
+    uuid: /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i,
+    // JSON-pointer: https://tools.ietf.org/html/rfc6901
+    // uri fragment: https://tools.ietf.org/html/rfc3986#appendix-A
+    "json-pointer": /^(?:\/(?:[^~/]|~0|~1)*)*$/,
+    "json-pointer-uri-fragment": /^#(?:\/(?:[a-z0-9_\-.!$&'()*+,;:=@]|%[0-9a-f]{2}|~0|~1)*)*$/i,
+    // relative JSON-pointer: http://tools.ietf.org/html/draft-luff-relative-json-pointer-00
+    "relative-json-pointer": /^(?:0|[1-9][0-9]*)(?:#|(?:\/(?:[^~/]|~0|~1)*)*)$/,
+    // the following formats are used by the openapi specification: https://spec.openapis.org/oas/v3.0.0#data-types
+    // byte: https://github.com/miguelmota/is-base64
+    byte,
+    // signed 32 bit integer
+    int32: { type: "number", validate: validateInt32 },
+    // signed 64 bit integer
+    int64: { type: "number", validate: validateInt64 },
+    // C-type float
+    float: { type: "number", validate: validateNumber },
+    // C-type double
+    double: { type: "number", validate: validateNumber },
+    // hint to the UI to hide input strings
+    password: true,
+    // unchecked string payload
+    binary: true
+  };
+  exports.fastFormats = {
+    ...exports.fullFormats,
+    date: fmtDef(/^\d\d\d\d-[0-1]\d-[0-3]\d$/, compareDate),
+    time: fmtDef(/^(?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)?$/i, compareTime),
+    "date-time": fmtDef(/^\d\d\d\d-[0-1]\d-[0-3]\d[t\s](?:[0-2]\d:[0-5]\d:[0-5]\d|23:59:60)(?:\.\d+)?(?:z|[+-]\d\d(?::?\d\d)?)$/i, compareDateTime),
+    // uri: https://github.com/mafintosh/is-my-json-valid/blob/master/formats.js
+    uri: /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/)?[^\s]*$/i,
+    "uri-reference": /^(?:(?:[a-z][a-z0-9+\-.]*:)?\/?\/)?(?:[^\\\s#][^\s#]*)?(?:#[^\\\s]*)?$/i,
+    // email (sources from jsen validator):
+    // http://stackoverflow.com/questions/201323/using-a-regular-expression-to-validate-an-email-address#answer-8829363
+    // http://www.w3.org/TR/html5/forms.html#valid-e-mail-address (search for 'wilful violation')
+    email: /^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*$/i
+  };
+  exports.formatNames = Object.keys(exports.fullFormats);
+  function isLeapYear(year) {
+    return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
+  }
+  const DATE = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
+  const DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  function date(str) {
+    const matches = DATE.exec(str);
+    if (!matches)
+      return false;
+    const year = +matches[1];
+    const month = +matches[2];
+    const day = +matches[3];
+    return month >= 1 && month <= 12 && day >= 1 && day <= (month === 2 && isLeapYear(year) ? 29 : DAYS[month]);
+  }
+  function compareDate(d1, d2) {
+    if (!(d1 && d2))
+      return void 0;
+    if (d1 > d2)
+      return 1;
+    if (d1 < d2)
+      return -1;
+    return 0;
+  }
+  const TIME = /^(\d\d):(\d\d):(\d\d)(\.\d+)?(z|[+-]\d\d(?::?\d\d)?)?$/i;
+  function time(str, withTimeZone) {
+    const matches = TIME.exec(str);
+    if (!matches)
+      return false;
+    const hour = +matches[1];
+    const minute = +matches[2];
+    const second = +matches[3];
+    const timeZone = matches[5];
+    return (hour <= 23 && minute <= 59 && second <= 59 || hour === 23 && minute === 59 && second === 60) && (!withTimeZone || timeZone !== "");
+  }
+  function compareTime(t1, t2) {
+    if (!(t1 && t2))
+      return void 0;
+    const a1 = TIME.exec(t1);
+    const a2 = TIME.exec(t2);
+    if (!(a1 && a2))
+      return void 0;
+    t1 = a1[1] + a1[2] + a1[3] + (a1[4] || "");
+    t2 = a2[1] + a2[2] + a2[3] + (a2[4] || "");
+    if (t1 > t2)
+      return 1;
+    if (t1 < t2)
+      return -1;
+    return 0;
+  }
+  const DATE_TIME_SEPARATOR = /t|\s/i;
+  function date_time(str) {
+    const dateTime = str.split(DATE_TIME_SEPARATOR);
+    return dateTime.length === 2 && date(dateTime[0]) && time(dateTime[1], true);
+  }
+  function compareDateTime(dt1, dt2) {
+    if (!(dt1 && dt2))
+      return void 0;
+    const [d1, t1] = dt1.split(DATE_TIME_SEPARATOR);
+    const [d2, t2] = dt2.split(DATE_TIME_SEPARATOR);
+    const res = compareDate(d1, d2);
+    if (res === void 0)
+      return void 0;
+    return res || compareTime(t1, t2);
+  }
+  const NOT_URI_FRAGMENT = /\/|:/;
+  const URI = /^(?:[a-z][a-z0-9+\-.]*:)(?:\/?\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:]|%[0-9a-f]{2})*@)?(?:\[(?:(?:(?:(?:[0-9a-f]{1,4}:){6}|::(?:[0-9a-f]{1,4}:){5}|(?:[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){4}|(?:(?:[0-9a-f]{1,4}:){0,1}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){3}|(?:(?:[0-9a-f]{1,4}:){0,2}[0-9a-f]{1,4})?::(?:[0-9a-f]{1,4}:){2}|(?:(?:[0-9a-f]{1,4}:){0,3}[0-9a-f]{1,4})?::[0-9a-f]{1,4}:|(?:(?:[0-9a-f]{1,4}:){0,4}[0-9a-f]{1,4})?::)(?:[0-9a-f]{1,4}:[0-9a-f]{1,4}|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?))|(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?::[0-9a-f]{1,4}|(?:(?:[0-9a-f]{1,4}:){0,6}[0-9a-f]{1,4})?::)|[Vv][0-9a-f]+\.[a-z0-9\-._~!$&'()*+,;=:]+)\]|(?:(?:25[0-5]|2[0-4]\d|[01]?\d\d?)\.){3}(?:25[0-5]|2[0-4]\d|[01]?\d\d?)|(?:[a-z0-9\-._~!$&'()*+,;=]|%[0-9a-f]{2})*)(?::\d*)?(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*|\/(?:(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)?|(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})+(?:\/(?:[a-z0-9\-._~!$&'()*+,;=:@]|%[0-9a-f]{2})*)*)(?:\?(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?(?:#(?:[a-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9a-f]{2})*)?$/i;
+  function uri2(str) {
+    return NOT_URI_FRAGMENT.test(str) && URI.test(str);
+  }
+  const BYTE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/gm;
+  function byte(str) {
+    BYTE.lastIndex = 0;
+    return BYTE.test(str);
+  }
+  const MIN_INT32 = -2147483648;
+  const MAX_INT32 = 2 ** 31 - 1;
+  function validateInt32(value) {
+    return Number.isInteger(value) && value <= MAX_INT32 && value >= MIN_INT32;
+  }
+  function validateInt64(value) {
+    return Number.isInteger(value);
+  }
+  function validateNumber() {
+    return true;
+  }
+  const Z_ANCHOR = /[^\\]\\Z/;
+  function regex(str) {
+    if (Z_ANCHOR.test(str))
+      return false;
+    try {
+      new RegExp(str);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+})(formats);
+var limit = {};
+(function(exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.formatLimitDefinition = void 0;
+  const ajv_1 = ajvExports;
+  const codegen_12 = codegen;
+  const ops2 = codegen_12.operators;
+  const KWDs2 = {
+    formatMaximum: { okStr: "<=", ok: ops2.LTE, fail: ops2.GT },
+    formatMinimum: { okStr: ">=", ok: ops2.GTE, fail: ops2.LT },
+    formatExclusiveMaximum: { okStr: "<", ok: ops2.LT, fail: ops2.GTE },
+    formatExclusiveMinimum: { okStr: ">", ok: ops2.GT, fail: ops2.LTE }
+  };
+  const error2 = {
+    message: ({ keyword: keyword2, schemaCode }) => codegen_12.str`should be ${KWDs2[keyword2].okStr} ${schemaCode}`,
+    params: ({ keyword: keyword2, schemaCode }) => codegen_12._`{comparison: ${KWDs2[keyword2].okStr}, limit: ${schemaCode}}`
+  };
+  exports.formatLimitDefinition = {
+    keyword: Object.keys(KWDs2),
+    type: "string",
+    schemaType: "string",
+    $data: true,
+    error: error2,
+    code(cxt) {
+      const { gen, data, schemaCode, keyword: keyword2, it } = cxt;
+      const { opts, self: self2 } = it;
+      if (!opts.validateFormats)
+        return;
+      const fCxt = new ajv_1.KeywordCxt(it, self2.RULES.all.format.definition, "format");
+      if (fCxt.$data)
+        validate$DataFormat();
+      else
+        validateFormat();
+      function validate$DataFormat() {
+        const fmts = gen.scopeValue("formats", {
+          ref: self2.formats,
+          code: opts.code.formats
+        });
+        const fmt = gen.const("fmt", codegen_12._`${fmts}[${fCxt.schemaCode}]`);
+        cxt.fail$data(codegen_12.or(codegen_12._`typeof ${fmt} != "object"`, codegen_12._`${fmt} instanceof RegExp`, codegen_12._`typeof ${fmt}.compare != "function"`, compareCode(fmt)));
+      }
+      function validateFormat() {
+        const format2 = fCxt.schema;
+        const fmtDef = self2.formats[format2];
+        if (!fmtDef || fmtDef === true)
+          return;
+        if (typeof fmtDef != "object" || fmtDef instanceof RegExp || typeof fmtDef.compare != "function") {
+          throw new Error(`"${keyword2}": format "${format2}" does not define "compare" function`);
+        }
+        const fmt = gen.scopeValue("formats", {
+          key: format2,
+          ref: fmtDef,
+          code: opts.code.formats ? codegen_12._`${opts.code.formats}${codegen_12.getProperty(format2)}` : void 0
+        });
+        cxt.fail$data(compareCode(fmt));
+      }
+      function compareCode(fmt) {
+        return codegen_12._`${fmt}.compare(${data}, ${schemaCode}) ${KWDs2[keyword2].fail} 0`;
+      }
+    },
+    dependencies: ["format"]
+  };
+  const formatLimitPlugin = (ajv2) => {
+    ajv2.addKeyword(exports.formatLimitDefinition);
+    return ajv2;
+  };
+  exports.default = formatLimitPlugin;
+})(limit);
+(function(module, exports) {
+  Object.defineProperty(exports, "__esModule", { value: true });
+  const formats_1 = formats;
+  const limit_1 = limit;
+  const codegen_12 = codegen;
+  const fullName = new codegen_12.Name("fullFormats");
+  const fastName = new codegen_12.Name("fastFormats");
+  const formatsPlugin = (ajv2, opts = { keywords: true }) => {
+    if (Array.isArray(opts)) {
+      addFormats(ajv2, opts, formats_1.fullFormats, fullName);
+      return ajv2;
+    }
+    const [formats2, exportName] = opts.mode === "fast" ? [formats_1.fastFormats, fastName] : [formats_1.fullFormats, fullName];
+    const list = opts.formats || formats_1.formatNames;
+    addFormats(ajv2, list, formats2, exportName);
+    if (opts.keywords)
+      limit_1.default(ajv2);
+    return ajv2;
+  };
+  formatsPlugin.get = (name, mode = "full") => {
+    const formats2 = mode === "fast" ? formats_1.fastFormats : formats_1.fullFormats;
+    const f = formats2[name];
+    if (!f)
+      throw new Error(`Unknown format "${name}"`);
+    return f;
+  };
+  function addFormats(ajv2, list, fs2, exportName) {
+    var _a;
+    var _b;
+    (_a = (_b = ajv2.opts.code).formats) !== null && _a !== void 0 ? _a : _b.formats = codegen_12._`require("ajv-formats/dist/formats").${exportName}`;
+    for (const f of list)
+      ajv2.addFormat(f, fs2[f]);
+  }
+  module.exports = exports = formatsPlugin;
+  Object.defineProperty(exports, "__esModule", { value: true });
+  exports.default = formatsPlugin;
+})(dist, dist.exports);
+var distExports = dist.exports;
+const copyProperty = (to, from, property, ignoreNonConfigurable) => {
+  if (property === "length" || property === "prototype") {
+    return;
+  }
+  if (property === "arguments" || property === "caller") {
+    return;
+  }
+  const toDescriptor = Object.getOwnPropertyDescriptor(to, property);
+  const fromDescriptor = Object.getOwnPropertyDescriptor(from, property);
+  if (!canCopyProperty(toDescriptor, fromDescriptor) && ignoreNonConfigurable) {
+    return;
+  }
+  Object.defineProperty(to, property, fromDescriptor);
+};
+const canCopyProperty = function(toDescriptor, fromDescriptor) {
+  return toDescriptor === void 0 || toDescriptor.configurable || toDescriptor.writable === fromDescriptor.writable && toDescriptor.enumerable === fromDescriptor.enumerable && toDescriptor.configurable === fromDescriptor.configurable && (toDescriptor.writable || toDescriptor.value === fromDescriptor.value);
+};
+const changePrototype = (to, from) => {
+  const fromPrototype = Object.getPrototypeOf(from);
+  if (fromPrototype === Object.getPrototypeOf(to)) {
+    return;
+  }
+  Object.setPrototypeOf(to, fromPrototype);
+};
+const wrappedToString = (withName, fromBody) => `/* Wrapped ${withName}*/
+${fromBody}`;
+const toStringDescriptor = Object.getOwnPropertyDescriptor(Function.prototype, "toString");
+const toStringName = Object.getOwnPropertyDescriptor(Function.prototype.toString, "name");
+const changeToString = (to, from, name) => {
+  const withName = name === "" ? "" : `with ${name.trim()}() `;
+  const newToString = wrappedToString.bind(null, withName, from.toString());
+  Object.defineProperty(newToString, "name", toStringName);
+  Object.defineProperty(to, "toString", { ...toStringDescriptor, value: newToString });
+};
+const mimicFn$4 = (to, from, { ignoreNonConfigurable = false } = {}) => {
+  const { name } = to;
+  for (const property of Reflect.ownKeys(from)) {
+    copyProperty(to, from, property, ignoreNonConfigurable);
+  }
+  changePrototype(to, from);
+  changeToString(to, from, name);
+  return to;
+};
+var mimicFn_1 = mimicFn$4;
+const mimicFn$3 = mimicFn_1;
+var debounceFn = (inputFunction, options = {}) => {
+  if (typeof inputFunction !== "function") {
+    throw new TypeError(`Expected the first argument to be a function, got \`${typeof inputFunction}\``);
+  }
+  const {
+    wait = 0,
+    before = false,
+    after = true
+  } = options;
+  if (!before && !after) {
+    throw new Error("Both `before` and `after` are false, function wouldn't be called.");
+  }
+  let timeout;
+  let result;
+  const debouncedFunction = function(...arguments_) {
+    const context = this;
+    const later = () => {
+      timeout = void 0;
+      if (after) {
+        result = inputFunction.apply(context, arguments_);
+      }
+    };
+    const shouldCallNow = before && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    if (shouldCallNow) {
+      result = inputFunction.apply(context, arguments_);
+    }
+    return result;
+  };
+  mimicFn$3(debouncedFunction, inputFunction);
+  debouncedFunction.cancel = () => {
+    if (timeout) {
+      clearTimeout(timeout);
+      timeout = void 0;
+    }
+  };
+  return debouncedFunction;
+};
+var re$2 = { exports: {} };
+const SEMVER_SPEC_VERSION = "2.0.0";
+const MAX_LENGTH$1 = 256;
+const MAX_SAFE_INTEGER$1 = Number.MAX_SAFE_INTEGER || /* istanbul ignore next */
+9007199254740991;
+const MAX_SAFE_COMPONENT_LENGTH = 16;
+const MAX_SAFE_BUILD_LENGTH = MAX_LENGTH$1 - 6;
+const RELEASE_TYPES = [
+  "major",
+  "premajor",
+  "minor",
+  "preminor",
+  "patch",
+  "prepatch",
+  "prerelease"
+];
+var constants$2 = {
+  MAX_LENGTH: MAX_LENGTH$1,
+  MAX_SAFE_COMPONENT_LENGTH,
+  MAX_SAFE_BUILD_LENGTH,
+  MAX_SAFE_INTEGER: MAX_SAFE_INTEGER$1,
+  RELEASE_TYPES,
+  SEMVER_SPEC_VERSION,
+  FLAG_INCLUDE_PRERELEASE: 1,
+  FLAG_LOOSE: 2
+};
+const debug$1 = typeof process === "object" && process.env && process.env.NODE_DEBUG && /\bsemver\b/i.test(process.env.NODE_DEBUG) ? (...args) => console.error("SEMVER", ...args) : () => {
+};
+var debug_1 = debug$1;
+(function(module, exports) {
+  const {
+    MAX_SAFE_COMPONENT_LENGTH: MAX_SAFE_COMPONENT_LENGTH2,
+    MAX_SAFE_BUILD_LENGTH: MAX_SAFE_BUILD_LENGTH2,
+    MAX_LENGTH: MAX_LENGTH2
+  } = constants$2;
+  const debug2 = debug_1;
+  exports = module.exports = {};
+  const re2 = exports.re = [];
+  const safeRe = exports.safeRe = [];
+  const src = exports.src = [];
+  const safeSrc = exports.safeSrc = [];
+  const t2 = exports.t = {};
+  let R = 0;
+  const LETTERDASHNUMBER = "[a-zA-Z0-9-]";
+  const safeRegexReplacements = [
+    ["\\s", 1],
+    ["\\d", MAX_LENGTH2],
+    [LETTERDASHNUMBER, MAX_SAFE_BUILD_LENGTH2]
+  ];
+  const makeSafeRegex = (value) => {
+    for (const [token, max] of safeRegexReplacements) {
+      value = value.split(`${token}*`).join(`${token}{0,${max}}`).split(`${token}+`).join(`${token}{1,${max}}`);
+    }
+    return value;
+  };
+  const createToken = (name, value, isGlobal) => {
+    const safe = makeSafeRegex(value);
+    const index = R++;
+    debug2(name, index, value);
+    t2[name] = index;
+    src[index] = value;
+    safeSrc[index] = safe;
+    re2[index] = new RegExp(value, isGlobal ? "g" : void 0);
+    safeRe[index] = new RegExp(safe, isGlobal ? "g" : void 0);
+  };
+  createToken("NUMERICIDENTIFIER", "0|[1-9]\\d*");
+  createToken("NUMERICIDENTIFIERLOOSE", "\\d+");
+  createToken("NONNUMERICIDENTIFIER", `\\d*[a-zA-Z-]${LETTERDASHNUMBER}*`);
+  createToken("MAINVERSION", `(${src[t2.NUMERICIDENTIFIER]})\\.(${src[t2.NUMERICIDENTIFIER]})\\.(${src[t2.NUMERICIDENTIFIER]})`);
+  createToken("MAINVERSIONLOOSE", `(${src[t2.NUMERICIDENTIFIERLOOSE]})\\.(${src[t2.NUMERICIDENTIFIERLOOSE]})\\.(${src[t2.NUMERICIDENTIFIERLOOSE]})`);
+  createToken("PRERELEASEIDENTIFIER", `(?:${src[t2.NONNUMERICIDENTIFIER]}|${src[t2.NUMERICIDENTIFIER]})`);
+  createToken("PRERELEASEIDENTIFIERLOOSE", `(?:${src[t2.NONNUMERICIDENTIFIER]}|${src[t2.NUMERICIDENTIFIERLOOSE]})`);
+  createToken("PRERELEASE", `(?:-(${src[t2.PRERELEASEIDENTIFIER]}(?:\\.${src[t2.PRERELEASEIDENTIFIER]})*))`);
+  createToken("PRERELEASELOOSE", `(?:-?(${src[t2.PRERELEASEIDENTIFIERLOOSE]}(?:\\.${src[t2.PRERELEASEIDENTIFIERLOOSE]})*))`);
+  createToken("BUILDIDENTIFIER", `${LETTERDASHNUMBER}+`);
+  createToken("BUILD", `(?:\\+(${src[t2.BUILDIDENTIFIER]}(?:\\.${src[t2.BUILDIDENTIFIER]})*))`);
+  createToken("FULLPLAIN", `v?${src[t2.MAINVERSION]}${src[t2.PRERELEASE]}?${src[t2.BUILD]}?`);
+  createToken("FULL", `^${src[t2.FULLPLAIN]}$`);
+  createToken("LOOSEPLAIN", `[v=\\s]*${src[t2.MAINVERSIONLOOSE]}${src[t2.PRERELEASELOOSE]}?${src[t2.BUILD]}?`);
+  createToken("LOOSE", `^${src[t2.LOOSEPLAIN]}$`);
+  createToken("GTLT", "((?:<|>)?=?)");
+  createToken("XRANGEIDENTIFIERLOOSE", `${src[t2.NUMERICIDENTIFIERLOOSE]}|x|X|\\*`);
+  createToken("XRANGEIDENTIFIER", `${src[t2.NUMERICIDENTIFIER]}|x|X|\\*`);
+  createToken("XRANGEPLAIN", `[v=\\s]*(${src[t2.XRANGEIDENTIFIER]})(?:\\.(${src[t2.XRANGEIDENTIFIER]})(?:\\.(${src[t2.XRANGEIDENTIFIER]})(?:${src[t2.PRERELEASE]})?${src[t2.BUILD]}?)?)?`);
+  createToken("XRANGEPLAINLOOSE", `[v=\\s]*(${src[t2.XRANGEIDENTIFIERLOOSE]})(?:\\.(${src[t2.XRANGEIDENTIFIERLOOSE]})(?:\\.(${src[t2.XRANGEIDENTIFIERLOOSE]})(?:${src[t2.PRERELEASELOOSE]})?${src[t2.BUILD]}?)?)?`);
+  createToken("XRANGE", `^${src[t2.GTLT]}\\s*${src[t2.XRANGEPLAIN]}$`);
+  createToken("XRANGELOOSE", `^${src[t2.GTLT]}\\s*${src[t2.XRANGEPLAINLOOSE]}$`);
+  createToken("COERCEPLAIN", `${"(^|[^\\d])(\\d{1,"}${MAX_SAFE_COMPONENT_LENGTH2}})(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH2}}))?(?:\\.(\\d{1,${MAX_SAFE_COMPONENT_LENGTH2}}))?`);
+  createToken("COERCE", `${src[t2.COERCEPLAIN]}(?:$|[^\\d])`);
+  createToken("COERCEFULL", src[t2.COERCEPLAIN] + `(?:${src[t2.PRERELEASE]})?(?:${src[t2.BUILD]})?(?:$|[^\\d])`);
+  createToken("COERCERTL", src[t2.COERCE], true);
+  createToken("COERCERTLFULL", src[t2.COERCEFULL], true);
+  createToken("LONETILDE", "(?:~>?)");
+  createToken("TILDETRIM", `(\\s*)${src[t2.LONETILDE]}\\s+`, true);
+  exports.tildeTrimReplace = "$1~";
+  createToken("TILDE", `^${src[t2.LONETILDE]}${src[t2.XRANGEPLAIN]}$`);
+  createToken("TILDELOOSE", `^${src[t2.LONETILDE]}${src[t2.XRANGEPLAINLOOSE]}$`);
+  createToken("LONECARET", "(?:\\^)");
+  createToken("CARETTRIM", `(\\s*)${src[t2.LONECARET]}\\s+`, true);
+  exports.caretTrimReplace = "$1^";
+  createToken("CARET", `^${src[t2.LONECARET]}${src[t2.XRANGEPLAIN]}$`);
+  createToken("CARETLOOSE", `^${src[t2.LONECARET]}${src[t2.XRANGEPLAINLOOSE]}$`);
+  createToken("COMPARATORLOOSE", `^${src[t2.GTLT]}\\s*(${src[t2.LOOSEPLAIN]})$|^$`);
+  createToken("COMPARATOR", `^${src[t2.GTLT]}\\s*(${src[t2.FULLPLAIN]})$|^$`);
+  createToken("COMPARATORTRIM", `(\\s*)${src[t2.GTLT]}\\s*(${src[t2.LOOSEPLAIN]}|${src[t2.XRANGEPLAIN]})`, true);
+  exports.comparatorTrimReplace = "$1$2$3";
+  createToken("HYPHENRANGE", `^\\s*(${src[t2.XRANGEPLAIN]})\\s+-\\s+(${src[t2.XRANGEPLAIN]})\\s*$`);
+  createToken("HYPHENRANGELOOSE", `^\\s*(${src[t2.XRANGEPLAINLOOSE]})\\s+-\\s+(${src[t2.XRANGEPLAINLOOSE]})\\s*$`);
+  createToken("STAR", "(<|>)?=?\\s*\\*");
+  createToken("GTE0", "^\\s*>=\\s*0\\.0\\.0\\s*$");
+  createToken("GTE0PRE", "^\\s*>=\\s*0\\.0\\.0-0\\s*$");
+})(re$2, re$2.exports);
+var reExports = re$2.exports;
+const looseOption = Object.freeze({ loose: true });
+const emptyOpts = Object.freeze({});
+const parseOptions$1 = (options) => {
+  if (!options) {
+    return emptyOpts;
+  }
+  if (typeof options !== "object") {
+    return looseOption;
+  }
+  return options;
+};
+var parseOptions_1 = parseOptions$1;
+const numeric = /^[0-9]+$/;
+const compareIdentifiers$1 = (a, b) => {
+  if (typeof a === "number" && typeof b === "number") {
+    return a === b ? 0 : a < b ? -1 : 1;
+  }
+  const anum = numeric.test(a);
+  const bnum = numeric.test(b);
+  if (anum && bnum) {
+    a = +a;
+    b = +b;
+  }
+  return a === b ? 0 : anum && !bnum ? -1 : bnum && !anum ? 1 : a < b ? -1 : 1;
+};
+const rcompareIdentifiers = (a, b) => compareIdentifiers$1(b, a);
+var identifiers$1 = {
+  compareIdentifiers: compareIdentifiers$1,
+  rcompareIdentifiers
+};
+const debug = debug_1;
+const { MAX_LENGTH, MAX_SAFE_INTEGER } = constants$2;
+const { safeRe: re$1, t: t$1 } = reExports;
+const parseOptions = parseOptions_1;
+const { compareIdentifiers } = identifiers$1;
+const isPrereleaseIdentifier = (prerelease2, identifier) => {
+  const identifiers2 = identifier.split(".");
+  if (identifiers2.length > prerelease2.length) {
+    return false;
+  }
+  for (let i = 0; i < identifiers2.length; i++) {
+    if (compareIdentifiers(prerelease2[i], identifiers2[i]) !== 0) {
+      return false;
+    }
+  }
+  return true;
+};
+let SemVer$e = class SemVer {
+  constructor(version, options) {
+    options = parseOptions(options);
+    if (version instanceof SemVer) {
+      if (version.loose === !!options.loose && version.includePrerelease === !!options.includePrerelease) {
+        return version;
+      } else {
+        version = version.version;
+      }
+    } else if (typeof version !== "string") {
+      throw new TypeError(`Invalid version. Must be a string. Got type "${typeof version}".`);
+    }
+    if (version.length > MAX_LENGTH) {
+      throw new TypeError(
+        `version is longer than ${MAX_LENGTH} characters`
+      );
+    }
+    debug("SemVer", version, options);
+    this.options = options;
+    this.loose = !!options.loose;
+    this.includePrerelease = !!options.includePrerelease;
+    const m = version.trim().match(options.loose ? re$1[t$1.LOOSE] : re$1[t$1.FULL]);
+    if (!m) {
+      throw new TypeError(`Invalid Version: ${version}`);
+    }
+    this.raw = version;
+    this.major = +m[1];
+    this.minor = +m[2];
+    this.patch = +m[3];
+    if (this.major > MAX_SAFE_INTEGER || this.major < 0) {
+      throw new TypeError("Invalid major version");
+    }
+    if (this.minor > MAX_SAFE_INTEGER || this.minor < 0) {
+      throw new TypeError("Invalid minor version");
+    }
+    if (this.patch > MAX_SAFE_INTEGER || this.patch < 0) {
+      throw new TypeError("Invalid patch version");
+    }
+    if (!m[4]) {
+      this.prerelease = [];
+    } else {
+      this.prerelease = m[4].split(".").map((id2) => {
+        if (/^[0-9]+$/.test(id2)) {
+          const num = +id2;
+          if (num >= 0 && num < MAX_SAFE_INTEGER) {
+            return num;
+          }
+        }
+        return id2;
+      });
+    }
+    this.build = m[5] ? m[5].split(".") : [];
+    this.format();
+  }
+  format() {
+    this.version = `${this.major}.${this.minor}.${this.patch}`;
+    if (this.prerelease.length) {
+      this.version += `-${this.prerelease.join(".")}`;
+    }
+    return this.version;
+  }
+  toString() {
+    return this.version;
+  }
+  compare(other) {
+    debug("SemVer.compare", this.version, this.options, other);
+    if (!(other instanceof SemVer)) {
+      if (typeof other === "string" && other === this.version) {
+        return 0;
+      }
+      other = new SemVer(other, this.options);
+    }
+    if (other.version === this.version) {
+      return 0;
+    }
+    return this.compareMain(other) || this.comparePre(other);
+  }
+  compareMain(other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+    if (this.major < other.major) {
+      return -1;
+    }
+    if (this.major > other.major) {
+      return 1;
+    }
+    if (this.minor < other.minor) {
+      return -1;
+    }
+    if (this.minor > other.minor) {
+      return 1;
+    }
+    if (this.patch < other.patch) {
+      return -1;
+    }
+    if (this.patch > other.patch) {
+      return 1;
+    }
+    return 0;
+  }
+  comparePre(other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+    if (this.prerelease.length && !other.prerelease.length) {
+      return -1;
+    } else if (!this.prerelease.length && other.prerelease.length) {
+      return 1;
+    } else if (!this.prerelease.length && !other.prerelease.length) {
+      return 0;
+    }
+    let i = 0;
+    do {
+      const a = this.prerelease[i];
+      const b = other.prerelease[i];
+      debug("prerelease compare", i, a, b);
+      if (a === void 0 && b === void 0) {
+        return 0;
+      } else if (b === void 0) {
+        return 1;
+      } else if (a === void 0) {
+        return -1;
+      } else if (a === b) {
+        continue;
+      } else {
+        return compareIdentifiers(a, b);
+      }
+    } while (++i);
+  }
+  compareBuild(other) {
+    if (!(other instanceof SemVer)) {
+      other = new SemVer(other, this.options);
+    }
+    let i = 0;
+    do {
+      const a = this.build[i];
+      const b = other.build[i];
+      debug("build compare", i, a, b);
+      if (a === void 0 && b === void 0) {
+        return 0;
+      } else if (b === void 0) {
+        return 1;
+      } else if (a === void 0) {
+        return -1;
+      } else if (a === b) {
+        continue;
+      } else {
+        return compareIdentifiers(a, b);
+      }
+    } while (++i);
+  }
+  // preminor will bump the version up to the next minor release, and immediately
+  // down to pre-release. premajor and prepatch work the same way.
+  inc(release, identifier, identifierBase) {
+    if (release.startsWith("pre")) {
+      if (!identifier && identifierBase === false) {
+        throw new Error("invalid increment argument: identifier is empty");
+      }
+      if (identifier) {
+        const match = `-${identifier}`.match(this.options.loose ? re$1[t$1.PRERELEASELOOSE] : re$1[t$1.PRERELEASE]);
+        if (!match || match[1] !== identifier) {
+          throw new Error(`invalid identifier: ${identifier}`);
+        }
+      }
+    }
+    switch (release) {
+      case "premajor":
+        this.prerelease.length = 0;
+        this.patch = 0;
+        this.minor = 0;
+        this.major++;
+        this.inc("pre", identifier, identifierBase);
+        break;
+      case "preminor":
+        this.prerelease.length = 0;
+        this.patch = 0;
+        this.minor++;
+        this.inc("pre", identifier, identifierBase);
+        break;
+      case "prepatch":
+        this.prerelease.length = 0;
+        this.inc("patch", identifier, identifierBase);
+        this.inc("pre", identifier, identifierBase);
+        break;
+      case "prerelease":
+        if (this.prerelease.length === 0) {
+          this.inc("patch", identifier, identifierBase);
+        }
+        this.inc("pre", identifier, identifierBase);
+        break;
+      case "release":
+        if (this.prerelease.length === 0) {
+          throw new Error(`version ${this.raw} is not a prerelease`);
+        }
+        this.prerelease.length = 0;
+        break;
+      case "major":
+        if (this.minor !== 0 || this.patch !== 0 || this.prerelease.length === 0) {
+          this.major++;
+        }
+        this.minor = 0;
+        this.patch = 0;
+        this.prerelease = [];
+        break;
+      case "minor":
+        if (this.patch !== 0 || this.prerelease.length === 0) {
+          this.minor++;
+        }
+        this.patch = 0;
+        this.prerelease = [];
+        break;
+      case "patch":
+        if (this.prerelease.length === 0) {
+          this.patch++;
+        }
+        this.prerelease = [];
+        break;
+      case "pre": {
+        const base = Number(identifierBase) ? 1 : 0;
+        if (this.prerelease.length === 0) {
+          this.prerelease = [base];
+        } else {
+          let i = this.prerelease.length;
+          while (--i >= 0) {
+            if (typeof this.prerelease[i] === "number") {
+              this.prerelease[i]++;
+              i = -2;
+            }
+          }
+          if (i === -1) {
+            if (identifier === this.prerelease.join(".") && identifierBase === false) {
+              throw new Error("invalid increment argument: identifier already exists");
+            }
+            this.prerelease.push(base);
+          }
+        }
+        if (identifier) {
+          let prerelease2 = [identifier, base];
+          if (identifierBase === false) {
+            prerelease2 = [identifier];
+          }
+          if (isPrereleaseIdentifier(this.prerelease, identifier)) {
+            const prereleaseBase = this.prerelease[identifier.split(".").length];
+            if (isNaN(prereleaseBase)) {
+              this.prerelease = prerelease2;
+            }
+          } else {
+            this.prerelease = prerelease2;
+          }
+        }
+        break;
+      }
+      default:
+        throw new Error(`invalid increment argument: ${release}`);
+    }
+    this.raw = this.format();
+    if (this.build.length) {
+      this.raw += `+${this.build.join(".")}`;
+    }
+    return this;
+  }
+};
+var semver$1 = SemVer$e;
+const SemVer$d = semver$1;
+const parse$7 = (version, options, throwErrors = false) => {
+  if (version instanceof SemVer$d) {
+    return version;
+  }
+  try {
+    return new SemVer$d(version, options);
+  } catch (er) {
+    if (!throwErrors) {
+      return null;
+    }
+    throw er;
+  }
+};
+var parse_1 = parse$7;
+const parse$6 = parse_1;
+const valid$2 = (version, options) => {
+  const v = parse$6(version, options);
+  return v ? v.version : null;
+};
+var valid_1 = valid$2;
+const parse$5 = parse_1;
+const clean$1 = (version, options) => {
+  const s = parse$5(version.trim().replace(/^[=v]+/, ""), options);
+  return s ? s.version : null;
+};
+var clean_1 = clean$1;
+const SemVer$c = semver$1;
+const inc$1 = (version, release, options, identifier, identifierBase) => {
+  if (typeof options === "string") {
+    identifierBase = identifier;
+    identifier = options;
+    options = void 0;
+  }
+  try {
+    return new SemVer$c(
+      version instanceof SemVer$c ? version.version : version,
+      options
+    ).inc(release, identifier, identifierBase).version;
+  } catch (er) {
+    return null;
+  }
+};
+var inc_1 = inc$1;
+const parse$4 = parse_1;
+const diff$1 = (version1, version2) => {
+  const v1 = parse$4(version1, null, true);
+  const v2 = parse$4(version2, null, true);
+  const comparison = v1.compare(v2);
+  if (comparison === 0) {
+    return null;
+  }
+  const v1Higher = comparison > 0;
+  const highVersion = v1Higher ? v1 : v2;
+  const lowVersion = v1Higher ? v2 : v1;
+  const highHasPre = !!highVersion.prerelease.length;
+  const lowHasPre = !!lowVersion.prerelease.length;
+  if (lowHasPre && !highHasPre) {
+    if (!lowVersion.patch && !lowVersion.minor) {
+      return "major";
+    }
+    if (lowVersion.compareMain(highVersion) === 0) {
+      if (lowVersion.minor && !lowVersion.patch) {
+        return "minor";
+      }
+      return "patch";
+    }
+  }
+  const prefix = highHasPre ? "pre" : "";
+  if (v1.major !== v2.major) {
+    return prefix + "major";
+  }
+  if (v1.minor !== v2.minor) {
+    return prefix + "minor";
+  }
+  if (v1.patch !== v2.patch) {
+    return prefix + "patch";
+  }
+  return "prerelease";
+};
+var diff_1 = diff$1;
+const SemVer$b = semver$1;
+const major$1 = (a, loose) => new SemVer$b(a, loose).major;
+var major_1 = major$1;
+const SemVer$a = semver$1;
+const minor$1 = (a, loose) => new SemVer$a(a, loose).minor;
+var minor_1 = minor$1;
+const SemVer$9 = semver$1;
+const patch$1 = (a, loose) => new SemVer$9(a, loose).patch;
+var patch_1 = patch$1;
+const parse$3 = parse_1;
+const prerelease$1 = (version, options) => {
+  const parsed = parse$3(version, options);
+  return parsed && parsed.prerelease.length ? parsed.prerelease : null;
+};
+var prerelease_1 = prerelease$1;
+const SemVer$8 = semver$1;
+const compare$b = (a, b, loose) => new SemVer$8(a, loose).compare(new SemVer$8(b, loose));
+var compare_1 = compare$b;
+const compare$a = compare_1;
+const rcompare$1 = (a, b, loose) => compare$a(b, a, loose);
+var rcompare_1 = rcompare$1;
+const compare$9 = compare_1;
+const compareLoose$1 = (a, b) => compare$9(a, b, true);
+var compareLoose_1 = compareLoose$1;
+const SemVer$7 = semver$1;
+const compareBuild$3 = (a, b, loose) => {
+  const versionA = new SemVer$7(a, loose);
+  const versionB = new SemVer$7(b, loose);
+  return versionA.compare(versionB) || versionA.compareBuild(versionB);
+};
+var compareBuild_1 = compareBuild$3;
+const compareBuild$2 = compareBuild_1;
+const sort$1 = (list, loose) => list.sort((a, b) => compareBuild$2(a, b, loose));
+var sort_1 = sort$1;
+const compareBuild$1 = compareBuild_1;
+const rsort$1 = (list, loose) => list.sort((a, b) => compareBuild$1(b, a, loose));
+var rsort_1 = rsort$1;
+const compare$8 = compare_1;
+const gt$4 = (a, b, loose) => compare$8(a, b, loose) > 0;
+var gt_1 = gt$4;
+const compare$7 = compare_1;
+const lt$3 = (a, b, loose) => compare$7(a, b, loose) < 0;
+var lt_1 = lt$3;
+const compare$6 = compare_1;
+const eq$2 = (a, b, loose) => compare$6(a, b, loose) === 0;
+var eq_1 = eq$2;
+const compare$5 = compare_1;
+const neq$2 = (a, b, loose) => compare$5(a, b, loose) !== 0;
+var neq_1 = neq$2;
+const compare$4 = compare_1;
+const gte$3 = (a, b, loose) => compare$4(a, b, loose) >= 0;
+var gte_1 = gte$3;
+const compare$3 = compare_1;
+const lte$3 = (a, b, loose) => compare$3(a, b, loose) <= 0;
+var lte_1 = lte$3;
+const eq$1 = eq_1;
+const neq$1 = neq_1;
+const gt$3 = gt_1;
+const gte$2 = gte_1;
+const lt$2 = lt_1;
+const lte$2 = lte_1;
+const cmp$1 = (a, op, b, loose) => {
+  switch (op) {
+    case "===":
+      if (typeof a === "object") {
+        a = a.version;
+      }
+      if (typeof b === "object") {
+        b = b.version;
+      }
+      return a === b;
+    case "!==":
+      if (typeof a === "object") {
+        a = a.version;
+      }
+      if (typeof b === "object") {
+        b = b.version;
+      }
+      return a !== b;
+    case "":
+    case "=":
+    case "==":
+      return eq$1(a, b, loose);
+    case "!=":
+      return neq$1(a, b, loose);
+    case ">":
+      return gt$3(a, b, loose);
+    case ">=":
+      return gte$2(a, b, loose);
+    case "<":
+      return lt$2(a, b, loose);
+    case "<=":
+      return lte$2(a, b, loose);
+    default:
+      throw new TypeError(`Invalid operator: ${op}`);
+  }
+};
+var cmp_1 = cmp$1;
+const SemVer$6 = semver$1;
+const parse$2 = parse_1;
+const { safeRe: re, t } = reExports;
+const coerce$1 = (version, options) => {
+  if (version instanceof SemVer$6) {
+    return version;
+  }
+  if (typeof version === "number") {
+    version = String(version);
+  }
+  if (typeof version !== "string") {
+    return null;
+  }
+  options = options || {};
+  let match = null;
+  if (!options.rtl) {
+    match = version.match(options.includePrerelease ? re[t.COERCEFULL] : re[t.COERCE]);
+  } else {
+    const coerceRtlRegex = options.includePrerelease ? re[t.COERCERTLFULL] : re[t.COERCERTL];
+    let next;
+    while ((next = coerceRtlRegex.exec(version)) && (!match || match.index + match[0].length !== version.length)) {
+      if (!match || next.index + next[0].length !== match.index + match[0].length) {
+        match = next;
+      }
+      coerceRtlRegex.lastIndex = next.index + next[1].length + next[2].length;
+    }
+    coerceRtlRegex.lastIndex = -1;
+  }
+  if (match === null) {
+    return null;
+  }
+  const major2 = match[2];
+  const minor2 = match[3] || "0";
+  const patch2 = match[4] || "0";
+  const prerelease2 = options.includePrerelease && match[5] ? `-${match[5]}` : "";
+  const build = options.includePrerelease && match[6] ? `+${match[6]}` : "";
+  return parse$2(`${major2}.${minor2}.${patch2}${prerelease2}${build}`, options);
+};
+var coerce_1 = coerce$1;
+const parse$1 = parse_1;
+const constants$1 = constants$2;
+const SemVer$5 = semver$1;
+const truncate$1 = (version, truncation, options) => {
+  if (!constants$1.RELEASE_TYPES.includes(truncation)) {
+    return null;
+  }
+  const clonedVersion = cloneInputVersion(version, options);
+  return clonedVersion && doTruncation(clonedVersion, truncation);
+};
+const cloneInputVersion = (version, options) => {
+  const versionStringToParse = version instanceof SemVer$5 ? version.version : version;
+  return parse$1(versionStringToParse, options);
+};
+const doTruncation = (version, truncation) => {
+  if (isPrerelease(truncation)) {
+    return version.version;
+  }
+  version.prerelease = [];
+  switch (truncation) {
+    case "major":
+      version.minor = 0;
+      version.patch = 0;
+      break;
+    case "minor":
+      version.patch = 0;
+      break;
+  }
+  return version.format();
+};
+const isPrerelease = (type2) => {
+  return type2.startsWith("pre");
+};
+var truncate_1 = truncate$1;
+class LRUCache {
+  constructor() {
+    this.max = 1e3;
+    this.map = /* @__PURE__ */ new Map();
+  }
+  get(key) {
+    const value = this.map.get(key);
+    if (value === void 0) {
+      return void 0;
+    } else {
+      this.map.delete(key);
+      this.map.set(key, value);
+      return value;
+    }
+  }
+  delete(key) {
+    return this.map.delete(key);
+  }
+  set(key, value) {
+    const deleted = this.delete(key);
+    if (!deleted && value !== void 0) {
+      if (this.map.size >= this.max) {
+        const firstKey = this.map.keys().next().value;
+        this.delete(firstKey);
+      }
+      this.map.set(key, value);
+    }
+    return this;
+  }
+}
+var lrucache = LRUCache;
+var range;
+var hasRequiredRange;
+function requireRange() {
+  if (hasRequiredRange) return range;
+  hasRequiredRange = 1;
+  const SPACE_CHARACTERS = /\s+/g;
+  class Range2 {
+    constructor(range2, options) {
+      options = parseOptions2(options);
+      if (range2 instanceof Range2) {
+        if (range2.loose === !!options.loose && range2.includePrerelease === !!options.includePrerelease) {
+          return range2;
+        } else {
+          return new Range2(range2.raw, options);
+        }
+      }
+      if (range2 instanceof Comparator2) {
+        this.raw = range2.value;
+        this.set = [[range2]];
+        this.formatted = void 0;
+        return this;
+      }
+      this.options = options;
+      this.loose = !!options.loose;
+      this.includePrerelease = !!options.includePrerelease;
+      this.raw = range2.trim().replace(SPACE_CHARACTERS, " ");
+      this.set = this.raw.split("||").map((r) => this.parseRange(r.trim())).filter((c) => c.length);
+      if (!this.set.length) {
+        throw new TypeError(`Invalid SemVer Range: ${this.raw}`);
+      }
+      if (this.set.length > 1) {
+        const first = this.set[0];
+        this.set = this.set.filter((c) => !isNullSet(c[0]));
+        if (this.set.length === 0) {
+          this.set = [first];
+        } else if (this.set.length > 1) {
+          for (const c of this.set) {
+            if (c.length === 1 && isAny(c[0])) {
+              this.set = [c];
+              break;
+            }
+          }
+        }
+      }
+      this.formatted = void 0;
+    }
+    get range() {
+      if (this.formatted === void 0) {
+        this.formatted = "";
+        for (let i = 0; i < this.set.length; i++) {
+          if (i > 0) {
+            this.formatted += "||";
+          }
+          const comps = this.set[i];
+          for (let k = 0; k < comps.length; k++) {
+            if (k > 0) {
+              this.formatted += " ";
+            }
+            this.formatted += comps[k].toString().trim();
+          }
+        }
+      }
+      return this.formatted;
+    }
+    format() {
+      return this.range;
+    }
+    toString() {
+      return this.range;
+    }
+    parseRange(range2) {
+      range2 = range2.replace(BUILDSTRIPRE, "");
+      const memoOpts = (this.options.includePrerelease && FLAG_INCLUDE_PRERELEASE) | (this.options.loose && FLAG_LOOSE);
+      const memoKey = memoOpts + ":" + range2;
+      const cached = cache.get(memoKey);
+      if (cached) {
+        return cached;
+      }
+      const loose = this.options.loose;
+      const hr = loose ? re2[t2.HYPHENRANGELOOSE] : re2[t2.HYPHENRANGE];
+      range2 = range2.replace(hr, hyphenReplace(this.options.includePrerelease));
+      debug2("hyphen replace", range2);
+      range2 = range2.replace(re2[t2.COMPARATORTRIM], comparatorTrimReplace);
+      debug2("comparator trim", range2);
+      range2 = range2.replace(re2[t2.TILDETRIM], tildeTrimReplace);
+      debug2("tilde trim", range2);
+      range2 = range2.replace(re2[t2.CARETTRIM], caretTrimReplace);
+      debug2("caret trim", range2);
+      let rangeList = range2.split(" ").map((comp) => parseComparator(comp, this.options)).join(" ").split(/\s+/).map((comp) => replaceGTE0(comp, this.options));
+      if (loose) {
+        rangeList = rangeList.filter((comp) => {
+          debug2("loose invalid filter", comp, this.options);
+          return !!comp.match(re2[t2.COMPARATORLOOSE]);
+        });
+      }
+      debug2("range list", rangeList);
+      const rangeMap = /* @__PURE__ */ new Map();
+      const comparators = rangeList.map((comp) => new Comparator2(comp, this.options));
+      for (const comp of comparators) {
+        if (isNullSet(comp)) {
+          return [comp];
+        }
+        rangeMap.set(comp.value, comp);
+      }
+      if (rangeMap.size > 1 && rangeMap.has("")) {
+        rangeMap.delete("");
+      }
+      const result = [...rangeMap.values()];
+      cache.set(memoKey, result);
+      return result;
+    }
+    intersects(range2, options) {
+      if (!(range2 instanceof Range2)) {
+        throw new TypeError("a Range is required");
+      }
+      return this.set.some((thisComparators) => {
+        return isSatisfiable(thisComparators, options) && range2.set.some((rangeComparators) => {
+          return isSatisfiable(rangeComparators, options) && thisComparators.every((thisComparator) => {
+            return rangeComparators.every((rangeComparator) => {
+              return thisComparator.intersects(rangeComparator, options);
+            });
+          });
+        });
+      });
+    }
+    // if ANY of the sets match ALL of its comparators, then pass
+    test(version) {
+      if (!version) {
+        return false;
+      }
+      if (typeof version === "string") {
+        try {
+          version = new SemVer3(version, this.options);
+        } catch (er) {
+          return false;
+        }
+      }
+      for (let i = 0; i < this.set.length; i++) {
+        if (testSet(this.set[i], version, this.options)) {
+          return true;
+        }
+      }
+      return false;
+    }
+  }
+  range = Range2;
+  const LRU = lrucache;
+  const cache = new LRU();
+  const parseOptions2 = parseOptions_1;
+  const Comparator2 = requireComparator();
+  const debug2 = debug_1;
+  const SemVer3 = semver$1;
+  const {
+    safeRe: re2,
+    src,
+    t: t2,
+    comparatorTrimReplace,
+    tildeTrimReplace,
+    caretTrimReplace
+  } = reExports;
+  const { FLAG_INCLUDE_PRERELEASE, FLAG_LOOSE } = constants$2;
+  const BUILDSTRIPRE = new RegExp(src[t2.BUILD], "g");
+  const isNullSet = (c) => c.value === "<0.0.0-0";
+  const isAny = (c) => c.value === "";
+  const isSatisfiable = (comparators, options) => {
+    let result = true;
+    const remainingComparators = comparators.slice();
+    let testComparator = remainingComparators.pop();
+    while (result && remainingComparators.length) {
+      result = remainingComparators.every((otherComparator) => {
+        return testComparator.intersects(otherComparator, options);
+      });
+      testComparator = remainingComparators.pop();
+    }
+    return result;
+  };
+  const parseComparator = (comp, options) => {
+    comp = comp.replace(re2[t2.BUILD], "");
+    debug2("comp", comp, options);
+    comp = replaceCarets(comp, options);
+    debug2("caret", comp);
+    comp = replaceTildes(comp, options);
+    debug2("tildes", comp);
+    comp = replaceXRanges(comp, options);
+    debug2("xrange", comp);
+    comp = replaceStars(comp, options);
+    debug2("stars", comp);
+    return comp;
+  };
+  const isX = (id2) => !id2 || id2.toLowerCase() === "x" || id2 === "*";
+  const invalidXRangeOrder = (M, m, p) => isX(M) && !isX(m) || isX(m) && p && !isX(p);
+  const replaceTildes = (comp, options) => {
+    return comp.trim().split(/\s+/).map((c) => replaceTilde(c, options)).join(" ");
+  };
+  const replaceTilde = (comp, options) => {
+    const r = options.loose ? re2[t2.TILDELOOSE] : re2[t2.TILDE];
+    return comp.replace(r, (_, M, m, p, pr) => {
+      debug2("tilde", comp, _, M, m, p, pr);
+      let ret;
+      if (isX(M)) {
+        ret = "";
+      } else if (isX(m)) {
+        ret = `>=${M}.0.0 <${+M + 1}.0.0-0`;
+      } else if (isX(p)) {
+        ret = `>=${M}.${m}.0 <${M}.${+m + 1}.0-0`;
+      } else if (pr) {
+        debug2("replaceTilde pr", pr);
+        ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+      } else {
+        ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
+      }
+      debug2("tilde return", ret);
+      return ret;
+    });
+  };
+  const replaceCarets = (comp, options) => {
+    return comp.trim().split(/\s+/).map((c) => replaceCaret(c, options)).join(" ");
+  };
+  const replaceCaret = (comp, options) => {
+    debug2("caret", comp, options);
+    const r = options.loose ? re2[t2.CARETLOOSE] : re2[t2.CARET];
+    const z = options.includePrerelease ? "-0" : "";
+    return comp.replace(r, (_, M, m, p, pr) => {
+      debug2("caret", comp, _, M, m, p, pr);
+      let ret;
+      if (isX(M)) {
+        ret = "";
+      } else if (isX(m)) {
+        ret = `>=${M}.0.0${z} <${+M + 1}.0.0-0`;
+      } else if (isX(p)) {
+        if (M === "0") {
+          ret = `>=${M}.${m}.0${z} <${M}.${+m + 1}.0-0`;
+        } else {
+          ret = `>=${M}.${m}.0${z} <${+M + 1}.0.0-0`;
+        }
+      } else if (pr) {
+        debug2("replaceCaret pr", pr);
+        if (M === "0") {
+          if (m === "0") {
+            ret = `>=${M}.${m}.${p}-${pr} <${M}.${m}.${+p + 1}-0`;
+          } else {
+            ret = `>=${M}.${m}.${p}-${pr} <${M}.${+m + 1}.0-0`;
+          }
+        } else {
+          ret = `>=${M}.${m}.${p}-${pr} <${+M + 1}.0.0-0`;
+        }
+      } else {
+        debug2("no pr");
+        if (M === "0") {
+          if (m === "0") {
+            ret = `>=${M}.${m}.${p} <${M}.${m}.${+p + 1}-0`;
+          } else {
+            ret = `>=${M}.${m}.${p} <${M}.${+m + 1}.0-0`;
+          }
+        } else {
+          ret = `>=${M}.${m}.${p} <${+M + 1}.0.0-0`;
+        }
+      }
+      debug2("caret return", ret);
+      return ret;
+    });
+  };
+  const replaceXRanges = (comp, options) => {
+    debug2("replaceXRanges", comp, options);
+    return comp.split(/\s+/).map((c) => replaceXRange(c, options)).join(" ");
+  };
+  const replaceXRange = (comp, options) => {
+    comp = comp.trim();
+    const r = options.loose ? re2[t2.XRANGELOOSE] : re2[t2.XRANGE];
+    return comp.replace(r, (ret, gtlt, M, m, p, pr) => {
+      debug2("xRange", comp, ret, gtlt, M, m, p, pr);
+      if (invalidXRangeOrder(M, m, p)) {
+        return comp;
+      }
+      const xM = isX(M);
+      const xm = xM || isX(m);
+      const xp = xm || isX(p);
+      const anyX = xp;
+      if (gtlt === "=" && anyX) {
+        gtlt = "";
+      }
+      pr = options.includePrerelease ? "-0" : "";
+      if (xM) {
+        if (gtlt === ">" || gtlt === "<") {
+          ret = "<0.0.0-0";
+        } else {
+          ret = "*";
+        }
+      } else if (gtlt && anyX) {
+        if (xm) {
+          m = 0;
+        }
+        p = 0;
+        if (gtlt === ">") {
+          gtlt = ">=";
+          if (xm) {
+            M = +M + 1;
+            m = 0;
+            p = 0;
+          } else {
+            m = +m + 1;
+            p = 0;
+          }
+        } else if (gtlt === "<=") {
+          gtlt = "<";
+          if (xm) {
+            M = +M + 1;
+          } else {
+            m = +m + 1;
+          }
+        }
+        if (gtlt === "<") {
+          pr = "-0";
+        }
+        ret = `${gtlt + M}.${m}.${p}${pr}`;
+      } else if (xm) {
+        ret = `>=${M}.0.0${pr} <${+M + 1}.0.0-0`;
+      } else if (xp) {
+        ret = `>=${M}.${m}.0${pr} <${M}.${+m + 1}.0-0`;
+      }
+      debug2("xRange return", ret);
+      return ret;
+    });
+  };
+  const replaceStars = (comp, options) => {
+    debug2("replaceStars", comp, options);
+    return comp.trim().replace(re2[t2.STAR], "");
+  };
+  const replaceGTE0 = (comp, options) => {
+    debug2("replaceGTE0", comp, options);
+    return comp.trim().replace(re2[options.includePrerelease ? t2.GTE0PRE : t2.GTE0], "");
+  };
+  const hyphenReplace = (incPr) => ($0, from, fM, fm, fp, fpr, fb, to, tM, tm, tp, tpr) => {
+    if (isX(fM)) {
+      from = "";
+    } else if (isX(fm)) {
+      from = `>=${fM}.0.0${incPr ? "-0" : ""}`;
+    } else if (isX(fp)) {
+      from = `>=${fM}.${fm}.0${incPr ? "-0" : ""}`;
+    } else if (fpr) {
+      from = `>=${from}`;
+    } else {
+      from = `>=${from}${incPr ? "-0" : ""}`;
+    }
+    if (isX(tM)) {
+      to = "";
+    } else if (isX(tm)) {
+      to = `<${+tM + 1}.0.0-0`;
+    } else if (isX(tp)) {
+      to = `<${tM}.${+tm + 1}.0-0`;
+    } else if (tpr) {
+      to = `<=${tM}.${tm}.${tp}-${tpr}`;
+    } else if (incPr) {
+      to = `<${tM}.${tm}.${+tp + 1}-0`;
+    } else {
+      to = `<=${to}`;
+    }
+    return `${from} ${to}`.trim();
+  };
+  const testSet = (set, version, options) => {
+    for (let i = 0; i < set.length; i++) {
+      if (!set[i].test(version)) {
+        return false;
+      }
+    }
+    if (version.prerelease.length && !options.includePrerelease) {
+      for (let i = 0; i < set.length; i++) {
+        debug2(set[i].semver);
+        if (set[i].semver === Comparator2.ANY) {
+          continue;
+        }
+        if (set[i].semver.prerelease.length > 0) {
+          const allowed = set[i].semver;
+          if (allowed.major === version.major && allowed.minor === version.minor && allowed.patch === version.patch) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+    return true;
+  };
+  return range;
+}
+var comparator;
+var hasRequiredComparator;
+function requireComparator() {
+  if (hasRequiredComparator) return comparator;
+  hasRequiredComparator = 1;
+  const ANY2 = Symbol("SemVer ANY");
+  class Comparator2 {
+    static get ANY() {
+      return ANY2;
+    }
+    constructor(comp, options) {
+      options = parseOptions2(options);
+      if (comp instanceof Comparator2) {
+        if (comp.loose === !!options.loose) {
+          return comp;
+        } else {
+          comp = comp.value;
+        }
+      }
+      comp = comp.trim().split(/\s+/).join(" ");
+      debug2("comparator", comp, options);
+      this.options = options;
+      this.loose = !!options.loose;
+      this.parse(comp);
+      if (this.semver === ANY2) {
+        this.value = "";
+      } else {
+        this.value = this.operator + this.semver.version;
+      }
+      debug2("comp", this);
+    }
+    parse(comp) {
+      const r = this.options.loose ? re2[t2.COMPARATORLOOSE] : re2[t2.COMPARATOR];
+      const m = comp.match(r);
+      if (!m) {
+        throw new TypeError(`Invalid comparator: ${comp}`);
+      }
+      this.operator = m[1] !== void 0 ? m[1] : "";
+      if (this.operator === "=") {
+        this.operator = "";
+      }
+      if (!m[2]) {
+        this.semver = ANY2;
+      } else {
+        this.semver = new SemVer3(m[2], this.options.loose);
+      }
+    }
+    toString() {
+      return this.value;
+    }
+    test(version) {
+      debug2("Comparator.test", version, this.options.loose);
+      if (this.semver === ANY2 || version === ANY2) {
+        return true;
+      }
+      if (typeof version === "string") {
+        try {
+          version = new SemVer3(version, this.options);
+        } catch (er) {
+          return false;
+        }
+      }
+      return cmp2(version, this.operator, this.semver, this.options);
+    }
+    intersects(comp, options) {
+      if (!(comp instanceof Comparator2)) {
+        throw new TypeError("a Comparator is required");
+      }
+      if (this.operator === "") {
+        if (this.value === "") {
+          return true;
+        }
+        return new Range2(comp.value, options).test(this.value);
+      } else if (comp.operator === "") {
+        if (comp.value === "") {
+          return true;
+        }
+        return new Range2(this.value, options).test(comp.semver);
+      }
+      options = parseOptions2(options);
+      if (options.includePrerelease && (this.value === "<0.0.0-0" || comp.value === "<0.0.0-0")) {
+        return false;
+      }
+      if (!options.includePrerelease && (this.value.startsWith("<0.0.0") || comp.value.startsWith("<0.0.0"))) {
+        return false;
+      }
+      if (this.operator.startsWith(">") && comp.operator.startsWith(">")) {
+        return true;
+      }
+      if (this.operator.startsWith("<") && comp.operator.startsWith("<")) {
+        return true;
+      }
+      if (this.semver.version === comp.semver.version && this.operator.includes("=") && comp.operator.includes("=")) {
+        return true;
+      }
+      if (cmp2(this.semver, "<", comp.semver, options) && this.operator.startsWith(">") && comp.operator.startsWith("<")) {
+        return true;
+      }
+      if (cmp2(this.semver, ">", comp.semver, options) && this.operator.startsWith("<") && comp.operator.startsWith(">")) {
+        return true;
+      }
+      return false;
+    }
+  }
+  comparator = Comparator2;
+  const parseOptions2 = parseOptions_1;
+  const { safeRe: re2, t: t2 } = reExports;
+  const cmp2 = cmp_1;
+  const debug2 = debug_1;
+  const SemVer3 = semver$1;
+  const Range2 = requireRange();
+  return comparator;
+}
+const Range$9 = requireRange();
+const satisfies$4 = (version, range2, options) => {
+  try {
+    range2 = new Range$9(range2, options);
+  } catch (er) {
+    return false;
+  }
+  return range2.test(version);
+};
+var satisfies_1 = satisfies$4;
+const Range$8 = requireRange();
+const toComparators$1 = (range2, options) => new Range$8(range2, options).set.map((comp) => comp.map((c) => c.value).join(" ").trim().split(" "));
+var toComparators_1 = toComparators$1;
+const SemVer$4 = semver$1;
+const Range$7 = requireRange();
+const maxSatisfying$1 = (versions, range2, options) => {
+  let max = null;
+  let maxSV = null;
+  let rangeObj = null;
+  try {
+    rangeObj = new Range$7(range2, options);
+  } catch (er) {
+    return null;
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      if (!max || maxSV.compare(v) === -1) {
+        max = v;
+        maxSV = new SemVer$4(max, options);
+      }
+    }
+  });
+  return max;
+};
+var maxSatisfying_1 = maxSatisfying$1;
+const SemVer$3 = semver$1;
+const Range$6 = requireRange();
+const minSatisfying$1 = (versions, range2, options) => {
+  let min = null;
+  let minSV = null;
+  let rangeObj = null;
+  try {
+    rangeObj = new Range$6(range2, options);
+  } catch (er) {
+    return null;
+  }
+  versions.forEach((v) => {
+    if (rangeObj.test(v)) {
+      if (!min || minSV.compare(v) === 1) {
+        min = v;
+        minSV = new SemVer$3(min, options);
+      }
+    }
+  });
+  return min;
+};
+var minSatisfying_1 = minSatisfying$1;
+const SemVer$2 = semver$1;
+const Range$5 = requireRange();
+const gt$2 = gt_1;
+const minVersion$1 = (range2, loose) => {
+  range2 = new Range$5(range2, loose);
+  let minver = new SemVer$2("0.0.0");
+  if (range2.test(minver)) {
+    return minver;
+  }
+  minver = new SemVer$2("0.0.0-0");
+  if (range2.test(minver)) {
+    return minver;
+  }
+  minver = null;
+  for (let i = 0; i < range2.set.length; ++i) {
+    const comparators = range2.set[i];
+    let setMin = null;
+    comparators.forEach((comparator2) => {
+      const compver = new SemVer$2(comparator2.semver.version);
+      switch (comparator2.operator) {
+        case ">":
+          if (compver.prerelease.length === 0) {
+            compver.patch++;
+          } else {
+            compver.prerelease.push(0);
+          }
+          compver.raw = compver.format();
+        case "":
+        case ">=":
+          if (!setMin || gt$2(compver, setMin)) {
+            setMin = compver;
+          }
+          break;
+        case "<":
+        case "<=":
+          break;
+        default:
+          throw new Error(`Unexpected operation: ${comparator2.operator}`);
+      }
+    });
+    if (setMin && (!minver || gt$2(minver, setMin))) {
+      minver = setMin;
+    }
+  }
+  if (minver && range2.test(minver)) {
+    return minver;
+  }
+  return null;
+};
+var minVersion_1 = minVersion$1;
+const Range$4 = requireRange();
+const validRange$1 = (range2, options) => {
+  try {
+    return new Range$4(range2, options).range || "*";
+  } catch (er) {
+    return null;
+  }
+};
+var valid$1 = validRange$1;
+const SemVer$1 = semver$1;
+const Comparator$2 = requireComparator();
+const { ANY: ANY$1 } = Comparator$2;
+const Range$3 = requireRange();
+const satisfies$3 = satisfies_1;
+const gt$1 = gt_1;
+const lt$1 = lt_1;
+const lte$1 = lte_1;
+const gte$1 = gte_1;
+const outside$3 = (version, range2, hilo, options) => {
+  version = new SemVer$1(version, options);
+  range2 = new Range$3(range2, options);
+  let gtfn, ltefn, ltfn, comp, ecomp;
+  switch (hilo) {
+    case ">":
+      gtfn = gt$1;
+      ltefn = lte$1;
+      ltfn = lt$1;
+      comp = ">";
+      ecomp = ">=";
+      break;
+    case "<":
+      gtfn = lt$1;
+      ltefn = gte$1;
+      ltfn = gt$1;
+      comp = "<";
+      ecomp = "<=";
+      break;
+    default:
+      throw new TypeError('Must provide a hilo val of "<" or ">"');
+  }
+  if (satisfies$3(version, range2, options)) {
+    return false;
+  }
+  for (let i = 0; i < range2.set.length; ++i) {
+    const comparators = range2.set[i];
+    let high = null;
+    let low = null;
+    comparators.forEach((comparator2) => {
+      if (comparator2.semver === ANY$1) {
+        comparator2 = new Comparator$2(">=0.0.0");
+      }
+      high = high || comparator2;
+      low = low || comparator2;
+      if (gtfn(comparator2.semver, high.semver, options)) {
+        high = comparator2;
+      } else if (ltfn(comparator2.semver, low.semver, options)) {
+        low = comparator2;
+      }
+    });
+    if (high.operator === comp || high.operator === ecomp) {
+      return false;
+    }
+    if ((!low.operator || low.operator === comp) && ltefn(version, low.semver)) {
+      return false;
+    } else if (low.operator === ecomp && ltfn(version, low.semver)) {
+      return false;
+    }
+  }
+  return true;
+};
+var outside_1 = outside$3;
+const outside$2 = outside_1;
+const gtr$1 = (version, range2, options) => outside$2(version, range2, ">", options);
+var gtr_1 = gtr$1;
+const outside$1 = outside_1;
+const ltr$1 = (version, range2, options) => outside$1(version, range2, "<", options);
+var ltr_1 = ltr$1;
+const Range$2 = requireRange();
+const intersects$1 = (r1, r2, options) => {
+  r1 = new Range$2(r1, options);
+  r2 = new Range$2(r2, options);
+  return r1.intersects(r2, options);
+};
+var intersects_1 = intersects$1;
+const satisfies$2 = satisfies_1;
+const compare$2 = compare_1;
+var simplify = (versions, range2, options) => {
+  const set = [];
+  let first = null;
+  let prev = null;
+  const v = versions.sort((a, b) => compare$2(a, b, options));
+  for (const version of v) {
+    const included = satisfies$2(version, range2, options);
+    if (included) {
+      prev = version;
+      if (!first) {
+        first = version;
+      }
+    } else {
+      if (prev) {
+        set.push([first, prev]);
+      }
+      prev = null;
+      first = null;
+    }
+  }
+  if (first) {
+    set.push([first, null]);
+  }
+  const ranges = [];
+  for (const [min, max] of set) {
+    if (min === max) {
+      ranges.push(min);
+    } else if (!max && min === v[0]) {
+      ranges.push("*");
+    } else if (!max) {
+      ranges.push(`>=${min}`);
+    } else if (min === v[0]) {
+      ranges.push(`<=${max}`);
+    } else {
+      ranges.push(`${min} - ${max}`);
+    }
+  }
+  const simplified = ranges.join(" || ");
+  const original = typeof range2.raw === "string" ? range2.raw : String(range2);
+  return simplified.length < original.length ? simplified : range2;
+};
+const Range$1 = requireRange();
+const Comparator$1 = requireComparator();
+const { ANY } = Comparator$1;
+const satisfies$1 = satisfies_1;
+const compare$1 = compare_1;
+const subset$1 = (sub, dom, options = {}) => {
+  if (sub === dom) {
+    return true;
+  }
+  sub = new Range$1(sub, options);
+  dom = new Range$1(dom, options);
+  let sawNonNull = false;
+  OUTER: for (const simpleSub of sub.set) {
+    for (const simpleDom of dom.set) {
+      const isSub = simpleSubset(simpleSub, simpleDom, options);
+      sawNonNull = sawNonNull || isSub !== null;
+      if (isSub) {
+        continue OUTER;
+      }
+    }
+    if (sawNonNull) {
+      return false;
+    }
+  }
+  return true;
+};
+const minimumVersionWithPreRelease = [new Comparator$1(">=0.0.0-0")];
+const minimumVersion = [new Comparator$1(">=0.0.0")];
+const simpleSubset = (sub, dom, options) => {
+  if (sub === dom) {
+    return true;
+  }
+  if (sub.length === 1 && sub[0].semver === ANY) {
+    if (dom.length === 1 && dom[0].semver === ANY) {
+      return true;
+    } else if (options.includePrerelease) {
+      sub = minimumVersionWithPreRelease;
+    } else {
+      sub = minimumVersion;
+    }
+  }
+  if (dom.length === 1 && dom[0].semver === ANY) {
+    if (options.includePrerelease) {
+      return true;
+    } else {
+      dom = minimumVersion;
+    }
+  }
+  const eqSet = /* @__PURE__ */ new Set();
+  let gt2, lt2;
+  for (const c of sub) {
+    if (c.operator === ">" || c.operator === ">=") {
+      gt2 = higherGT(gt2, c, options);
+    } else if (c.operator === "<" || c.operator === "<=") {
+      lt2 = lowerLT(lt2, c, options);
+    } else {
+      eqSet.add(c.semver);
+    }
+  }
+  if (eqSet.size > 1) {
+    return null;
+  }
+  let gtltComp;
+  if (gt2 && lt2) {
+    gtltComp = compare$1(gt2.semver, lt2.semver, options);
+    if (gtltComp > 0) {
+      return null;
+    } else if (gtltComp === 0 && (gt2.operator !== ">=" || lt2.operator !== "<=")) {
+      return null;
+    }
+  }
+  for (const eq2 of eqSet) {
+    if (gt2 && !satisfies$1(eq2, String(gt2), options)) {
+      return null;
+    }
+    if (lt2 && !satisfies$1(eq2, String(lt2), options)) {
+      return null;
+    }
+    for (const c of dom) {
+      if (!satisfies$1(eq2, String(c), options)) {
+        return false;
+      }
+    }
+    return true;
+  }
+  let higher, lower;
+  let hasDomLT, hasDomGT;
+  let needDomLTPre = lt2 && !options.includePrerelease && lt2.semver.prerelease.length ? lt2.semver : false;
+  let needDomGTPre = gt2 && !options.includePrerelease && gt2.semver.prerelease.length ? gt2.semver : false;
+  if (needDomLTPre && needDomLTPre.prerelease.length === 1 && lt2.operator === "<" && needDomLTPre.prerelease[0] === 0) {
+    needDomLTPre = false;
+  }
+  for (const c of dom) {
+    hasDomGT = hasDomGT || c.operator === ">" || c.operator === ">=";
+    hasDomLT = hasDomLT || c.operator === "<" || c.operator === "<=";
+    if (gt2) {
+      if (needDomGTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomGTPre.major && c.semver.minor === needDomGTPre.minor && c.semver.patch === needDomGTPre.patch) {
+          needDomGTPre = false;
+        }
+      }
+      if (c.operator === ">" || c.operator === ">=") {
+        higher = higherGT(gt2, c, options);
+        if (higher === c && higher !== gt2) {
+          return false;
+        }
+      } else if (gt2.operator === ">=" && !c.test(gt2.semver)) {
+        return false;
+      }
+    }
+    if (lt2) {
+      if (needDomLTPre) {
+        if (c.semver.prerelease && c.semver.prerelease.length && c.semver.major === needDomLTPre.major && c.semver.minor === needDomLTPre.minor && c.semver.patch === needDomLTPre.patch) {
+          needDomLTPre = false;
+        }
+      }
+      if (c.operator === "<" || c.operator === "<=") {
+        lower = lowerLT(lt2, c, options);
+        if (lower === c && lower !== lt2) {
+          return false;
+        }
+      } else if (lt2.operator === "<=" && !c.test(lt2.semver)) {
+        return false;
+      }
+    }
+    if (!c.operator && (lt2 || gt2) && gtltComp !== 0) {
+      return false;
+    }
+  }
+  if (gt2 && hasDomLT && !lt2 && gtltComp !== 0) {
+    return false;
+  }
+  if (lt2 && hasDomGT && !gt2 && gtltComp !== 0) {
+    return false;
+  }
+  if (needDomGTPre || needDomLTPre) {
+    return false;
+  }
+  return true;
+};
+const higherGT = (a, b, options) => {
+  if (!a) {
+    return b;
+  }
+  const comp = compare$1(a.semver, b.semver, options);
+  return comp > 0 ? a : comp < 0 ? b : b.operator === ">" && a.operator === ">=" ? b : a;
+};
+const lowerLT = (a, b, options) => {
+  if (!a) {
+    return b;
+  }
+  const comp = compare$1(a.semver, b.semver, options);
+  return comp < 0 ? a : comp > 0 ? b : b.operator === "<" && a.operator === "<=" ? b : a;
+};
+var subset_1 = subset$1;
+const internalRe = reExports;
+const constants = constants$2;
+const SemVer2 = semver$1;
+const identifiers = identifiers$1;
+const parse = parse_1;
+const valid = valid_1;
+const clean = clean_1;
+const inc = inc_1;
+const diff = diff_1;
+const major = major_1;
+const minor = minor_1;
+const patch = patch_1;
+const prerelease = prerelease_1;
+const compare = compare_1;
+const rcompare = rcompare_1;
+const compareLoose = compareLoose_1;
+const compareBuild = compareBuild_1;
+const sort = sort_1;
+const rsort = rsort_1;
+const gt = gt_1;
+const lt = lt_1;
+const eq = eq_1;
+const neq = neq_1;
+const gte = gte_1;
+const lte = lte_1;
+const cmp = cmp_1;
+const coerce = coerce_1;
+const truncate = truncate_1;
+const Comparator = requireComparator();
+const Range = requireRange();
+const satisfies = satisfies_1;
+const toComparators = toComparators_1;
+const maxSatisfying = maxSatisfying_1;
+const minSatisfying = minSatisfying_1;
+const minVersion = minVersion_1;
+const validRange = valid$1;
+const outside = outside_1;
+const gtr = gtr_1;
+const ltr = ltr_1;
+const intersects = intersects_1;
+const simplifyRange = simplify;
+const subset = subset_1;
+var semver = {
+  parse,
+  valid,
+  clean,
+  inc,
+  diff,
+  major,
+  minor,
+  patch,
+  prerelease,
+  compare,
+  rcompare,
+  compareLoose,
+  compareBuild,
+  sort,
+  rsort,
+  gt,
+  lt,
+  eq,
+  neq,
+  gte,
+  lte,
+  cmp,
+  coerce,
+  truncate,
+  Comparator,
+  Range,
+  satisfies,
+  toComparators,
+  maxSatisfying,
+  minSatisfying,
+  minVersion,
+  validRange,
+  outside,
+  gtr,
+  ltr,
+  intersects,
+  simplifyRange,
+  subset,
+  SemVer: SemVer2,
+  re: internalRe.re,
+  src: internalRe.src,
+  tokens: internalRe.t,
+  SEMVER_SPEC_VERSION: constants.SEMVER_SPEC_VERSION,
+  RELEASE_TYPES: constants.RELEASE_TYPES,
+  compareIdentifiers: identifiers.compareIdentifiers,
+  rcompareIdentifiers: identifiers.rcompareIdentifiers
+};
+var onetime$1 = { exports: {} };
+var mimicFn$2 = { exports: {} };
+const mimicFn$1 = (to, from) => {
+  for (const prop of Reflect.ownKeys(from)) {
+    Object.defineProperty(to, prop, Object.getOwnPropertyDescriptor(from, prop));
+  }
+  return to;
+};
+mimicFn$2.exports = mimicFn$1;
+mimicFn$2.exports.default = mimicFn$1;
+var mimicFnExports = mimicFn$2.exports;
+const mimicFn = mimicFnExports;
+const calledFunctions = /* @__PURE__ */ new WeakMap();
+const onetime = (function_, options = {}) => {
+  if (typeof function_ !== "function") {
+    throw new TypeError("Expected a function");
+  }
+  let returnValue;
+  let callCount = 0;
+  const functionName = function_.displayName || function_.name || "<anonymous>";
+  const onetime2 = function(...arguments_) {
+    calledFunctions.set(onetime2, ++callCount);
+    if (callCount === 1) {
+      returnValue = function_.apply(this, arguments_);
+      function_ = null;
+    } else if (options.throw === true) {
+      throw new Error(`Function \`${functionName}\` can only be called once`);
+    }
+    return returnValue;
+  };
+  mimicFn(onetime2, function_);
+  calledFunctions.set(onetime2, callCount);
+  return onetime2;
+};
+onetime$1.exports = onetime;
+onetime$1.exports.default = onetime;
+onetime$1.exports.callCount = (function_) => {
+  if (!calledFunctions.has(function_)) {
+    throw new Error(`The given function \`${function_.name}\` is not wrapped by the \`onetime\` package`);
+  }
+  return calledFunctions.get(function_);
+};
+var onetimeExports = onetime$1.exports;
+(function(module, exports) {
+  var __classPrivateFieldSet = commonjsGlobal && commonjsGlobal.__classPrivateFieldSet || function(receiver, state, value, kind, f) {
+    if (kind === "m") throw new TypeError("Private method is not writable");
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a setter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot write private member to an object whose class did not declare it");
+    return kind === "a" ? f.call(receiver, value) : f ? f.value = value : state.set(receiver, value), value;
+  };
+  var __classPrivateFieldGet = commonjsGlobal && commonjsGlobal.__classPrivateFieldGet || function(receiver, state, kind, f) {
+    if (kind === "a" && !f) throw new TypeError("Private accessor was defined without a getter");
+    if (typeof state === "function" ? receiver !== state || !f : !state.has(receiver)) throw new TypeError("Cannot read private member from an object whose class did not declare it");
+    return kind === "m" ? f : kind === "a" ? f.call(receiver) : f ? f.value : state.get(receiver);
+  };
+  var _a, _b;
+  var _Conf_validator, _Conf_encryptionKey, _Conf_options, _Conf_defaultValues;
+  Object.defineProperty(exports, "__esModule", { value: true });
+  const util_12 = require$$4;
+  const fs2 = require$$0$2;
+  const path2 = require$$1$1;
+  const crypto = require$$3$1;
+  const assert = require$$5;
+  const events_1 = require$$5$1;
+  const dotProp$1 = dotProp;
+  const pkgUp2 = pkgUpExports;
+  const envPaths2 = envPathsExports;
+  const atomically = dist$1;
+  const ajv_1 = ajvExports;
+  const ajv_formats_1 = distExports;
+  const debounceFn$1 = debounceFn;
+  const semver$12 = semver;
+  const onetime2 = onetimeExports;
+  const encryptionAlgorithm = "aes-256-cbc";
+  const createPlainObject = () => {
+    return /* @__PURE__ */ Object.create(null);
+  };
+  const isExist = (data) => {
+    return data !== void 0 && data !== null;
+  };
+  let parentDir = "";
+  try {
+    delete require.cache[__filename];
+    parentDir = path2.dirname((_b = (_a = module.parent) === null || _a === void 0 ? void 0 : _a.filename) !== null && _b !== void 0 ? _b : ".");
+  } catch (_c) {
+  }
+  const checkValueType = (key, value) => {
+    const nonJsonTypes = /* @__PURE__ */ new Set([
+      "undefined",
+      "symbol",
+      "function"
+    ]);
+    const type2 = typeof value;
+    if (nonJsonTypes.has(type2)) {
+      throw new TypeError(`Setting a value of type \`${type2}\` for key \`${key}\` is not allowed as it's not supported by JSON`);
+    }
+  };
+  const INTERNAL_KEY = "__internal__";
+  const MIGRATION_KEY = `${INTERNAL_KEY}.migrations.version`;
+  class Conf2 {
+    constructor(partialOptions = {}) {
+      var _a2;
+      _Conf_validator.set(this, void 0);
+      _Conf_encryptionKey.set(this, void 0);
+      _Conf_options.set(this, void 0);
+      _Conf_defaultValues.set(this, {});
+      this._deserialize = (value) => JSON.parse(value);
+      this._serialize = (value) => JSON.stringify(value, void 0, "	");
+      const options = {
+        configName: "config",
+        fileExtension: "json",
+        projectSuffix: "nodejs",
+        clearInvalidConfig: false,
+        accessPropertiesByDotNotation: true,
+        configFileMode: 438,
+        ...partialOptions
+      };
+      const getPackageData = onetime2(() => {
+        const packagePath = pkgUp2.sync({ cwd: parentDir });
+        const packageData = packagePath && JSON.parse(fs2.readFileSync(packagePath, "utf8"));
+        return packageData !== null && packageData !== void 0 ? packageData : {};
+      });
+      if (!options.cwd) {
+        if (!options.projectName) {
+          options.projectName = getPackageData().name;
+        }
+        if (!options.projectName) {
+          throw new Error("Project name could not be inferred. Please specify the `projectName` option.");
+        }
+        options.cwd = envPaths2(options.projectName, { suffix: options.projectSuffix }).config;
+      }
+      __classPrivateFieldSet(this, _Conf_options, options, "f");
+      if (options.schema) {
+        if (typeof options.schema !== "object") {
+          throw new TypeError("The `schema` option must be an object.");
+        }
+        const ajv2 = new ajv_1.default({
+          allErrors: true,
+          useDefaults: true
+        });
+        (0, ajv_formats_1.default)(ajv2);
+        const schema = {
+          type: "object",
+          properties: options.schema
+        };
+        __classPrivateFieldSet(this, _Conf_validator, ajv2.compile(schema), "f");
+        for (const [key, value] of Object.entries(options.schema)) {
+          if (value === null || value === void 0 ? void 0 : value.default) {
+            __classPrivateFieldGet(this, _Conf_defaultValues, "f")[key] = value.default;
+          }
+        }
+      }
+      if (options.defaults) {
+        __classPrivateFieldSet(this, _Conf_defaultValues, {
+          ...__classPrivateFieldGet(this, _Conf_defaultValues, "f"),
+          ...options.defaults
+        }, "f");
+      }
+      if (options.serialize) {
+        this._serialize = options.serialize;
+      }
+      if (options.deserialize) {
+        this._deserialize = options.deserialize;
+      }
+      this.events = new events_1.EventEmitter();
+      __classPrivateFieldSet(this, _Conf_encryptionKey, options.encryptionKey, "f");
+      const fileExtension = options.fileExtension ? `.${options.fileExtension}` : "";
+      this.path = path2.resolve(options.cwd, `${(_a2 = options.configName) !== null && _a2 !== void 0 ? _a2 : "config"}${fileExtension}`);
+      const fileStore = this.store;
+      const store2 = Object.assign(createPlainObject(), options.defaults, fileStore);
+      this._validate(store2);
+      try {
+        assert.deepEqual(fileStore, store2);
+      } catch (_b2) {
+        this.store = store2;
+      }
+      if (options.watch) {
+        this._watch();
+      }
+      if (options.migrations) {
+        if (!options.projectVersion) {
+          options.projectVersion = getPackageData().version;
+        }
+        if (!options.projectVersion) {
+          throw new Error("Project version could not be inferred. Please specify the `projectVersion` option.");
+        }
+        this._migrate(options.migrations, options.projectVersion, options.beforeEachMigration);
+      }
+    }
+    get(key, defaultValue) {
+      if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
+        return this._get(key, defaultValue);
+      }
+      const { store: store2 } = this;
+      return key in store2 ? store2[key] : defaultValue;
+    }
+    set(key, value) {
+      if (typeof key !== "string" && typeof key !== "object") {
+        throw new TypeError(`Expected \`key\` to be of type \`string\` or \`object\`, got ${typeof key}`);
+      }
+      if (typeof key !== "object" && value === void 0) {
+        throw new TypeError("Use `delete()` to clear values");
+      }
+      if (this._containsReservedKey(key)) {
+        throw new TypeError(`Please don't use the ${INTERNAL_KEY} key, as it's used to manage this module internal operations.`);
+      }
+      const { store: store2 } = this;
+      const set = (key2, value2) => {
+        checkValueType(key2, value2);
+        if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
+          dotProp$1.set(store2, key2, value2);
+        } else {
+          store2[key2] = value2;
+        }
+      };
+      if (typeof key === "object") {
+        const object = key;
+        for (const [key2, value2] of Object.entries(object)) {
+          set(key2, value2);
+        }
+      } else {
+        set(key, value);
+      }
+      this.store = store2;
+    }
+    /**
+        Check if an item exists.
+    
+        @param key - The key of the item to check.
+        */
+    has(key) {
+      if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
+        return dotProp$1.has(this.store, key);
+      }
+      return key in this.store;
+    }
+    /**
+        Reset items to their default values, as defined by the `defaults` or `schema` option.
+    
+        @see `clear()` to reset all items.
+    
+        @param keys - The keys of the items to reset.
+        */
+    reset(...keys) {
+      for (const key of keys) {
+        if (isExist(__classPrivateFieldGet(this, _Conf_defaultValues, "f")[key])) {
+          this.set(key, __classPrivateFieldGet(this, _Conf_defaultValues, "f")[key]);
+        }
+      }
+    }
+    /**
+        Delete an item.
+    
+        @param key - The key of the item to delete.
+        */
+    delete(key) {
+      const { store: store2 } = this;
+      if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
+        dotProp$1.delete(store2, key);
+      } else {
+        delete store2[key];
+      }
+      this.store = store2;
+    }
+    /**
+        Delete all items.
+    
+        This resets known items to their default values, if defined by the `defaults` or `schema` option.
+        */
+    clear() {
+      this.store = createPlainObject();
+      for (const key of Object.keys(__classPrivateFieldGet(this, _Conf_defaultValues, "f"))) {
+        this.reset(key);
+      }
+    }
+    /**
+        Watches the given `key`, calling `callback` on any changes.
+    
+        @param key - The key wo watch.
+        @param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+        @returns A function, that when called, will unsubscribe.
+        */
+    onDidChange(key, callback) {
+      if (typeof key !== "string") {
+        throw new TypeError(`Expected \`key\` to be of type \`string\`, got ${typeof key}`);
+      }
+      if (typeof callback !== "function") {
+        throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
+      }
+      return this._handleChange(() => this.get(key), callback);
+    }
+    /**
+        Watches the whole config object, calling `callback` on any changes.
+    
+        @param callback - A callback function that is called on any changes. When a `key` is first set `oldValue` will be `undefined`, and when a key is deleted `newValue` will be `undefined`.
+        @returns A function, that when called, will unsubscribe.
+        */
+    onDidAnyChange(callback) {
+      if (typeof callback !== "function") {
+        throw new TypeError(`Expected \`callback\` to be of type \`function\`, got ${typeof callback}`);
+      }
+      return this._handleChange(() => this.store, callback);
+    }
+    get size() {
+      return Object.keys(this.store).length;
+    }
+    get store() {
+      try {
+        const data = fs2.readFileSync(this.path, __classPrivateFieldGet(this, _Conf_encryptionKey, "f") ? null : "utf8");
+        const dataString = this._encryptData(data);
+        const deserializedData = this._deserialize(dataString);
+        this._validate(deserializedData);
+        return Object.assign(createPlainObject(), deserializedData);
+      } catch (error2) {
+        if ((error2 === null || error2 === void 0 ? void 0 : error2.code) === "ENOENT") {
+          this._ensureDirectory();
+          return createPlainObject();
+        }
+        if (__classPrivateFieldGet(this, _Conf_options, "f").clearInvalidConfig && error2.name === "SyntaxError") {
+          return createPlainObject();
+        }
+        throw error2;
+      }
+    }
+    set store(value) {
+      this._ensureDirectory();
+      this._validate(value);
+      this._write(value);
+      this.events.emit("change");
+    }
+    *[(_Conf_validator = /* @__PURE__ */ new WeakMap(), _Conf_encryptionKey = /* @__PURE__ */ new WeakMap(), _Conf_options = /* @__PURE__ */ new WeakMap(), _Conf_defaultValues = /* @__PURE__ */ new WeakMap(), Symbol.iterator)]() {
+      for (const [key, value] of Object.entries(this.store)) {
+        yield [key, value];
+      }
+    }
+    _encryptData(data) {
+      if (!__classPrivateFieldGet(this, _Conf_encryptionKey, "f")) {
+        return data.toString();
+      }
+      try {
+        if (__classPrivateFieldGet(this, _Conf_encryptionKey, "f")) {
+          try {
+            if (data.slice(16, 17).toString() === ":") {
+              const initializationVector = data.slice(0, 16);
+              const password = crypto.pbkdf2Sync(__classPrivateFieldGet(this, _Conf_encryptionKey, "f"), initializationVector.toString(), 1e4, 32, "sha512");
+              const decipher = crypto.createDecipheriv(encryptionAlgorithm, password, initializationVector);
+              data = Buffer.concat([decipher.update(Buffer.from(data.slice(17))), decipher.final()]).toString("utf8");
+            } else {
+              const decipher = crypto.createDecipher(encryptionAlgorithm, __classPrivateFieldGet(this, _Conf_encryptionKey, "f"));
+              data = Buffer.concat([decipher.update(Buffer.from(data)), decipher.final()]).toString("utf8");
+            }
+          } catch (_a2) {
+          }
+        }
+      } catch (_b2) {
+      }
+      return data.toString();
+    }
+    _handleChange(getter, callback) {
+      let currentValue = getter();
+      const onChange = () => {
+        const oldValue = currentValue;
+        const newValue = getter();
+        if ((0, util_12.isDeepStrictEqual)(newValue, oldValue)) {
+          return;
+        }
+        currentValue = newValue;
+        callback.call(this, newValue, oldValue);
+      };
+      this.events.on("change", onChange);
+      return () => this.events.removeListener("change", onChange);
+    }
+    _validate(data) {
+      if (!__classPrivateFieldGet(this, _Conf_validator, "f")) {
+        return;
+      }
+      const valid2 = __classPrivateFieldGet(this, _Conf_validator, "f").call(this, data);
+      if (valid2 || !__classPrivateFieldGet(this, _Conf_validator, "f").errors) {
+        return;
+      }
+      const errors2 = __classPrivateFieldGet(this, _Conf_validator, "f").errors.map(({ instancePath, message = "" }) => `\`${instancePath.slice(1)}\` ${message}`);
+      throw new Error("Config schema violation: " + errors2.join("; "));
+    }
+    _ensureDirectory() {
+      fs2.mkdirSync(path2.dirname(this.path), { recursive: true });
+    }
+    _write(value) {
+      let data = this._serialize(value);
+      if (__classPrivateFieldGet(this, _Conf_encryptionKey, "f")) {
+        const initializationVector = crypto.randomBytes(16);
+        const password = crypto.pbkdf2Sync(__classPrivateFieldGet(this, _Conf_encryptionKey, "f"), initializationVector.toString(), 1e4, 32, "sha512");
+        const cipher = crypto.createCipheriv(encryptionAlgorithm, password, initializationVector);
+        data = Buffer.concat([initializationVector, Buffer.from(":"), cipher.update(Buffer.from(data)), cipher.final()]);
+      }
+      if (process.env.SNAP) {
+        fs2.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
+      } else {
+        try {
+          atomically.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
+        } catch (error2) {
+          if ((error2 === null || error2 === void 0 ? void 0 : error2.code) === "EXDEV") {
+            fs2.writeFileSync(this.path, data, { mode: __classPrivateFieldGet(this, _Conf_options, "f").configFileMode });
+            return;
+          }
+          throw error2;
+        }
+      }
+    }
+    _watch() {
+      this._ensureDirectory();
+      if (!fs2.existsSync(this.path)) {
+        this._write(createPlainObject());
+      }
+      if (process.platform === "win32") {
+        fs2.watch(this.path, { persistent: false }, debounceFn$1(() => {
+          this.events.emit("change");
+        }, { wait: 100 }));
+      } else {
+        fs2.watchFile(this.path, { persistent: false }, debounceFn$1(() => {
+          this.events.emit("change");
+        }, { wait: 5e3 }));
+      }
+    }
+    _migrate(migrations, versionToMigrate, beforeEachMigration) {
+      let previousMigratedVersion = this._get(MIGRATION_KEY, "0.0.0");
+      const newerVersions = Object.keys(migrations).filter((candidateVersion) => this._shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate));
+      let storeBackup = { ...this.store };
+      for (const version of newerVersions) {
+        try {
+          if (beforeEachMigration) {
+            beforeEachMigration(this, {
+              fromVersion: previousMigratedVersion,
+              toVersion: version,
+              finalVersion: versionToMigrate,
+              versions: newerVersions
+            });
+          }
+          const migration = migrations[version];
+          migration(this);
+          this._set(MIGRATION_KEY, version);
+          previousMigratedVersion = version;
+          storeBackup = { ...this.store };
+        } catch (error2) {
+          this.store = storeBackup;
+          throw new Error(`Something went wrong during the migration! Changes applied to the store until this failed migration will be restored. ${error2}`);
+        }
+      }
+      if (this._isVersionInRangeFormat(previousMigratedVersion) || !semver$12.eq(previousMigratedVersion, versionToMigrate)) {
+        this._set(MIGRATION_KEY, versionToMigrate);
+      }
+    }
+    _containsReservedKey(key) {
+      if (typeof key === "object") {
+        const firsKey = Object.keys(key)[0];
+        if (firsKey === INTERNAL_KEY) {
+          return true;
+        }
+      }
+      if (typeof key !== "string") {
+        return false;
+      }
+      if (__classPrivateFieldGet(this, _Conf_options, "f").accessPropertiesByDotNotation) {
+        if (key.startsWith(`${INTERNAL_KEY}.`)) {
+          return true;
+        }
+        return false;
+      }
+      return false;
+    }
+    _isVersionInRangeFormat(version) {
+      return semver$12.clean(version) === null;
+    }
+    _shouldPerformMigration(candidateVersion, previousMigratedVersion, versionToMigrate) {
+      if (this._isVersionInRangeFormat(candidateVersion)) {
+        if (previousMigratedVersion !== "0.0.0" && semver$12.satisfies(previousMigratedVersion, candidateVersion)) {
+          return false;
+        }
+        return semver$12.satisfies(versionToMigrate, candidateVersion);
+      }
+      if (semver$12.lte(candidateVersion, previousMigratedVersion)) {
+        return false;
+      }
+      if (semver$12.gt(candidateVersion, versionToMigrate)) {
+        return false;
+      }
+      return true;
+    }
+    _get(key, defaultValue) {
+      return dotProp$1.get(this.store, key, defaultValue);
+    }
+    _set(key, value) {
+      const { store: store2 } = this;
+      dotProp$1.set(store2, key, value);
+      this.store = store2;
+    }
+  }
+  exports.default = Conf2;
+  module.exports = Conf2;
+  module.exports.default = Conf2;
+})(source, source.exports);
+var sourceExports = source.exports;
+const path = require$$1$1;
+const { app, ipcMain, ipcRenderer, shell } = require$$1;
+const Conf = sourceExports;
+let isInitialized = false;
+const initDataListener = () => {
+  if (!ipcMain || !app) {
+    throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
+  }
+  const appData = {
+    defaultCwd: app.getPath("userData"),
+    appVersion: app.getVersion()
+  };
+  if (isInitialized) {
+    return appData;
+  }
+  ipcMain.on("electron-store-get-data", (event) => {
+    event.returnValue = appData;
+  });
+  isInitialized = true;
+  return appData;
+};
+class ElectronStore extends Conf {
+  constructor(options) {
+    let defaultCwd;
+    let appVersion;
+    if (ipcRenderer) {
+      const appData = ipcRenderer.sendSync("electron-store-get-data");
+      if (!appData) {
+        throw new Error("Electron Store: You need to call `.initRenderer()` from the main process.");
+      }
+      ({ defaultCwd, appVersion } = appData);
+    } else if (ipcMain && app) {
+      ({ defaultCwd, appVersion } = initDataListener());
+    }
+    options = {
+      name: "config",
+      ...options
+    };
+    if (!options.projectVersion) {
+      options.projectVersion = appVersion;
+    }
+    if (options.cwd) {
+      options.cwd = path.isAbsolute(options.cwd) ? options.cwd : path.join(defaultCwd, options.cwd);
+    } else {
+      options.cwd = defaultCwd;
+    }
+    options.configName = options.name;
+    delete options.name;
+    super(options);
+  }
+  static initRenderer() {
+    initDataListener();
+  }
+  async openInEditor() {
+    const error2 = await shell.openPath(this.path);
+    if (error2) {
+      throw new Error(error2);
+    }
+  }
+}
+var electronStore = ElectronStore;
+const Store = /* @__PURE__ */ getDefaultExportFromCjs(electronStore);
+const store = new Store();
+const setItem = (name, item) => {
+  store.set(name, item);
+};
+const getItem = (name) => {
+  return store.get(name);
+};
+const delItem = (name) => {
+  store.delete(name);
+};
+const storeListener = () => {
+  require$$1.ipcMain.on("set-item", (event, name, item) => {
+    setItem(name, item);
+  });
+  require$$1.ipcMain.on("del-item", (event, name) => {
+    delItem(name);
+  });
+  require$$1.ipcMain.handle("get-item", async (event, name) => {
+    return await getItem(name);
+  });
+};
+const DEFAULT_REPOSITORY = "iLx11/screen-go";
+const DIRECT_PACKAGE_FILE_REG = /\.(exe|msi|dmg|pkg|appimage|deb|rpm|zip|7z)(\?|#|$)/i;
+const successResult = (data) => {
+  return {
+    success: true,
+    data
+  };
+};
+const errorResult = (message) => {
+  return {
+    success: false,
+    message
+  };
+};
+const getSoftwareRepository = () => {
+  var _a, _b;
+  return ((_a = process.env.SCREEN_GO_UPDATE_REPOSITORY) == null ? void 0 : _a.trim()) || ((_b = process.env.GITHUB_REPOSITORY) == null ? void 0 : _b.trim()) || DEFAULT_REPOSITORY;
+};
+const getSoftwareLatestReleaseApiUrl = () => {
+  return `https://api.github.com/repos/${getSoftwareRepository()}/releases/latest`;
+};
+const getSoftwarePlatformKey = () => {
+  return `${process.platform}-${process.arch}`;
+};
+const createDefaultSoftwareUpdateState = (currentVersion) => {
+  return {
+    phase: "idle",
+    busy: false,
+    progress: 0,
+    downloadedSize: 0,
+    message: "",
+    updateInfo: {
+      currentVersion,
+      latestVersion: "",
+      platformKey: getSoftwarePlatformKey(),
+      fileName: "",
+      fileSize: 0,
+      downloadUrl: "",
+      pageUrl: "",
+      releaseNotes: "",
+      checksum: "",
+      publishedAt: "",
+      hasDirectPackage: false
+    },
+    downloadedFilePath: "",
+    updatedAt: Date.now()
+  };
+};
+const cloneSoftwareUpdateState = (state) => {
+  return {
+    ...state,
+    updateInfo: state.updateInfo ? {
+      ...state.updateInfo
+    } : null
+  };
+};
+const normalizeVersionText = (version) => {
+  return String(version ?? "").trim().replace(/^v/i, "");
+};
+const compareVersion = (leftVersion, rightVersion) => {
+  const leftList = normalizeVersionText(leftVersion).split(/[^0-9]+/).filter(Boolean).map((item) => Number.parseInt(item, 10) || 0);
+  const rightList = normalizeVersionText(rightVersion).split(/[^0-9]+/).filter(Boolean).map((item) => Number.parseInt(item, 10) || 0);
+  const maxLen = Math.max(leftList.length, rightList.length, 1);
+  for (let index = 0; index < maxLen; index++) {
+    const leftValue = leftList[index] ?? 0;
+    const rightValue = rightList[index] ?? 0;
+    if (leftValue > rightValue) return 1;
+    if (leftValue < rightValue) return -1;
+  }
+  return 0;
+};
+const getSoftwarePlatformKeyCandidates = () => {
+  const platformAliasMap = {
+    win32: ["win32", "windows", "win"],
+    darwin: ["darwin", "macos", "mac"],
+    linux: ["linux"]
+  };
+  const archAliasMap = {
+    x64: ["x64", "amd64"],
+    arm64: ["arm64", "aarch64"]
+  };
+  const platformList = platformAliasMap[process.platform] ?? [process.platform];
+  const archList = archAliasMap[process.arch] ?? [process.arch];
+  const keyList = platformList.flatMap((platform2) => {
+    return archList.flatMap((arch) => [
+      `${platform2}-${arch}`,
+      `${platform2}_${arch}`,
+      `${platform2}.${arch}`
+    ]);
+  });
+  return [...keyList, process.platform, "default"];
+};
+const getSoftwareAssetScore = (assetName) => {
+  const normalizedName = assetName.toLowerCase();
+  const candidates = getSoftwarePlatformKeyCandidates();
+  let score = 0;
+  if (DIRECT_PACKAGE_FILE_REG.test(normalizedName)) score += 10;
+  candidates.forEach((key, index) => {
+    if (normalizedName.includes(key.toLowerCase())) {
+      score += 100 - index;
+    }
+  });
+  if (process.platform == "win32") {
+    if (normalizedName.endsWith(".exe")) score += 20;
+    if (normalizedName.includes("setup")) score += 8;
+  } else if (process.platform == "darwin") {
+    if (normalizedName.endsWith(".dmg")) score += 20;
+  } else if (process.platform == "linux") {
+    if (normalizedName.endsWith(".appimage")) score += 20;
+    if (normalizedName.endsWith(".deb")) score += 12;
+  }
+  return score;
+};
+const resolveReleaseAssetByPlatform = (release) => {
+  var _a;
+  const assets = Array.isArray(release.assets) ? release.assets : [];
+  return (_a = assets.filter((asset) => (asset == null ? void 0 : asset.browser_download_url) && (asset == null ? void 0 : asset.name)).map((asset) => ({
+    asset,
+    score: getSoftwareAssetScore(asset.name)
+  })).filter((item) => item.score > 0).sort((left, right) => right.score - left.score)[0]) == null ? void 0 : _a.asset;
+};
+const buildSoftwarePackageInfo = (release, currentVersion) => {
+  const asset = resolveReleaseAssetByPlatform(release);
+  const latestVersion = normalizeVersionText(release.tag_name || release.name || "");
+  const pageUrl = String(release.html_url || "").trim();
+  return {
+    currentVersion,
+    latestVersion,
+    platformKey: getSoftwarePlatformKey(),
+    fileName: sanitizeSoftwareFileName((asset == null ? void 0 : asset.name) || "ScreenGo-Setup.exe"),
+    fileSize: Number((asset == null ? void 0 : asset.size) ?? 0) || 0,
+    downloadUrl: String((asset == null ? void 0 : asset.browser_download_url) || "").trim(),
+    pageUrl,
+    releaseNotes: String(release.body || "").trim(),
+    checksum: "",
+    publishedAt: String(release.published_at || "").trim(),
+    hasDirectPackage: Boolean(asset == null ? void 0 : asset.browser_download_url)
+  };
+};
+const sanitizeSoftwareFileName = (fileName) => {
+  const normalizedName = String(fileName ?? "").trim();
+  if (!normalizedName) return "ScreenGo-Setup.exe";
+  return normalizedName.replace(/[<>:"/\\|?*\u0000-\u001f]/g, "_");
+};
+const getSoftwareUpdateCacheDir = () => {
+  return require$$1$1.join(require$$1.app.getPath("temp") || process.cwd(), "screen-go-update");
+};
+const ensureSoftwareUpdateCacheDir = async () => {
+  const targetDir = getSoftwareUpdateCacheDir();
+  await promises.mkdir(targetDir, { recursive: true });
+  return targetDir;
+};
+const resolveSoftwareDownloadedFilePath = async (fileName) => {
+  const targetDir = await ensureSoftwareUpdateCacheDir();
+  return require$$1$1.join(targetDir, sanitizeSoftwareFileName(fileName));
+};
+const isFileExists = async (filePath) => {
+  try {
+    await promises.access(filePath, require$$0$2.constants.F_OK);
+    return true;
+  } catch (error2) {
+    return false;
+  }
+};
+const getFileSizeSafe = async (filePath) => {
+  try {
+    const fileStat = await promises.stat(filePath);
+    return Number(fileStat.size ?? 0) || 0;
+  } catch (error2) {
+    return 0;
+  }
+};
+const calcFileSHA256 = async (filePath) => {
+  const fileBuffer = await promises.readFile(filePath);
+  const hash = require$$3$1.createHash("sha256");
+  hash.update(fileBuffer);
+  return hash.digest("hex");
+};
+const calcSoftwareDownloadProgress = (loadedSize, totalSize) => {
+  if (!totalSize || totalSize <= 0) return 0;
+  const progress = Number((loadedSize / totalSize * 100).toFixed(1));
+  return Math.max(0, Math.min(100, progress));
+};
+const formatSoftwareSizeText = (size) => {
+  if (!size) return "0 B";
+  const unitList = ["B", "KB", "MB", "GB"];
+  let currentSize = size;
+  let unitIndex = 0;
+  while (currentSize >= 1024 && unitIndex < unitList.length - 1) {
+    currentSize /= 1024;
+    unitIndex++;
+  }
+  return `${currentSize.toFixed(currentSize >= 10 ? 1 : 2)} ${unitList[unitIndex]}`;
+};
+const SOFTWARE_UPDATE_STATE_CHANNEL = "softwareUpdate";
+class SoftwareUpdateService {
+  constructor() {
+    this.updateState = createDefaultSoftwareUpdateState(require$$1.app.getVersion());
+    this.downloadAbortController = null;
+    this.getState = () => {
+      return cloneSoftwareUpdateState(this.updateState);
+    };
+    this.resetState = async () => {
+      if (this.downloadAbortController) {
+        this.downloadAbortController.abort();
+        this.downloadAbortController = null;
+      }
+      this.setState(createDefaultSoftwareUpdateState(require$$1.app.getVersion()));
+      return successResult(true);
+    };
+    this.checkUpdate = async () => {
+      this.setState({
+        phase: "checking",
+        busy: true,
+        progress: 0,
+        downloadedSize: 0,
+        downloadedFilePath: "",
+        message: "正在检查更新..."
+      });
+      try {
+        const releaseData = await this.fetchLatestRelease();
+        const currentVersion = require$$1.app.getVersion();
+        const packageInfo = buildSoftwarePackageInfo(releaseData, currentVersion);
+        if (!packageInfo.latestVersion) {
+          throw new Error("GitHub Release 缺少有效版本号");
+        }
+        if (compareVersion(packageInfo.latestVersion, currentVersion) <= 0) {
+          this.setState({
+            phase: "not-available",
+            busy: false,
+            progress: 0,
+            downloadedSize: 0,
+            updateInfo: packageInfo,
+            downloadedFilePath: "",
+            message: "当前已是最新版本"
+          });
+          return successResult(packageInfo);
+        }
+        this.setState({
+          phase: "available",
+          busy: false,
+          progress: 0,
+          downloadedSize: 0,
+          updateInfo: packageInfo,
+          downloadedFilePath: "",
+          message: packageInfo.hasDirectPackage ? "发现新版本，可以下载安装包" : "发现新版本，请打开 Release 页面下载"
+        });
+        return successResult(packageInfo);
+      } catch (error2) {
+        const message = this.getErrorMessage(error2, "检查更新失败");
+        this.setState({
+          phase: "error",
+          busy: false,
+          progress: 0,
+          downloadedSize: 0,
+          downloadedFilePath: "",
+          message
+        });
+        return errorResult(message);
+      }
+    };
+    this.downloadUpdate = async () => {
+      if (this.updateState.busy) {
+        return errorResult("已有更新任务正在执行");
+      }
+      const packageInfo = await this.ensureAvailablePackageInfo();
+      if (!packageInfo) {
+        return errorResult("请先检查更新");
+      }
+      if (!packageInfo.hasDirectPackage || !packageInfo.downloadUrl) {
+        return errorResult("当前版本没有匹配本机平台的安装包");
+      }
+      const targetFilePath = await resolveSoftwareDownloadedFilePath(
+        packageInfo.fileName
+      );
+      const abortController = new AbortController();
+      this.downloadAbortController = abortController;
+      this.setState({
+        phase: "downloading",
+        busy: true,
+        progress: 0,
+        downloadedSize: 0,
+        downloadedFilePath: "",
+        message: "正在下载安装包..."
+      });
+      try {
+        await promises.rm(targetFilePath, { force: true });
+        const response = await fetch(packageInfo.downloadUrl, {
+          signal: abortController.signal,
+          headers: {
+            "User-Agent": "ScreenGo-Updater",
+            Accept: "application/octet-stream"
+          }
+        });
+        if (!response.ok || !response.body) {
+          throw new Error(`安装包下载失败：${response.status}`);
+        }
+        const totalSize = Number(response.headers.get("content-length") || 0) || packageInfo.fileSize;
+        let loadedSize = 0;
+        let lastUpdateTime = 0;
+        const sourceStream = require$$0$1.Readable.fromWeb(response.body);
+        sourceStream.on("data", (chunk) => {
+          loadedSize += Buffer.byteLength(chunk);
+          const progress = calcSoftwareDownloadProgress(loadedSize, totalSize);
+          const nextProgress = totalSize && progress >= 100 ? 99 : progress;
+          const nowTime = Date.now();
+          if (nowTime - lastUpdateTime < 250 && nextProgress < 99) return;
+          lastUpdateTime = nowTime;
+          this.setState({
+            progress: nextProgress,
+            downloadedSize: loadedSize,
+            message: totalSize ? `正在下载安装包... ${nextProgress}%` : `正在下载安装包... ${formatSoftwareSizeText(loadedSize)}`
+          });
+        });
+        await promises$1.pipeline(sourceStream, require$$0$2.createWriteStream(targetFilePath));
+        this.setState({
+          progress: 99,
+          message: "正在校验安装包..."
+        });
+        if (packageInfo.checksum) {
+          const fileHash = await calcFileSHA256(targetFilePath);
+          if (fileHash.toLowerCase() !== packageInfo.checksum.toLowerCase()) {
+            await promises.rm(targetFilePath, { force: true });
+            throw new Error("安装包校验失败");
+          }
+        }
+        const fileSize = await getFileSizeSafe(targetFilePath);
+        const finishedPackageInfo = {
+          ...packageInfo,
+          fileSize: fileSize || packageInfo.fileSize
+        };
+        this.downloadAbortController = null;
+        this.setState({
+          phase: "downloaded",
+          busy: false,
+          progress: 100,
+          downloadedSize: finishedPackageInfo.fileSize,
+          updateInfo: finishedPackageInfo,
+          downloadedFilePath: targetFilePath,
+          message: "安装包已下载完成"
+        });
+        return successResult(finishedPackageInfo);
+      } catch (error2) {
+        this.downloadAbortController = null;
+        if (abortController.signal.aborted) {
+          this.setState({
+            phase: "cancelled",
+            busy: false,
+            progress: 0,
+            downloadedSize: 0,
+            downloadedFilePath: "",
+            message: "已取消更新下载"
+          });
+          return errorResult("已取消更新下载");
+        }
+        const message = this.getErrorMessage(error2, "下载更新失败");
+        this.setState({
+          phase: "error",
+          busy: false,
+          progress: 0,
+          downloadedSize: 0,
+          downloadedFilePath: "",
+          message
+        });
+        return errorResult(message);
+      }
+    };
+    this.cancelDownload = async () => {
+      if (!this.downloadAbortController) {
+        return errorResult("没有正在下载的更新任务");
+      }
+      this.downloadAbortController.abort();
+      this.downloadAbortController = null;
+      this.setState({
+        phase: "cancelled",
+        busy: false,
+        progress: 0,
+        downloadedSize: 0,
+        downloadedFilePath: "",
+        message: "已取消更新下载"
+      });
+      return successResult(true);
+    };
+    this.installUpdate = async () => {
+      const downloadedFilePath = String(this.updateState.downloadedFilePath || "");
+      if (!downloadedFilePath) {
+        return errorResult("请先下载安装包");
+      }
+      if (!await isFileExists(downloadedFilePath)) {
+        return errorResult("安装包不存在，请重新下载");
+      }
+      try {
+        this.setState({
+          phase: "installing",
+          busy: true,
+          progress: 100,
+          message: "正在启动安装包..."
+        });
+        await this.launchInstaller(downloadedFilePath);
+        return successResult(true);
+      } catch (error2) {
+        const message = this.getErrorMessage(error2, "启动安装包失败");
+        this.setState({
+          phase: "error",
+          busy: false,
+          message
+        });
+        return errorResult(message);
+      }
+    };
+    this.openDownloadPage = async () => {
+      const packageInfo = this.updateState.updateInfo;
+      const pageUrl = (packageInfo == null ? void 0 : packageInfo.pageUrl) || (packageInfo == null ? void 0 : packageInfo.downloadUrl);
+      if (!pageUrl) {
+        return errorResult("没有可打开的下载页面");
+      }
+      await require$$1.shell.openExternal(pageUrl);
+      return successResult(true);
+    };
+    this.fetchLatestRelease = async () => {
+      const response = await fetch(getSoftwareLatestReleaseApiUrl(), {
+        headers: {
+          "User-Agent": "ScreenGo-Updater",
+          Accept: "application/vnd.github+json"
+        }
+      });
+      if (!response.ok) {
+        throw new Error(`GitHub Release 获取失败：${response.status}`);
+      }
+      return await response.json();
+    };
+    this.ensureAvailablePackageInfo = async () => {
+      var _a;
+      if (((_a = this.updateState.updateInfo) == null ? void 0 : _a.latestVersion) && compareVersion(
+        this.updateState.updateInfo.latestVersion,
+        this.updateState.updateInfo.currentVersion
+      ) > 0) {
+        return this.updateState.updateInfo;
+      }
+      const checkResult = await this.checkUpdate();
+      if (!checkResult.success) return null;
+      return checkResult.data || null;
+    };
+    this.launchInstaller = async (installerPath) => {
+      var _a;
+      const fileExt = ((_a = installerPath.split(".").pop()) == null ? void 0 : _a.toLowerCase()) || "";
+      if (process.platform == "win32" && ["exe", "msi"].includes(fileExt)) {
+        child_process.spawn(installerPath, [], {
+          detached: true,
+          stdio: "ignore",
+          windowsHide: false
+        }).unref();
+        setTimeout(() => {
+          require$$1.app.quit();
+        }, 300);
+        return;
+      }
+      const openResult = await require$$1.shell.openPath(installerPath);
+      if (openResult) {
+        throw new Error(openResult);
+      }
+    };
+    this.getErrorMessage = (error2, fallbackMessage) => {
+      if (error2 instanceof Error && error2.message.trim()) {
+        return error2.message;
+      }
+      return fallbackMessage;
+    };
+    this.setState = (partialState) => {
+      this.updateState = {
+        ...this.updateState,
+        ...partialState,
+        updateInfo: partialState.updateInfo === void 0 ? this.updateState.updateInfo : partialState.updateInfo,
+        updatedAt: Date.now()
+      };
+      CreateWindow.travWindowSend({
+        [SOFTWARE_UPDATE_STATE_CHANNEL]: cloneSoftwareUpdateState(this.updateState)
+      });
+      require$$1.BrowserWindow.getAllWindows().forEach((window2) => {
+        if (!window2.webContents.isDestroyed()) {
+          window2.webContents.send(
+            "software-update-state",
+            cloneSoftwareUpdateState(this.updateState)
+          );
+        }
+      });
+    };
+  }
+}
+const softwareUpdateService = new SoftwareUpdateService();
+const softwareUpdateListener = () => {
+  require$$1.ipcMain.handle("get-software-update-state", async () => {
+    return softwareUpdateService.getState();
+  });
+  require$$1.ipcMain.handle("reset-software-update-state", async () => {
+    return await softwareUpdateService.resetState();
+  });
+  require$$1.ipcMain.handle("check-software-update", async () => {
+    return await softwareUpdateService.checkUpdate();
+  });
+  require$$1.ipcMain.handle("download-software-update", async () => {
+    return await softwareUpdateService.downloadUpdate();
+  });
+  require$$1.ipcMain.handle("cancel-software-update", async () => {
+    return await softwareUpdateService.cancelDownload();
+  });
+  require$$1.ipcMain.handle("install-software-update", async () => {
+    return await softwareUpdateService.installUpdate();
+  });
+  require$$1.ipcMain.handle("open-software-update-page", async () => {
+    return await softwareUpdateService.openDownloadPage();
+  });
+};
+windowControlListener();
+fileListener();
+ffmpegListener();
+storeListener();
+softwareUpdateListener();
+require$$1.ipcMain.on("store-set", (event, objData) => {
+  CreateWindow.travWindowSend(
+    objData,
+    require$$1.BrowserWindow.fromWebContents(event.sender)
+  );
+});
+require$$1.app.commandLine.appendSwitch("--ignore-certificate-errors", "true");
+require$$1.protocol.registerSchemesAsPrivileged([
+  { scheme: "app", privileges: { secure: true, standard: true } }
+]);
+require$$1.app.whenReady().then(() => {
+  createMainWindow();
+  require$$1.app.on("activate", () => {
+    if (require$$1.BrowserWindow.getAllWindows().length === 0) createMainWindow();
+  });
+});
+const WINDOW_WIDTH = 1e3;
+const WINDOW_HEIGHT = 830;
+const createMainWindow = async () => {
+  let mainW = new CreateWindow();
+  console.info("createMainWindow");
+  mainW.createWindow({
+    route: "/",
+    isMainWin: true,
+    // maxWidth: WINDOW_WIDTH,
+    // maxHeight: WINDOW_HEIGHT,
+    width: WINDOW_WIDTH,
+    height: WINDOW_HEIGHT,
+    minWidth: 800,
+    minHeight: 680,
+    resizable: true,
+    windowName: "main"
+  });
+};
+require$$1.app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") require$$1.app.quit();
+});
