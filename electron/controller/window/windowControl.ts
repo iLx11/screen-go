@@ -1,6 +1,6 @@
 const { ipcMain, BrowserWindow, screen } = require('electron')
 import IWindowConfig from 'electron/interface/IWindowOption'
-import CreateWindow from './CreateWindow'
+import CreateWindow from './createWindow'
 
 export const windowControlListener = () => {
   // 创建其他窗口
