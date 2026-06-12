@@ -34,8 +34,17 @@ export const useScreenStore = defineStore('screen', {
       videoSourceWidth: 0,
       videoSourceHeight: 0,
       videoTotalDur: 0,
+      workMode: 'image',
       curMode: false,
-      videoPath: ''
+      videoPath: '',
+      fontFamily: 'Microsoft YaHei',
+      fontText: '',
+      fontWidth: 16,
+      fontHeight: 16,
+      fontSize: 16,
+      fontWeight: '400',
+      fontOffsetX: 0,
+      fontOffsetY: 0
     }
   },
   actions: {
@@ -138,6 +147,34 @@ export const useScreenStore = defineStore('screen', {
     },
     setVideoPath(path: string) {
       this.videoPath = path
+    },
+    setWorkMode(mode: string) {
+      this.workMode = mode
+      this.curMode = mode === 'video'
+    },
+    setFontFamily(fontFamily: string) {
+      this.fontFamily = fontFamily
+    },
+    setFontText(text: string) {
+      this.fontText = text
+    },
+    setFontWidth(data: number) {
+      this.fontWidth = data
+    },
+    setFontHeight(data: number) {
+      this.fontHeight = data
+    },
+    setFontSize(data: number) {
+      this.fontSize = data
+    },
+    setFontWeight(data: string) {
+      this.fontWeight = data
+    },
+    setFontOffsetX(data: number) {
+      this.fontOffsetX = data
+    },
+    setFontOffsetY(data: number) {
+      this.fontOffsetY = data
     }
   },
 })

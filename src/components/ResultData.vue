@@ -18,6 +18,7 @@ import {
 import { useScreenStore } from '../stores/store'
 import { useConfigStore } from '../stores/configStore'
 import { XBox } from 'ilx1-x-box'
+import { getUniqueFontText } from '@/utils/tools/fontGenerate'
 
 import 'codemirror/mode/clike/clike.js'
 import 'codemirror/addon/display/placeholder.js'
@@ -172,8 +173,31 @@ const getVideoFrameTextList = () => {
 }
 
 const getPureDataText = () => {
-  if (!screenStore.curMode) return screenStore.resultString
-  return getVideoFrameTextList().join(',\n')
+  const dataList = extractTopLevelBraceDataList(screenStore.resultString)
+  return dataList.length > 0 ? dataList.join(',\n') : screenStore.resultString
+}
+
+const getResultArrayCount = () => {
+  const dataList = extractTopLevelBraceDataList(screenStore.resultString)
+  if (dataList.length > 0) return dataList.length
+  return screenStore.curMode ? getFrameCount() : 0
+}
+
+const getFontDataTextList = () => {
+  const dataList = extractTopLevelBraceDataList(screenStore.resultString)
+  return dataList.length > 0 ? dataList : [screenStore.resultString]
+}
+
+const buildFontResultString = (config: ResultConfig) => {
+  const dataList = getFontDataTextList()
+  const charList = Array.from(getUniqueFontText(screenStore.fontText))
+  const arrayList = dataList.map((dataText, index) => {
+    const char = charList[index] || `${index + 1}`
+    const comma = index < dataList.length - 1 ? ',' : ''
+    return `// ${char}\n{${dataText}}${comma}`
+  })
+
+  return `${config.preComment}\n${config.arrayName}[${dataList.length}][${screenStore.resultDataLength}] = {\n${arrayList.join('\n')}\n};\n${config.backComment}\n`
 }
 
 const getArrayNameWithIndex = (arrayName: string, index: number) => {
@@ -187,6 +211,7 @@ const buildResultString = () => {
 
   const config = getResultConfig()
   if (config.outputBinFile) return getPureDataText()
+  if (screenStore.workMode == 'font') return buildFontResultString(config)
 
   if (
     screenStore.curMode &&
@@ -201,9 +226,11 @@ const buildResultString = () => {
     return `${config.preComment}\n${arrayList.join('\n')}\n${config.backComment}\n`
   }
 
-  const arraySize = screenStore.curMode
-    ? `[${getFrameCount()}][${screenStore.resultDataLength}]`
-    : `[${screenStore.resultDataLength}]`
+  const resultArrayCount = getResultArrayCount()
+  const arraySize =
+    resultArrayCount > 0
+      ? `[${resultArrayCount}][${screenStore.resultDataLength}]`
+      : `[${screenStore.resultDataLength}]`
 
   return `${config.preComment}\n${config.arrayName}${arraySize} = {\n  ${screenStore.resultString}\n};\n${config.backComment}\n`
 }
@@ -361,7 +388,12 @@ const exportBinFile = async () => {
     return
   }
 
-  const fileName = screenStore.curMode ? 'video-data.bin' : 'image-data.bin'
+  const fileName =
+    screenStore.workMode == 'video'
+      ? 'video-data.bin'
+      : screenStore.workMode == 'font'
+        ? 'font-data.bin'
+        : 'image-data.bin'
   const handler = win.api.saveBinFile || win.api.file?.saveBinFile
 
   try {
@@ -389,12 +421,16 @@ const normalizeConfigArray = (configArray: number[] = []) => {
 
 const getCurrentImageConfig = () => {
   const width = Number(
-    screenStore.curMode
+    screenStore.workMode == 'font'
+      ? screenStore.fontWidth
+      : screenStore.curMode
       ? screenStore.resizeWidth
       : configStore.screenConfig.resizeWidth || screenStore.resizeWidth
   )
   const height = Number(
-    screenStore.curMode
+    screenStore.workMode == 'font'
+      ? screenStore.fontHeight
+      : screenStore.curMode
       ? screenStore.resizeHeight
       : configStore.screenConfig.resizeHeight || screenStore.resizeHeight
   )
@@ -429,7 +465,7 @@ const extractBraceDataText = (text: string) => {
 }
 
 const parseResultBytes = (text: string) => {
-  const dataText = extractBraceDataText(text)
+  const dataText = extractBraceDataText(text).replace(/\/\/.*(?=\r?\n|$)/g, '')
   const matches = dataText.match(/0x[0-9a-fA-F]+|\d+/g) || []
   return matches
     .map(item =>

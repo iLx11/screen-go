@@ -5,6 +5,7 @@ import { XBox } from 'ilx1-x-box'
 import { resizeImage, generate } from 'ilx1-x-tool'
 import { useConfigStore } from '@/stores/configStore'
 import { recordSizePreset } from '@/utils/tools/sizePreset'
+import { generateFontData, getUniqueFontText } from '@/utils/tools/fontGenerate'
 
 const configStore = useConfigStore()
 const win = window as any
@@ -115,6 +116,71 @@ const imgHandle = async () => {
 }
 
 // 视频取模处理
+// 字体取模处理
+const fontHandle = async () => {
+  const text = getUniqueFontText(screenStore.fontText)
+  const width = Math.max(1, Math.floor(Number(screenStore.fontWidth) || 0))
+  const height = Math.max(1, Math.floor(Number(screenStore.fontHeight) || 0))
+  const fontSize = Math.max(1, Math.floor(Number(screenStore.fontSize) || 0))
+
+  if (!text) {
+    XBox.popMes('请输入要取模的字符')
+    return false
+  }
+
+  screenStore.resetWaitProgress()
+  screenStore.setWaitProgressText('处理字体数据中...')
+  screenStore.setWaitProgressVisible(false)
+  screenStore.setWaitCancelable(false)
+  screenStore.setWaitCanceled(false)
+  screenStore.setWaitExecute(true)
+
+  try {
+    const configArray = [...configStore.screenConfig.configArray]
+    screenStore.setFontText(text)
+    configArray[4] = 1
+    configStore.screenConfig.resizeWidth = width
+    configStore.screenConfig.resizeHeight = height
+    configStore.screenConfig.configArray = [...configArray]
+    screenStore.setResizeWidth(width)
+    screenStore.setResizeHeight(height)
+
+    const dataList = generateFontData({
+      text,
+      fontFamily: screenStore.fontFamily,
+      width,
+      height,
+      fontSize,
+      fontWeight: screenStore.fontWeight,
+      offsetX: screenStore.fontOffsetX,
+      offsetY: screenStore.fontOffsetY,
+      configArray,
+    })
+
+    if (dataList.length == 0) {
+      XBox.popMes('字体取模失败！')
+      return false
+    }
+
+    const result =
+      dataList.length == 1
+        ? Array.from(dataList[0]).join(',')
+        : dataList.map(item => `{${Array.from(item).join(',')}}`).join(',')
+
+    screenStore.setDataLength(Array.from(dataList[0]).length)
+    screenStore.setResultString(result)
+    configStore.showPop('生成成功！')
+    return true
+  } catch (error) {
+    console.error(error)
+    XBox.popMes('字体取模失败！')
+    return false
+  } finally {
+    await closeWaitExecute()
+  }
+}
+
+// 视频取模处理
 const videoHandle = async () => {
   if (
     !isPositiveNumber(screenStore.resizeWidth) ||
@@ -211,6 +277,10 @@ const imgPreSet = () => {
 // 提交处理
 const commit = async () => {
   if (screenStore.waitExecute) return
+  if (screenStore.workMode == 'font') {
+    await fontHandle()
+    return
+  }
   // 图片取模
   if (!screenStore.curMode) {
     // 处理图片
@@ -245,7 +315,7 @@ const commit = async () => {
   border: none;
   font-size: 20px;
   font-weight: bold;
-  color: rgba(51, 51, 51, 0.7);
+  color: rgba(255, 255, 255);
   cursor: pointer;
   background: var(--commit-box-color);
 }

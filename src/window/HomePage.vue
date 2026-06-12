@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import WindowTitle from '../components/tools/WindowTitle.vue'
-import { onMounted, onUnmounted, nextTick, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import ImageEditor from '../components/ImageEditor.vue'
 import ImageConfig from '../components/ImageConfig.vue'
 import VideoConfig from '../components/VideoConfig.vue'
+import FontConfig from '../components/FontConfig.vue'
 import CommitBox from '../components/CommitBox.vue'
 import ResultData from '../components/ResultData.vue'
 import { useScreenStore } from '../stores/store'
@@ -237,10 +238,12 @@ watch(
   }
 )
 
-const configShow = ref<boolean>(false)
-const setConfigShow = state => {
-  configShow.value = state
-  screenStore.curMode = state
+type WorkMode = 'image' | 'video' | 'font'
+
+const activeMode = ref<WorkMode>('image')
+const setWorkMode = (mode: WorkMode) => {
+  activeMode.value = mode
+  screenStore.setWorkMode(mode)
 }
 </script>
 
@@ -296,7 +299,7 @@ const setConfigShow = state => {
       <div
         id="screen-box"
         @click="openScreenPage"
-        v-if="!configShow"
+        v-if="activeMode === 'image'"
       >
         <div>
           <img
@@ -312,19 +315,41 @@ const setConfigShow = state => {
       </div>
       <div
         id="config-tool-box"
-        v-if="!configShow"
+        v-if="activeMode === 'image'"
       >
         <ImageConfig />
       </div>
       <div
         id="video-config-box"
-        v-if="configShow"
+        v-if="activeMode === 'video'"
       >
         <VideoConfig />
       </div>
+      <div
+        id="font-config-box"
+        v-if="activeMode === 'font'"
+      >
+        <FontConfig />
+      </div>
       <div id="func-switch">
-        <div @click="setConfigShow(false)">图片取模</div>
-        <div @click="setConfigShow(true)">视频取模</div>
+        <div
+          :class="{ active: activeMode === 'image' }"
+          @click="setWorkMode('image')"
+        >
+          图片取模
+        </div>
+        <div
+          :class="{ active: activeMode === 'video' }"
+          @click="setWorkMode('video')"
+        >
+          视频取模
+        </div>
+        <div
+          :class="{ active: activeMode === 'font' }"
+          @click="setWorkMode('font')"
+        >
+          字体取模
+        </div>
       </div>
       <div id="commit-box">
         <CommitBox />
@@ -522,7 +547,12 @@ const setConfigShow = state => {
 #config-tool-box {
   grid-area: 5 / 1 / 10 / 2;
 }
+
 #video-config-box {
+  grid-area: 1 / 1 / 10 / 2;
+}
+
+#font-config-box {
   grid-area: 1 / 1 / 10 / 2;
 }
 
@@ -535,7 +565,7 @@ const setConfigShow = state => {
   color: var(--config-text-color);
   font-weight: var(--config-font-weight);
   div {
-    width: 48.5%;
+    width: 32%;
     height: 100%;
     background: rgb(232, 237, 237);
     border-radius: 12px;
@@ -545,6 +575,11 @@ const setConfigShow = state => {
     border: none;
     cursor: pointer;
     font-weight: var(--config-font-weight);
+  }
+
+  .active {
+    background: var(--bg-color-comp-4);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
   }
 }
 
