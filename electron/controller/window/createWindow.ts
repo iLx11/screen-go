@@ -9,7 +9,7 @@ import { join } from 'path'
 const path = require('path')
 
 // 是否开发环境
-const DEV = true
+const DEV = false
 
 // 窗口记录数组
 interface IWindowMap {
